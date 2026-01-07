@@ -1,16 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Piano Chord Detection Validation System</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div class="container">
         <header>
             <h1>🎹 Piano Chord Detection Validation</h1>
             <p class="subtitle">CNN-based chord recognition with WCSR evaluation</p>
+            <nav class="header-nav">
+                <a href="single-chord.html" class="nav-btn">🎵 Single Chord Classifier</a>
+            </nav>
         </header>
 
         <!-- Configuration Panel -->
@@ -45,6 +50,10 @@
                     <label>
                         Pre-Onset Buffer (ms)
                         <input type="number" id="preOnsetBuffer" value="50" min="0" max="200">
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="ignoreSubsequentOnsets" checked>
+                        <span>Ignore subsequent onsets in window</span>
                     </label>
                 </div>
                 <div class="config-group">
@@ -102,9 +111,19 @@
 
         <!-- CQT Visualization -->
         <section class="visualization-section" id="visualizationSection" style="display: none;">
-            <h2>📊 CQT Spectrogram & Onset Detection</h2>
+            <h2>📊 CQT Spectrogram &amp; Onset Detection</h2>
+            <div class="cqt-controls">
+                <button id="playButton" class="btn-play">
+                    <span class="play-icon">▶</span>
+                    <span class="play-text">Play</span>
+                </button>
+                <span class="playback-time" id="playbackTime">0:00.000 / 0:00.000</span>
+            </div>
             <div class="cqt-container">
-                <canvas id="cqtCanvas" width="1200" height="300"></canvas>
+                <div class="cqt-canvas-wrapper">
+                    <canvas id="cqtCanvas" width="1200" height="300"></canvas>
+                    <div class="playback-cursor" id="playbackCursor"></div>
+                </div>
                 <div class="cqt-legend">
                     <span class="legend-item"><span class="legend-color onset-line"></span> Detected Onsets</span>
                     <span class="legend-item"><span class="legend-color gt-region"></span> Ground Truth Regions</span>
@@ -116,7 +135,7 @@
         <!-- Results Section -->
         <section class="results-section" id="resultsSection" style="display: none;">
             <h2>📈 Validation Results</h2>
-            
+
             <!-- WCSR Score -->
             <div class="score-card">
                 <div class="score-main">
@@ -193,10 +212,12 @@
         <section class="model-info">
             <h2>🧠 Model Information</h2>
             <div class="model-details">
-                <p><strong>Architecture:</strong> CNN (Conv2D → MaxPool → Conv2D → MaxPool → Conv2D → MaxPool → Dense → Dropout → Softmax)</p>
+                <p><strong>Architecture:</strong> CNN (Conv2D → MaxPool → Conv2D → MaxPool → Conv2D → MaxPool → Dense →
+                    Dropout → Softmax)</p>
                 <p><strong>Input Shape:</strong> 36 × 200 × 1 (CQT bins × time frames × channels)</p>
                 <p><strong>Output Classes:</strong> 36 (12 roots × 3 types: major, minor, diminished)</p>
-                <p><strong>Chord Labels:</strong> A, A#, B, C, C#, D, D#, E, F, F#, G, G# × {major, minor, diminished}</p>
+                <p><strong>Chord Labels:</strong> A, A#, B, C, C#, D, D#, E, F, F#, G, G# × {major, minor, diminished}
+                </p>
             </div>
         </section>
     </div>
@@ -204,4 +225,5 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
     <script type="module" src="app.js"></script>
 </body>
+
 </html>
