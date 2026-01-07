@@ -145,6 +145,9 @@ export class CQTExtractor {
         // Normalize features
         this.normalizeFeatures(features);
 
+        // Print features for verification
+        this.printFeatures(features, numBins, targetFrames, frames.length);
+
         return features;
     }
 
@@ -207,6 +210,89 @@ export class CQTExtractor {
         }
 
         return features;
+    }
+
+    /**
+     * Print features for verification
+     * @param {Float32Array} features - The extracted features
+     * @param {number} numBins - Number of frequency bins
+     * @param {number} targetFrames - Number of time frames
+     * @param {number} actualFrames - Actual frames extracted before padding
+     */
+    printFeatures(features, numBins, targetFrames, actualFrames) {
+        console.log('\n========== CQT FEATURE EXTRACTION RESULTS ==========');
+        console.log(`Shape: [${numBins} bins × ${targetFrames} frames] = ${features.length} total values`);
+        console.log(`Actual frames extracted: ${actualFrames} (padded to ${targetFrames})`);
+
+        // Calculate statistics
+        let min = Infinity, max = -Infinity, sum = 0;
+        let nonZeroCount = 0;
+
+        for (let i = 0; i < features.length; i++) {
+            const val = features[i];
+            if (val < min) min = val;
+            if (val > max) max = val;
+            sum += val;
+            if (val > 0.001) nonZeroCount++;
+        }
+
+        const mean = sum / features.length;
+        const nonZeroPercent = ((nonZeroCount / features.length) * 100).toFixed(1);
+
+        console.log(`\nStatistics (after normalization):`);
+        console.log(`  Min: ${min.toFixed(6)}`);
+        console.log(`  Max: ${max.toFixed(6)}`);
+        console.log(`  Mean: ${mean.toFixed(6)}`);
+        console.log(`  Non-zero values: ${nonZeroCount} (${nonZeroPercent}%)`);
+
+        // Reshape to 2D for visualization [numBins x targetFrames]
+        // Note: features are stored as [bin0_time0, bin0_time1, ..., bin1_time0, bin1_time1, ...]
+        console.log(`\nFeature Matrix Preview (top 12 bins × first 8 frames):`);
+        console.log(`Note: Layout is [bins (rows) × time frames (columns)]`);
+
+        const previewBins = Math.min(12, numBins);
+        const previewFrames = Math.min(8, targetFrames);
+
+        // Print header
+        let header = 'Bin\\Time |';
+        for (let t = 0; t < previewFrames; t++) {
+            header += ` T${t.toString().padStart(2, '0')} `;
+        }
+        console.log(header);
+        console.log('-'.repeat(header.length));
+
+        // Print values for each bin (high frequencies at top)
+        for (let b = numBins - 1; b >= numBins - previewBins; b--) {
+            let row = `B${b.toString().padStart(3, '0')}    |`;
+            for (let t = 0; t < previewFrames; t++) {
+                const idx = b * targetFrames + t;
+                const val = features[idx];
+                row += ` ${val.toFixed(2)} `;
+            }
+            console.log(row);
+        }
+
+        // ASCII heatmap visualization
+        console.log(`\nASCII Heatmap (all ${numBins} bins × ${previewFrames} frames):`);
+        console.log('Legend: ░ (0.0-0.2) ▒ (0.2-0.4) ▓ (0.4-0.6) █ (0.6-0.8) ▀ (0.8-1.0)');
+
+        const heatmapChars = ['░', '▒', '▓', '█', '▀'];
+
+        for (let b = numBins - 1; b >= 0; b--) {
+            let row = '';
+            for (let t = 0; t < previewFrames; t++) {
+                const idx = b * targetFrames + t;
+                const val = features[idx];
+                const charIdx = Math.min(4, Math.floor(val * 5));
+                row += heatmapChars[charIdx];
+            }
+            // Only print every 4th row to keep output manageable
+            if (b % 4 === 0 || b === numBins - 1) {
+                console.log(`B${b.toString().padStart(3, '0')} ${row}`);
+            }
+        }
+
+        console.log('====================================================\n');
     }
 
     /**
