@@ -108,6 +108,13 @@ def print_features(features: np.ndarray, actual_frames: int):
     print(f'  Mean: {mean_val:.6f}')
     print(f'  Non-zero values: {non_zero_count} ({non_zero_percent:.1f}%)')
     
+    # Print frequency-to-note mapping for verification
+    print(f'\nFrequency bins (first 12):')
+    for k in range(min(12, n_bins)):
+        freq = FMIN * (2.0 ** (k / BINS_PER_OCTAVE))
+        note = librosa.hz_to_note(freq)
+        print(f'  Bin {k}: {freq:.2f} Hz ({note})')
+    
     # Feature Matrix Preview
     preview_bins = min(12, n_bins)
     preview_frames = min(8, target_frames)
