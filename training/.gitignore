@@ -13,3 +13,4 @@ datasets/
 CNN_audio_model_tfjs
 *.keras
 *.npz
+models
