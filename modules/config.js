@@ -40,15 +40,27 @@ export const CONFIG = {
         // Model output format: Root_type_octave (e.g., "C_major_4")
         // MIREX format: Root:type (e.g., "C:maj", "C:min", "C:dim")
 
-        // Generate all 36 chord labels
+        // IMPORTANT: Labels must be in ALPHABETICAL order to match LabelEncoder!
+        // LabelEncoder sorts alphabetically, so A# comes BEFORE A in the array.
+        // This is the order the model outputs predictions.
+        modelLabels: [
+            'A#_diminished_4', 'A#_major_4', 'A#_minor_4',
+            'A_diminished_4', 'A_major_4', 'A_minor_4',
+            'B_diminished_4', 'B_major_4', 'B_minor_4',
+            'C#_diminished_4', 'C#_major_4', 'C#_minor_4',
+            'C_diminished_4', 'C_major_4', 'C_minor_4',
+            'D#_diminished_4', 'D#_major_4', 'D#_minor_4',
+            'D_diminished_4', 'D_major_4', 'D_minor_4',
+            'E_diminished_4', 'E_major_4', 'E_minor_4',
+            'F#_diminished_4', 'F#_major_4', 'F#_minor_4',
+            'F_diminished_4', 'F_major_4', 'F_minor_4',
+            'G#_diminished_4', 'G#_major_4', 'G#_minor_4',
+            'G_diminished_4', 'G_major_4', 'G_minor_4',
+        ],
+
+        // Get model labels (returns the pre-defined alphabetical array)
         getModelLabels: function () {
-            const labels = [];
-            for (const root of this.roots) {
-                for (const type of this.types) {
-                    labels.push(`${root}_${type}_4`);
-                }
-            }
-            return labels;
+            return this.modelLabels;
         },
 
         // Convert model label to MIREX format

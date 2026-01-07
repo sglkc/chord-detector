@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CQT Test - librosa Compatibility</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        h1 {
+            color: #4ecdc4;
+        }
+        .section {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.5rem;
+        }
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        pre {
+            background: #0f0f23;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+        canvas {
+            border: 1px solid #333;
+            border-radius: 8px;
+            max-width: 100%;
+        }
+        .info {
+            color: #888;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        #status {
+            padding: 1rem;
+            background: #0f0f23;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 CQT Extractor Test</h1>
+    <p>Test the librosa-compatible CQT implementation</p>
+
+    <div class="section">
+        <h2>1. Load Audio File</h2>
+        <label class="upload-btn" for="audioFile">
+            📁 Select Audio File
+        </label>
+        <input type="file" id="audioFile" accept="audio/*">
+        <span id="fileName" class="info">No file selected</span>
+    </div>
+
+    <div id="status">Status: Ready</div>
+
+    <div class="section">
+        <h2>2. CQT Visualization</h2>
+        <canvas id="cqtCanvas" width="800" height="200"></canvas>
+    </div>
+
+    <div class="section">
+        <h2>3. Feature Extraction Output</h2>
+        <pre id="output">Waiting for audio file...</pre>
+    </div>
+
+    <div class="section">
+        <h2>4. Comparison Notes</h2>
+        <pre id="comparison">
+Compare these values with Python output:
+
+1. Run Python script:
+   cd training
+   ./extract_cqt_features.py ./datasets/normal/A_major_4/A_major_4-100.wav
+
+2. Upload the same audio file here
+
+3. Compare:
+   - Shape (should be identical)
+   - Actual frames extracted
+   - Mean value (should be similar after normalization)
+   - Feature matrix preview values
+        </pre>
+    </div>
+
+    <script type="module">
+        import { CQTExtractor } from './modules/cqt-extractor.js';
+        import { CONFIG } from './modules/config.js';
+
+        const cqtExtractor = new CQTExtractor();
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        const statusEl = document.getElementById('status');
+        const outputEl = document.getElementById('output');
+        const fileNameEl = document.getElementById('fileName');
+        const canvas = document.getElementById('cqtCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function log(message) {
+            console.log(message);
+            statusEl.textContent = 'Status: ' + message;
+        }
+
+        function appendOutput(text) {
+            outputEl.textContent += text + '\n';
+        }
+
+        document.getElementById('audioFile').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            fileNameEl.textContent = file.name;
+            outputEl.textContent = '';
+            log('Loading audio file...');
+
+            try {
+                // Decode audio
+                const arrayBuffer = await file.arrayBuffer();
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+                appendOutput(`Audio loaded: ${file.name}`);
+                appendOutput(`  Sample rate: ${audioBuffer.sampleRate} Hz`);
+                appendOutput(`  Duration: ${audioBuffer.duration.toFixed(2)} seconds`);
+                appendOutput(`  Samples: ${audioBuffer.length}`);
+                appendOutput('');
+
+                // Initialize CQT extractor
+                log('Initializing CQT extractor...');
+                await cqtExtractor.init(audioBuffer.sampleRate);
+
+                // Extract CQT for visualization
+                log('Extracting full CQT...');
+                const cqtData = await cqtExtractor.extractFullCQT(audioBuffer, CONFIG);
+
+                appendOutput(`CQT extracted:`);
+                appendOutput(`  Frames: ${cqtData.numFrames}`);
+                appendOutput(`  Bins: ${cqtData.numBins}`);
+                appendOutput(`  FFT Length: ${cqtData.fftLength}`);
+                appendOutput('');
+
+                // Draw visualization
+                log('Drawing CQT visualization...');
+                drawCQT(cqtData);
+
+                // Extract features (like classification would)
+                log('Extracting features for classification...');
+                const windowData = audioBuffer.getChannelData(0);
+                
+                // Capture console output
+                const originalLog = console.log;
+                let capturedOutput = '';
+                console.log = (...args) => {
+                    capturedOutput += args.join(' ') + '\n';
+                    originalLog.apply(console, args);
+                };
+
+                const features = await cqtExtractor.extractFeatures(windowData, CONFIG);
+
+                console.log = originalLog;
+                appendOutput(capturedOutput);
+
+                log('Done! Check the output above.');
+
+            } catch (error) {
+                log('Error: ' + error.message);
+                console.error(error);
+            }
+        });
+
+        function drawCQT(cqtData) {
+            const { magnitudes, numFrames, numBins } = cqtData;
+
+            // Resize canvas
+            canvas.width = Math.min(800, numFrames);
+            canvas.height = numBins * 4;
+
+            // Find min/max for normalization
+            let min = Infinity, max = -Infinity;
+            for (const frame of magnitudes) {
+                for (const val of frame) {
+                    if (val < min) min = val;
+                    if (val > max) max = val;
+                }
+            }
+            const range = max - min || 1;
+
+            // Draw
+            const imageData = ctx.createImageData(canvas.width, canvas.height);
+            const scaleX = numFrames / canvas.width;
+            const scaleY = numBins / canvas.height;
+
+            for (let y = 0; y < canvas.height; y++) {
+                for (let x = 0; x < canvas.width; x++) {
+                    const frameIdx = Math.floor(x * scaleX);
+                    const binIdx = numBins - 1 - Math.floor(y * scaleY);
+                    
+                    if (frameIdx < magnitudes.length && binIdx >= 0 && binIdx < numBins) {
+                        const value = (magnitudes[frameIdx][binIdx] - min) / range;
+                        const color = viridisColor(value);
+                        const pixelIdx = (y * canvas.width + x) * 4;
+                        imageData.data[pixelIdx] = color[0];
+                        imageData.data[pixelIdx + 1] = color[1];
+                        imageData.data[pixelIdx + 2] = color[2];
+                        imageData.data[pixelIdx + 3] = 255;
+                    }
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function viridisColor(value) {
+            const v = Math.max(0, Math.min(1, value));
+            const r = Math.round(255 * (0.267004 + v * (0.329415 + v * (-0.508378 + v * 1.137680))));
+            const g = Math.round(255 * (0.004874 + v * (0.873158 + v * (-0.058404 + v * -0.322897))));
+            const b = Math.round(255 * (0.329415 + v * (0.280197 + v * (-1.314181 + v * 1.171356))));
+            return [
+                Math.max(0, Math.min(255, r)),
+                Math.max(0, Math.min(255, g)),
+                Math.max(0, Math.min(255, b))
+            ];
+        }
+
+        log('Ready. Select an audio file to test.');
+    </script>
+</body>
+</html>
