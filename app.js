@@ -27,7 +27,7 @@ class ChordValidationApp {
         this.animationFrameId = null;
 
         this.onsetDetector = new OnsetDetector();
-        this.cqtExtractor = new CQTExtractor();
+        this.cqtExtractor = new CQTExtractor(CONFIG.classification.cqtBackend);
         this.classifier = new ChordClassifier();
         this.validator = new WCSRValidator();
         this.visualizer = new Visualizer();

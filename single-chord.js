@@ -182,7 +182,7 @@ class SingleChordClassifier {
 
     // Initialize CQT extractor
     if (!this.cqtExtractor) {
-      this.cqtExtractor = new CQTExtractor();
+      this.cqtExtractor = new CQTExtractor(CONFIG.classification.cqtBackend);
       await this.cqtExtractor.init(CONFIG.audio.sampleRate);
     }
 

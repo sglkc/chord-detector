@@ -1,20 +1,87 @@
 /**
- * CQT Feature Extraction Module
+ * CQT Feature Extraction Module (Pluggable)
  * 
- * This module now uses a librosa-compatible CQT implementation
- * instead of ShowCQT (which was designed for visualization).
+ * This module provides a unified interface for CQT extraction with
+ * pluggable backends. Switch between implementations easily.
  * 
- * The new implementation properly matches Python/librosa's cqt() output
- * for accurate feature extraction in chord classification.
+ * Available backends:
+ * - 'librosa': librosa-compatible CQT (recommended for classification)
+ * - 'showcqt': ShowCQT-based visualization CQT (faster, but less accurate for ML)
+ * 
+ * Usage:
+ *   import { CQTExtractor } from './cqt-extractor.js';
+ *   
+ *   // Use default (librosa)
+ *   const extractor = new CQTExtractor();
+ *   
+ *   // Or specify backend
+ *   const extractor = new CQTExtractor('showcqt');
+ *   
+ *   // Switch backend at runtime
+ *   extractor.setBackend('librosa');
  */
 
 import { CQTExtractor as LibrosaCQT } from './cqt-librosa.js';
+import { ShowCQTExtractor } from './cqt-showcqt.js';
+
+// Available backends
+const BACKENDS = {
+    'librosa': LibrosaCQT,
+    'showcqt': ShowCQTExtractor,
+};
+
+// Default backend (librosa for accurate ML features)
+const DEFAULT_BACKEND = 'librosa';
 
 export class CQTExtractor {
-    constructor() {
-        this.cqt = new LibrosaCQT();
+    /**
+     * Create a pluggable CQT extractor
+     * @param {string} backend - Backend to use: 'librosa' or 'showcqt'
+     */
+    constructor(backend = DEFAULT_BACKEND) {
+        this.backendName = null;
+        this.extractor = null;
         this.initialized = false;
         this.sampleRate = 48000;
+
+        this.setBackend(backend);
+    }
+
+    /**
+     * Set the CQT extraction backend
+     * @param {string} backend - Backend name: 'librosa' or 'showcqt'
+     */
+    setBackend(backend) {
+        const backendLower = backend.toLowerCase();
+
+        if (!BACKENDS[backendLower]) {
+            console.warn(`Unknown backend '${backend}', using default '${DEFAULT_BACKEND}'`);
+            this.backendName = DEFAULT_BACKEND;
+        } else {
+            this.backendName = backendLower;
+        }
+
+        const BackendClass = BACKENDS[this.backendName];
+        this.extractor = new BackendClass();
+        this.initialized = false;
+
+        console.log(`CQT Extractor backend set to: ${this.backendName}`);
+    }
+
+    /**
+     * Get the current backend name
+     * @returns {string} Current backend name
+     */
+    getBackend() {
+        return this.backendName;
+    }
+
+    /**
+     * Get list of available backends
+     * @returns {string[]} Array of available backend names
+     */
+    static getAvailableBackends() {
+        return Object.keys(BACKENDS);
     }
 
     /**
@@ -23,22 +90,8 @@ export class CQTExtractor {
      */
     async init(sampleRate = 48000) {
         this.sampleRate = sampleRate;
-
-        try {
-            // Initialize the librosa-compatible CQT
-            this.cqt.init({
-                sampleRate: sampleRate,
-                fmin: 130.81,  // C3
-                nBins: 36,
-                binsPerOctave: 12,
-                hopLength: 512
-            });
-            this.initialized = true;
-            console.log('CQT Extractor initialized (librosa-compatible)');
-        } catch (error) {
-            console.error('Failed to initialize CQT:', error);
-            throw error;
-        }
+        await this.extractor.init(sampleRate);
+        this.initialized = true;
     }
 
     /**
@@ -52,33 +105,43 @@ export class CQTExtractor {
             await this.init(audioBuffer.sampleRate);
         }
 
-        // Re-initialize with config parameters if needed
-        this.cqt.init({
-            sampleRate: audioBuffer.sampleRate,
-            fmin: config.audio.minFrequency || 130.81,
-            nBins: config.classification.cqtBins,
-            binsPerOctave: 12,
-            hopLength: config.audio.hopSize
-        });
-
+        // Extract audio data from AudioBuffer
         const audioData = audioBuffer.getChannelData(0);
 
-        // Use librosa-compatible CQT extraction
-        const result = this.cqt.extractFullCQT(audioData, {
-            hopLength: config.audio.hopSize
-        });
+        // Initialize extractor with proper parameters for librosa backend
+        if (this.backendName === 'librosa') {
+            this.extractor.init({
+                sampleRate: audioBuffer.sampleRate,
+                fmin: config.audio.minFrequency || 130.81,
+                nBins: config.classification.cqtBins,
+                binsPerOctave: 12,
+                hopLength: config.audio.hopSize
+            });
+        }
 
+        // For librosa backend, pass Float32Array directly
+        // For showcqt backend, pass AudioBuffer (it handles internally)
+        let result;
+        if (this.backendName === 'librosa') {
+            result = this.extractor.extractFullCQT(audioData, {
+                hopLength: config.audio.hopSize
+            });
+        } else {
+            // ShowCQT backend expects AudioBuffer  
+            result = await this.extractor.extractFullCQT(audioBuffer, config);
+        }
+
+        // Ensure consistent return format
         return {
             magnitudes: result.magnitudes,
             times: result.times,
             numFrames: result.numFrames,
             numBins: result.numBins,
             hopSize: config.audio.hopSize,
-            sampleRate: this.sampleRate,
+            sampleRate: audioBuffer.sampleRate,
             duration: audioBuffer.duration,
             fftLength: result.fftLength,
-            // Time offset for visualization alignment
-            timeOffset: result.fftLength / (2 * this.sampleRate)
+            timeOffset: result.fftLength ? result.fftLength / (2 * audioBuffer.sampleRate) : 0
         };
     }
 
@@ -92,21 +155,40 @@ export class CQTExtractor {
         if (!this.initialized) {
             await this.init(config.audio.sampleRate);
         }
-
-        return this.cqt.extractFeatures(windowData, config);
+        return this.extractor.extractFeatures(windowData, config);
     }
 
     /**
-     * Get CQT for visualization as ImageData
+     * Get CQT visualization as ImageData
      */
     getVisualizationData(magnitudes, numBins, numFrames) {
-        return this.cqt.getVisualizationData(magnitudes, numBins, numFrames);
+        return this.extractor.getVisualizationData(magnitudes, numBins, numFrames);
     }
 
     /**
      * Viridis colormap approximation (for backward compatibility)
      */
     viridisColor(value) {
-        return this.cqt._viridisColor(value);
+        if (this.extractor.viridisColor) {
+            return this.extractor.viridisColor(value);
+        } else if (this.extractor._viridisColor) {
+            return this.extractor._viridisColor(value);
+        }
+        // Fallback
+        const v = Math.max(0, Math.min(1, value));
+        const r = Math.round(255 * (0.267004 + v * (0.329415 + v * (-0.508378 + v * 1.137680))));
+        const g = Math.round(255 * (0.004874 + v * (0.873158 + v * (-0.058404 + v * -0.322897))));
+        const b = Math.round(255 * (0.329415 + v * (0.280197 + v * (-1.314181 + v * 1.171356))));
+        return [
+            Math.max(0, Math.min(255, r)),
+            Math.max(0, Math.min(255, g)),
+            Math.max(0, Math.min(255, b))
+        ];
     }
 }
+
+// Also export individual backends for direct use
+export { LibrosaCQT, ShowCQTExtractor };
+
+// Export default backend constant
+export const CQT_DEFAULT_BACKEND = DEFAULT_BACKEND;
