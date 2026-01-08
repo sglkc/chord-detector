@@ -23,6 +23,7 @@ export const CONFIG = {
 
     // Classification parameters
     classification: {
+        model: 'graph-v2',          // Classification model: 'graph-v2', 'graph', 'layers'
         windowSize: 2.0,            // Window size in seconds
         cqtBins: 36,                // Number of CQT frequency bins
         cqtTimeFrames: 200,         // Number of time frames for model input

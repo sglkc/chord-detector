@@ -30,6 +30,31 @@
 
     <!-- Main Content -->
     <main class="main-content">
+      <!-- Settings Section -->
+      <section class="settings-section glass-card">
+        <div class="section-header">
+          <h2>⚙️ Settings</h2>
+        </div>
+        <div class="settings-grid">
+          <div class="setting-item">
+            <label for="modelSelect">Classification Model</label>
+            <select id="modelSelect" class="setting-select">
+              <option value="graph">Graph</option>
+              <option value="graph-v2">Graph v2</option>
+              <option value="layers">Layers</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label for="cqtBackendSelect">CQT Backend</label>
+            <select id="cqtBackendSelect" class="setting-select">
+              <option value="wasm">WASM (Fastest)</option>
+              <option value="librosa">Librosa (JS)</option>
+              <option value="showcqt">ShowCQT (Visual)</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
       <!-- Upload Section -->
       <section class="upload-section glass-card">
         <div class="section-header">

@@ -19,6 +19,10 @@ class SingleChordClassifier {
     this.currentlyPlaying = null;
     this.currentSource = null;
 
+    // Current model and backend
+    this.currentModelName = 'graph';
+    this.currentCqtBackend = CONFIG.classification.cqtBackend;
+
     this.initElements();
     this.bindEvents();
   }
@@ -30,6 +34,10 @@ class SingleChordClassifier {
     this.fileCount = document.getElementById('fileCount');
     this.classifyBtn = document.getElementById('classifyBtn');
     this.clearBtn = document.getElementById('clearBtn');
+
+    // Settings elements
+    this.modelSelect = document.getElementById('modelSelect');
+    this.cqtBackendSelect = document.getElementById('cqtBackendSelect');
 
     // Progress elements
     this.progressSection = document.getElementById('progressSection');
@@ -68,6 +76,10 @@ class SingleChordClassifier {
     // Buttons
     this.classifyBtn.addEventListener('click', () => this.classifyAll());
     this.clearBtn.addEventListener('click', () => this.clearAll());
+
+    // Model and backend selection
+    this.modelSelect?.addEventListener('change', () => this.handleModelChange());
+    this.cqtBackendSelect?.addEventListener('change', () => this.handleCqtBackendChange());
   }
 
   handleFileSelect(event) {
@@ -180,17 +192,38 @@ class SingleChordClassifier {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
     }
 
-    // Initialize CQT extractor
-    if (!this.cqtExtractor) {
-      this.cqtExtractor = new CQTExtractor(CONFIG.classification.cqtBackend);
+    // Get current selections
+    const selectedModel = this.modelSelect?.value || CONFIG.classification.model;
+    const selectedBackend = this.cqtBackendSelect?.value || CONFIG.classification.cqtBackend;
+
+    // Initialize CQT extractor (or reinitialize if backend changed)
+    if (!this.cqtExtractor || this.currentCqtBackend !== selectedBackend) {
+      this.currentCqtBackend = selectedBackend;
+      this.cqtExtractor = new CQTExtractor(selectedBackend);
       await this.cqtExtractor.init(CONFIG.audio.sampleRate);
+      console.log(`CQT backend initialized: ${selectedBackend}`);
     }
 
-    // Initialize classifier and load model
-    if (!this.classifier) {
+    // Initialize classifier and load model (or reload if model changed)
+    if (!this.classifier || this.currentModelName !== selectedModel) {
+      this.currentModelName = selectedModel;
       this.classifier = new ChordClassifier();
-      await this.classifier.loadModel('model/model.json');
+      const modelPath = `models/${selectedModel}/model.json`;
+      await this.classifier.loadModel(modelPath);
+      console.log(`Model loaded: ${selectedModel}`);
     }
+  }
+
+  handleModelChange() {
+    // Reset classifier to force reload on next classification
+    this.classifier = null;
+    console.log(`Model will change to: ${this.modelSelect.value}`);
+  }
+
+  handleCqtBackendChange() {
+    // Reset extractor to force reinitialization on next classification  
+    this.cqtExtractor = null;
+    console.log(`CQT backend will change to: ${this.cqtBackendSelect.value}`);
   }
 
   async loadAudioFile(file) {

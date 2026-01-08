@@ -26,8 +26,12 @@ class ChordValidationApp {
         this.playbackOffset = 0;
         this.animationFrameId = null;
 
+        // Current model and backend
+        this.currentModelName = CONFIG.classification.model;
+        this.currentCqtBackend = CONFIG.classification.cqtBackend;
+
         this.onsetDetector = new OnsetDetector();
-        this.cqtExtractor = new CQTExtractor(CONFIG.classification.cqtBackend);
+        this.cqtExtractor = new CQTExtractor(this.currentCqtBackend);
         this.classifier = new ChordClassifier();
         this.validator = new WCSRValidator();
         this.visualizer = new Visualizer();
@@ -49,7 +53,9 @@ class ChordValidationApp {
             ignoreSubsequentOnsets: document.getElementById('ignoreSubsequentOnsets'),
             windowSize: document.getElementById('windowSize'),
             cqtBins: document.getElementById('cqtBins'),
-            confidenceThreshold: document.getElementById('confidenceThreshold')
+            confidenceThreshold: document.getElementById('confidenceThreshold'),
+            modelSelect: document.getElementById('modelSelect'),
+            cqtBackendSelect: document.getElementById('cqtBackendSelect')
         };
 
         // File inputs
@@ -90,8 +96,16 @@ class ChordValidationApp {
 
         // Config change handlers
         Object.values(this.configInputs).forEach(input => {
-            input.addEventListener('change', () => this.updateConfig());
+            if (input) {
+                input.addEventListener('change', () => this.updateConfig());
+            }
         });
+
+        // Model selection change - requires model reload
+        this.configInputs.modelSelect?.addEventListener('change', () => this.handleModelChange());
+
+        // CQT backend change - requires extractor reinitialization
+        this.configInputs.cqtBackendSelect?.addEventListener('change', () => this.handleCqtBackendChange());
 
         // Playback controls
         this.playButton?.addEventListener('click', () => this.togglePlayback());
@@ -167,14 +181,36 @@ class ChordValidationApp {
     async loadModel() {
         this.updateProgress(5, 'Loading TensorFlow.js model...');
         try {
-            await this.classifier.loadModel('./model/model.json');
+            const modelPath = `./models/${this.currentModelName}/model.json`;
+            await this.classifier.loadModel(modelPath);
             this.model = this.classifier.model;
             this.checkReadyState();
-            this.updateProgress(0, 'Model loaded successfully');
+            this.updateProgress(0, `Model "${this.currentModelName}" loaded successfully`);
             this.progressSection.style.display = 'none';
+            console.log(`Loaded model: ${this.currentModelName}`);
         } catch (error) {
             console.error('Failed to load model:', error);
             this.updateProgress(0, 'Failed to load model: ' + error.message);
+        }
+    }
+
+    async handleModelChange() {
+        const newModel = this.configInputs.modelSelect.value;
+        if (newModel !== this.currentModelName) {
+            this.currentModelName = newModel;
+            this.model = null;
+            this.classifier = new ChordClassifier();
+            await this.loadModel();
+        }
+    }
+
+    async handleCqtBackendChange() {
+        const newBackend = this.configInputs.cqtBackendSelect.value;
+        if (newBackend !== this.currentCqtBackend) {
+            this.currentCqtBackend = newBackend;
+            this.cqtExtractor = new CQTExtractor(newBackend);
+            CONFIG.classification.cqtBackend = newBackend;
+            console.log(`CQT backend changed to: ${newBackend}`);
         }
     }
 

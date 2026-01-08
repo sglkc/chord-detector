@@ -138,6 +138,31 @@ section h3 {
     box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.2);
 }
 
+.config-group select {
+    width: 140px;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    background: var(--card-bg);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%237f8c8d' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 30px;
+}
+
+.config-group select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.2);
+}
+
+.config-group select:hover {
+    border-color: var(--primary-color);
+}
+
 .config-group label.checkbox-label {
     justify-content: flex-start;
     gap: 10px;
