@@ -5,33 +5,36 @@
  * pluggable backends. Switch between implementations easily.
  * 
  * Available backends:
- * - 'librosa': librosa-compatible CQT (recommended for classification)
+ * - 'wasm': WebAssembly CQT (fastest, recommended)
+ * - 'librosa': Pure JS librosa-compatible CQT (fallback)
  * - 'showcqt': ShowCQT-based visualization CQT (faster, but less accurate for ML)
  * 
  * Usage:
  *   import { CQTExtractor } from './cqt-extractor.js';
  *   
- *   // Use default (librosa)
+ *   // Use default (wasm)
  *   const extractor = new CQTExtractor();
  *   
  *   // Or specify backend
- *   const extractor = new CQTExtractor('showcqt');
+ *   const extractor = new CQTExtractor('librosa');
  *   
  *   // Switch backend at runtime
- *   extractor.setBackend('librosa');
+ *   extractor.setBackend('wasm');
  */
 
+import { CQTExtractor as WasmCQT } from './cqt-wasm.js';
 import { CQTExtractor as LibrosaCQT } from './cqt-librosa.js';
 import { ShowCQTExtractor } from './cqt-showcqt.js';
 
 // Available backends
 const BACKENDS = {
+    'wasm': WasmCQT,
     'librosa': LibrosaCQT,
     'showcqt': ShowCQTExtractor,
 };
 
-// Default backend (librosa for accurate ML features)
-const DEFAULT_BACKEND = 'librosa';
+// Default backend (WASM for best performance)
+const DEFAULT_BACKEND = 'wasm';
 
 export class CQTExtractor {
     /**
@@ -108,9 +111,10 @@ export class CQTExtractor {
         // Extract audio data from AudioBuffer
         const audioData = audioBuffer.getChannelData(0);
 
-        // Initialize extractor with proper parameters for librosa backend
-        if (this.backendName === 'librosa') {
-            this.extractor.init({
+        // Initialize extractor with proper parameters for librosa/wasm backends
+        // Only init if not already initialized (avoid repeated WASM memory allocations)
+        if ((this.backendName === 'librosa' || this.backendName === 'wasm') && !this.extractor.initialized) {
+            await this.extractor.init({
                 sampleRate: audioBuffer.sampleRate,
                 fmin: config.audio.minFrequency || 130.81,
                 nBins: config.classification.cqtBins,
@@ -119,10 +123,10 @@ export class CQTExtractor {
             });
         }
 
-        // For librosa backend, pass Float32Array directly
+        // For librosa/wasm backend, pass Float32Array directly
         // For showcqt backend, pass AudioBuffer (it handles internally)
         let result;
-        if (this.backendName === 'librosa') {
+        if (this.backendName === 'librosa' || this.backendName === 'wasm') {
             result = this.extractor.extractFullCQT(audioData, {
                 hopLength: config.audio.hopSize
             });
@@ -188,7 +192,7 @@ export class CQTExtractor {
 }
 
 // Also export individual backends for direct use
-export { LibrosaCQT, ShowCQTExtractor };
+export { WasmCQT, LibrosaCQT, ShowCQTExtractor };
 
 // Export default backend constant
 export const CQT_DEFAULT_BACKEND = DEFAULT_BACKEND;

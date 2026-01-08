@@ -27,7 +27,7 @@ export const CONFIG = {
         cqtBins: 36,                // Number of CQT frequency bins
         cqtTimeFrames: 200,         // Number of time frames for model input
         confidenceThreshold: 0.5,   // Minimum confidence for valid prediction
-        cqtBackend: 'librosa',      // CQT backend: 'librosa' (accurate) or 'showcqt' (fast)
+        cqtBackend: 'wasm',         // CQT backend: 'wasm' (fastest), 'librosa' (JS fallback), or 'showcqt' (visualization)
     },
 
     // Chord mappings
