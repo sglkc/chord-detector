@@ -1,12 +1,12 @@
 /**
  * CQT Feature Extraction Module (ShowCQT-based)
  * Uses showcqt-js for Constant-Q Transform extraction
- * 
+ *
  * This is the original visualization-oriented CQT extractor.
  * For librosa-compatible extraction, use cqt-librosa.js
  */
 
-import ShowCQT from '../showcqt/showcqt-main.mjs';
+import ShowCQT from "https://cdn.jsdelivr.net/npm/showcqt@2.2.1/showcqt-main.mjs";
 
 export class ShowCQTExtractor {
   constructor() {
