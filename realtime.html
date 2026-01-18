@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-time Chord Detection | Piano Chord Detection</title>
+  <meta name="description"
+    content="Real-time chord detection using your microphone. CNN-based chord recognition with live audio input.">
+  <link rel="stylesheet" href="realtime.css">
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-content">
+        <div class="logo">
+          <span class="logo-icon">🎹</span>
+          <div class="logo-text">
+            <h1>Real-time Chord Detection</h1>
+            <p class="tagline">Live microphone chord recognition</p>
+          </div>
+        </div>
+        <nav class="nav-links">
+          <a href="index.html" class="nav-link">← Validation</a>
+          <a href="single-chord.html" class="nav-link">Single Chord</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Controls Section -->
+      <section class="controls-section glass-card">
+        <div class="section-header">
+          <h2>🎤 Microphone Controls</h2>
+        </div>
+
+        <div class="controls-grid">
+          <!-- Input Device -->
+          <div class="control-item">
+            <label for="inputDevice">Input Device</label>
+            <select id="inputDevice" class="control-select">
+              <option value="">Loading devices...</option>
+            </select>
+          </div>
+
+          <!-- Model Select -->
+          <div class="control-item">
+            <label for="modelSelect">Classification Model</label>
+            <select id="modelSelect" class="control-select">
+              <option value="graph">Graph</option>
+              <option value="graph-v2">Graph v2</option>
+              <option value="layers">Layers</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="controls-grid">
+          <!-- Onset Parameters -->
+          <div class="control-item">
+            <label for="onsetThreshold">Onset Threshold</label>
+            <input type="number" id="onsetThreshold" value="0.15" min="0.01" max="1" step="0.01" class="control-input">
+          </div>
+
+          <div class="control-item">
+            <label for="minOnsetInterval">Min Onset Interval (ms)</label>
+            <input type="number" id="minOnsetInterval" value="100" min="50" max="500" step="10" class="control-input">
+          </div>
+
+          <div class="control-item">
+            <label for="windowSize">Window Size (seconds)</label>
+            <input type="number" id="windowSize" value="2.0" min="0.5" max="5" step="0.1" class="control-input">
+          </div>
+
+          <div class="control-item checkbox-item">
+            <label>
+              <input type="checkbox" id="ignoreSubsequent" checked>
+              Ignore subsequent onsets in window
+            </label>
+          </div>
+        </div>
+
+        <!-- Record Button -->
+        <div class="record-controls">
+          <button id="recordBtn" class="btn-record" disabled>
+            <span class="btn-icon">🎙️</span>
+            <span class="btn-text">Start Recording</span>
+          </button>
+          <div class="status-indicator" id="statusIndicator">
+            <span class="status-dot"></span>
+            <span class="status-text">Initializing...</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Current Chord Display -->
+      <section class="chord-display glass-card" id="chordDisplay">
+        <div class="current-chord-wrapper">
+          <div class="chord-label">Detected Chord</div>
+          <div class="current-chord" id="currentChord">—</div>
+          <div class="chord-confidence" id="chordConfidence"></div>
+        </div>
+      </section>
+
+      <!-- Detection History -->
+      <section class="history-section glass-card" id="historySection">
+        <div class="section-header">
+          <h2>📜 Detection History</h2>
+          <button id="clearHistory" class="btn-secondary btn-small">Clear</button>
+        </div>
+        <div class="history-list" id="historyList">
+          <div class="history-empty">No chords detected yet. Start recording to begin.</div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="footer-content">
+        <div class="model-badge">
+          <span class="badge-icon">🧠</span>
+          <span>CNN Model: 36 classes (12 roots × 3 types)</span>
+        </div>
+        <div class="tech-stack">
+          <span class="tech-item">TensorFlow.js</span>
+          <span class="tech-item">AudioWorklet</span>
+          <span class="tech-item">Web Audio API</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+  <script type="module" src="realtime.js"></script>
+</body>
+
+</html>

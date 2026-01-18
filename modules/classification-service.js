@@ -132,6 +132,14 @@ export class ClassificationService {
         this.options.onResult(rest.prediction);
         break;
 
+      case 'stream-ready':
+        console.log('[ClassificationService] Stream ready');
+        break;
+
+      case 'onset-detected':
+        console.log('[ClassificationService] Onset detected at', rest.timestamp);
+        break;
+
       case 'error':
         console.error('[ClassificationService] Worker error:', rest.error);
         if (this.pendingCallbacks.has(id)) {

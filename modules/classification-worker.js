@@ -29,6 +29,16 @@ let config = null;
 let cqtInitialized = false;
 let isStreaming = false;
 
+// Real-time streaming state
+let streamConfig = null;
+let streamBuffer = null;
+let streamBufferSize = 0;
+let lastOnsetTime = -Infinity;
+let isCapturingWindow = false;
+let windowBuffer = null;
+let windowBufferSize = 0;
+let windowStartTime = 0;
+
 // Model input shape (detected from loaded model)
 let modelInputBins = 36;
 let modelInputFrames = 200;
@@ -376,6 +386,119 @@ function filterSubsequentOnsets(onsets, windowSize) {
   return filtered;
 }
 
+/**
+ * Real-time onset detection on a small audio chunk
+ * Simplified but fast for streaming use
+ * Returns true if onset detected in the chunk
+ */
+function detectOnsetRealtime(audioData, threshold = 0.15) {
+  const frameSize = 1024;
+  const hop = 512;
+
+  if (audioData.length < frameSize) return false;
+
+  const numFrames = Math.floor((audioData.length - frameSize) / hop) + 1;
+  if (numFrames < 2) return false;
+
+  let prevEnergy = 0;
+  let maxFlux = 0;
+
+  for (let i = 0; i < numFrames; i++) {
+    const start = i * hop;
+    let energy = 0;
+
+    for (let j = 0; j < frameSize && start + j < audioData.length; j++) {
+      energy += audioData[start + j] * audioData[start + j];
+    }
+
+    if (i > 0) {
+      const flux = Math.max(0, energy - prevEnergy);
+      if (flux > maxFlux) maxFlux = flux;
+    }
+
+    prevEnergy = energy;
+  }
+
+  // Normalize and check threshold
+  const normalizedFlux = Math.sqrt(maxFlux);
+  return normalizedFlux > threshold;
+}
+
+/**
+ * Process real-time audio stream for onset detection and classification
+ */
+async function processStreamChunk(samples, timestamp) {
+  const sr = streamConfig?.sampleRate || currentSampleRate;
+  const windowSize = streamConfig?.windowSize || 2.0;
+  const windowSamples = Math.floor(windowSize * sr);
+  const threshold = streamConfig?.threshold || 0.15;
+  const minInterval = (streamConfig?.minInterval || 100) / 1000; // Convert ms to seconds
+  const ignoreSubsequent = streamConfig?.ignoreSubsequent !== false;
+
+  // If we're capturing a window, add samples to it
+  if (isCapturingWindow) {
+    const remaining = windowSamples - windowBufferSize;
+    const toAdd = Math.min(remaining, samples.length);
+
+    windowBuffer.set(samples.subarray(0, toAdd), windowBufferSize);
+    windowBufferSize += toAdd;
+
+    // Check if window is complete
+    if (windowBufferSize >= windowSamples) {
+      isCapturingWindow = false;
+
+      // Classify the window
+      try {
+        const cqtData = extractCQTFeatures(windowBuffer);
+        const features = resizeCQTForModel(cqtData, modelInputBins, modelInputFrames);
+        const result = await predict(features);
+
+        self.postMessage({
+          type: 'stream-result',
+          prediction: result,
+          timestamp: windowStartTime
+        });
+      } catch (e) {
+        console.error('[Worker] Classification error:', e);
+      }
+
+      // Reset if not ignoring subsequent
+      if (!ignoreSubsequent) {
+        lastOnsetTime = -Infinity;
+      }
+    }
+
+    return;
+  }
+
+  // Check for onset
+  const currentTime = timestamp / 1000; // Convert to seconds
+  const timeSinceLastOnset = currentTime - lastOnsetTime;
+
+  // Only check for onset if enough time has passed
+  if (timeSinceLastOnset >= minInterval) {
+    const hasOnset = detectOnsetRealtime(samples, threshold);
+
+    if (hasOnset) {
+      lastOnsetTime = currentTime;
+      isCapturingWindow = true;
+      windowStartTime = timestamp;
+      windowBuffer = new Float32Array(windowSamples);
+      windowBufferSize = 0;
+
+      // Start capturing with current samples
+      const toAdd = Math.min(windowSamples, samples.length);
+      windowBuffer.set(samples.subarray(0, toAdd), 0);
+      windowBufferSize = toAdd;
+
+      self.postMessage({
+        type: 'onset-detected',
+        timestamp: timestamp
+      });
+    }
+  }
+}
+
 // ============================================================================
 // Model Loading and Prediction
 // ============================================================================
@@ -600,12 +723,46 @@ self.onmessage = async function (event) {
       }
 
       case 'start-stream': {
+        // Initialize streaming with config
+        const { sampleRate, windowSize, threshold, minInterval, ignoreSubsequent } = payload || {};
+
+        streamConfig = {
+          sampleRate: sampleRate || currentSampleRate,
+          windowSize: windowSize || 2.0,
+          threshold: threshold || 0.15,
+          minInterval: minInterval || 100,
+          ignoreSubsequent: ignoreSubsequent !== false
+        };
+
+        // Reset streaming state
         isStreaming = true;
-        console.log('[Worker] Streaming started');
+        lastOnsetTime = -Infinity;
+        isCapturingWindow = false;
+        windowBuffer = null;
+        windowBufferSize = 0;
+
+        console.log('[Worker] Streaming started with config:', streamConfig);
+        self.postMessage({ type: 'stream-ready' });
+        break;
+      }
+
+      case 'stream-detect': {
+        // Real-time onset detection + classification
+        if (!isStreaming) break;
+
+        const { audioData, timestamp } = payload;
+        const audioArray = audioData instanceof Float32Array ? audioData : new Float32Array(audioData);
+
+        try {
+          await processStreamChunk(audioArray, timestamp || Date.now());
+        } catch (e) {
+          console.error('[Worker] Stream detect error:', e);
+        }
         break;
       }
 
       case 'stream-classify': {
+        // Direct classification without onset detection (backward compatible)
         if (!isStreaming) break;
         const { audioData } = payload;
         const audioArray = audioData instanceof Float32Array ? audioData : new Float32Array(audioData);
@@ -620,6 +777,11 @@ self.onmessage = async function (event) {
 
       case 'stop-stream': {
         isStreaming = false;
+        isCapturingWindow = false;
+        streamConfig = null;
+        windowBuffer = null;
+        windowBufferSize = 0;
+        lastOnsetTime = -Infinity;
         console.log('[Worker] Streaming stopped');
         break;
       }
