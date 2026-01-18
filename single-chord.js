@@ -158,11 +158,11 @@ class SingleChordClassifier {
           const audioData = audioBuffer.getChannelData(0);
 
           // Classify using ClassificationService (worker handles CQT + prediction)
-          const result = await this.classificationService.classify(audioData);
-          this.results.set(cardId, result);
+          const { prediction, cqtData } = await this.classificationService.classify(audioData);
+          this.results.set(cardId, prediction);
 
-          // Update card with result (no CQT visualization for single-chord)
-          this.updateCard(cardId, file, audioBuffer, result, null);
+          // Update card with result and CQT visualization
+          this.updateCard(cardId, file, audioBuffer, prediction, cqtData);
         } catch (error) {
           console.error(`Error processing ${file.name}:`, error);
           this.updateCardError(cardId, file.name, error.message);
@@ -345,6 +345,25 @@ class SingleChordClassifier {
 
     canvas.width = width;
     canvas.height = height;
+
+    // Handle case when cqtData is not available
+    if (!cqtData || !cqtData.magnitudes) {
+      // Draw a placeholder gradient
+      const gradient = ctx.createLinearGradient(0, height, 0, 0);
+      gradient.addColorStop(0, '#1a1a2e');
+      gradient.addColorStop(0.5, '#16213e');
+      gradient.addColorStop(1, '#0f3460');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+
+      // Add text indicating no spectrogram
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.font = '12px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('CQT Visualization', width / 2, height / 2);
+      return;
+    }
 
     const { magnitudes, numFrames, numBins } = cqtData;
 

@@ -751,9 +751,16 @@ async function predict(features) {
 
 async function classifySingle(audioData) {
   if (!cqtInitialized) throw new Error('CQT not initialized');
+
+  // Extract CQT features for classification
   const cqtData = extractCQTFeatures(audioData);
   const features = resizeCQTForModel(cqtData, modelInputBins, modelInputFrames);
-  return await predict(features);
+  const prediction = await predict(features);
+
+  // Also extract full CQT for visualization
+  const fullCQT = extractFullCQT(audioData);
+
+  return { prediction, cqtData: fullCQT };
 }
 
 // ============================================================================
@@ -881,8 +888,8 @@ self.onmessage = async function (event) {
       case 'classify-single': {
         const { audioData } = payload;
         const audioArray = audioData instanceof Float32Array ? audioData : new Float32Array(audioData);
-        const prediction = await classifySingle(audioArray);
-        self.postMessage({ type: 'result', id, prediction });
+        const { prediction, cqtData } = await classifySingle(audioArray);
+        self.postMessage({ type: 'result', id, prediction, cqtData });
         break;
       }
 
@@ -931,8 +938,8 @@ self.onmessage = async function (event) {
         const { audioData } = payload;
         const audioArray = audioData instanceof Float32Array ? audioData : new Float32Array(audioData);
         try {
-          const prediction = await classifySingle(audioArray);
-          self.postMessage({ type: 'stream-result', prediction, timestamp: Date.now() });
+          const { prediction, cqtData } = await classifySingle(audioArray);
+          self.postMessage({ type: 'stream-result', prediction, cqtData, timestamp: Date.now() });
         } catch (e) {
           console.error('[Worker] Stream error:', e);
         }

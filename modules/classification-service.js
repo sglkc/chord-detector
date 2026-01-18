@@ -218,7 +218,7 @@ export class ClassificationService {
   /**
    * Classify a single audio segment
    * @param {Float32Array} audioData - Audio samples
-   * @returns {Object} Classification result
+   * @returns {Object} { prediction, cqtData }
    */
   async classify(audioData) {
     if (!this.initialized) await this.init();
@@ -231,7 +231,7 @@ export class ClassificationService {
       audioData: audioData
     });
 
-    return result.prediction;
+    return { prediction: result.prediction, cqtData: result.cqtData };
   }
 
   /**
