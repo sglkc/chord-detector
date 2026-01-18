@@ -106,7 +106,9 @@ export class ClassificationService {
         };
 
         const id = ++this.messageId;
-        const modelPath = `${window.location.origin}/models/${this.options.model}/model.json`;
+        // Create absolute URL that works in worker context
+        const baseUrl = new URL('./', window.location.href).href;
+        const modelPath = `${baseUrl}models/${this.options.model}/model.json`;
 
         this.pendingCallbacks.set(id, { resolve, reject });
 
