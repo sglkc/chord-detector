@@ -1,27 +1,31 @@
 /**
  * Single Chord Classifier
  * Classify individual chord samples from multiple audio files
+ * All heavy processing happens in Web Worker
  */
 
-import { CQTExtractor } from './modules/cqt-extractor.js';
-import { ChordClassifier } from './modules/chord-classifier.js';
 import { CONFIG } from './modules/config.js';
+import { ClassificationService } from './modules/classification-service.js';
 
 class SingleChordClassifier {
   constructor() {
     this.files = [];
     this.audioBuffers = new Map();
     this.results = new Map();
-    this.model = null;
-    this.cqtExtractor = null;
-    this.classifier = null;
     this.audioContext = null;
     this.currentlyPlaying = null;
     this.currentSource = null;
 
-    // Current model and backend
+    // Current model
     this.currentModelName = 'graph';
-    this.currentCqtBackend = CONFIG.classification.cqtBackend;
+
+    // Classification service - handles all heavy processing in worker
+    this.classificationService = new ClassificationService({
+      model: this.currentModelName,
+      onProgress: (percent, message) => {
+        this.updateProgress(percent, message);
+      }
+    });
 
     this.initElements();
     this.bindEvents();
@@ -37,7 +41,6 @@ class SingleChordClassifier {
 
     // Settings elements
     this.modelSelect = document.getElementById('modelSelect');
-    this.cqtBackendSelect = document.getElementById('cqtBackendSelect');
 
     // Progress elements
     this.progressSection = document.getElementById('progressSection');
@@ -131,7 +134,7 @@ class SingleChordClassifier {
 
     try {
       // Initialize components
-      this.updateProgress(5, 'Loading model...');
+      this.updateProgress(5, 'Initializing...');
       await this.initializeComponents();
 
       const totalFiles = this.files.length;
@@ -151,24 +154,24 @@ class SingleChordClassifier {
           const audioBuffer = await this.loadAudioFile(file);
           this.audioBuffers.set(cardId, audioBuffer);
 
-          // Extract CQT features for the entire audio
-          const features = await this.extractFeatures(audioBuffer);
+          // Get audio data for classification
+          const audioData = audioBuffer.getChannelData(0);
 
-          // Classify
-          const result = await this.classifier.predict(features);
+          // Classify using ClassificationService (worker handles CQT + prediction)
+          const result = await this.classificationService.classify(audioData);
           this.results.set(cardId, result);
 
-          // Extract CQT for visualization
-          const cqtData = await this.cqtExtractor.extractFullCQT(audioBuffer, CONFIG);
-
-          // Update card with result
-          this.updateCard(cardId, file, audioBuffer, result, cqtData);
+          // Update card with result (no CQT visualization for single-chord)
+          this.updateCard(cardId, file, audioBuffer, result, null);
         } catch (error) {
           console.error(`Error processing ${file.name}:`, error);
           this.updateCardError(cardId, file.name, error.message);
         }
 
         this.processedCount.textContent = `${i + 1} processed`;
+
+        // Yield to keep UI responsive
+        await new Promise(resolve => setTimeout(resolve, 0));
       }
 
       this.updateProgress(100, 'Classification complete!');
@@ -192,38 +195,22 @@ class SingleChordClassifier {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
     }
 
-    // Get current selections
+    // Get current model selection
     const selectedModel = this.modelSelect?.value || CONFIG.classification.model;
-    const selectedBackend = this.cqtBackendSelect?.value || CONFIG.classification.cqtBackend;
 
-    // Initialize CQT extractor (or reinitialize if backend changed)
-    if (!this.cqtExtractor || this.currentCqtBackend !== selectedBackend) {
-      this.currentCqtBackend = selectedBackend;
-      this.cqtExtractor = new CQTExtractor(selectedBackend);
-      await this.cqtExtractor.init(CONFIG.audio.sampleRate);
-      console.log(`CQT backend initialized: ${selectedBackend}`);
-    }
-
-    // Initialize classifier and load model (or reload if model changed)
-    if (!this.classifier || this.currentModelName !== selectedModel) {
+    // Update classification service if model changed
+    if (this.currentModelName !== selectedModel) {
       this.currentModelName = selectedModel;
-      this.classifier = new ChordClassifier();
-      const modelPath = `models/${selectedModel}/model.json`;
-      await this.classifier.loadModel(modelPath);
-      console.log(`Model loaded: ${selectedModel}`);
+      await this.classificationService.setModel(selectedModel);
+      console.log(`Model updated: ${selectedModel}`);
     }
+
+    // Initialize the classification service (loads model if needed)
+    await this.classificationService.init();
   }
 
-  handleModelChange() {
-    // Reset classifier to force reload on next classification
-    this.classifier = null;
+  async handleModelChange() {
     console.log(`Model will change to: ${this.modelSelect.value}`);
-  }
-
-  handleCqtBackendChange() {
-    // Reset extractor to force reinitialization on next classification  
-    this.cqtExtractor = null;
-    console.log(`CQT backend will change to: ${this.cqtBackendSelect.value}`);
   }
 
   async loadAudioFile(file) {
@@ -240,26 +227,6 @@ class SingleChordClassifier {
       reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsArrayBuffer(file);
     });
-  }
-
-  async extractFeatures(audioBuffer) {
-    // Get audio data from the entire buffer
-    const audioData = audioBuffer.getChannelData(0);
-
-    // Calculate how many samples we need for the window
-    const windowSizeSamples = Math.floor(CONFIG.classification.windowSize * audioBuffer.sampleRate);
-
-    // Use the entire audio or truncate to window size
-    const samplesToUse = Math.min(audioData.length, windowSizeSamples);
-    const windowData = audioData.slice(0, samplesToUse);
-
-    // Extract CQT features
-    const features = await this.cqtExtractor.extractFeatures(
-      new Float32Array(windowData),
-      CONFIG
-    );
-
-    return features;
   }
 
   createCardPlaceholder(cardId, fileName) {

@@ -1,14 +1,14 @@
 /**
  * Piano Chord Detection Validation System
  * Main Application Module
+ * 
+ * All heavy processing (CQT, onset detection, classification) happens in a Web Worker
  */
 
-import { OnsetDetector } from './modules/onset-detector.js';
-import { CQTExtractor } from './modules/cqt-extractor.js';
-import { ChordClassifier } from './modules/chord-classifier.js';
 import { WCSRValidator } from './modules/wcsr-validator.js';
 import { Visualizer } from './modules/visualizer.js';
 import { CONFIG } from './modules/config.js';
+import { ClassificationService } from './modules/classification-service.js';
 
 class ChordValidationApp {
     constructor() {
@@ -16,7 +16,6 @@ class ChordValidationApp {
         this.annotationFile = null;
         this.audioBuffer = null;
         this.annotations = null;
-        this.model = null;
 
         // Playback state
         this.audioContext = null;
@@ -26,19 +25,36 @@ class ChordValidationApp {
         this.playbackOffset = 0;
         this.animationFrameId = null;
 
-        // Current model and backend
+        // Current model
         this.currentModelName = CONFIG.classification.model;
-        this.currentCqtBackend = CONFIG.classification.cqtBackend;
 
-        this.onsetDetector = new OnsetDetector();
-        this.cqtExtractor = new CQTExtractor(this.currentCqtBackend);
-        this.classifier = new ChordClassifier();
+        // Classification service - handles ALL heavy processing in worker
+        this.classificationService = new ClassificationService({
+            model: this.currentModelName,
+            onProgress: (percent, message, stage) => {
+                this.updateProgress(percent, message);
+            }
+        });
+
         this.validator = new WCSRValidator();
         this.visualizer = new Visualizer();
 
         this.initElements();
         this.bindEvents();
-        this.loadModel();
+        this.initService();
+    }
+
+    async initService() {
+        try {
+            this.updateProgress(5, 'Initializing classification service...');
+            await this.classificationService.init();
+            this.updateProgress(0, 'Ready');
+            this.progressSection.style.display = 'none';
+            this.checkReadyState();
+        } catch (error) {
+            console.error('Failed to initialize service:', error);
+            this.updateProgress(0, 'Failed to initialize: ' + error.message);
+        }
     }
 
     initElements() {
@@ -54,8 +70,7 @@ class ChordValidationApp {
             windowSize: document.getElementById('windowSize'),
             cqtBins: document.getElementById('cqtBins'),
             confidenceThreshold: document.getElementById('confidenceThreshold'),
-            modelSelect: document.getElementById('modelSelect'),
-            cqtBackendSelect: document.getElementById('cqtBackendSelect')
+            modelSelect: document.getElementById('modelSelect')
         };
 
         // File inputs
@@ -198,19 +213,8 @@ class ChordValidationApp {
         const newModel = this.configInputs.modelSelect.value;
         if (newModel !== this.currentModelName) {
             this.currentModelName = newModel;
-            this.model = null;
-            this.classifier = new ChordClassifier();
-            await this.loadModel();
-        }
-    }
-
-    async handleCqtBackendChange() {
-        const newBackend = this.configInputs.cqtBackendSelect.value;
-        if (newBackend !== this.currentCqtBackend) {
-            this.currentCqtBackend = newBackend;
-            this.cqtExtractor = new CQTExtractor(newBackend);
-            CONFIG.classification.cqtBackend = newBackend;
-            console.log(`CQT backend changed to: ${newBackend}`);
+            await this.classificationService.setModel(newModel);
+            console.log(`Model changed to: ${newModel}`);
         }
     }
 
@@ -227,41 +231,32 @@ class ChordValidationApp {
             this.resultsSection.style.display = 'none';
 
             // Step 1: Load and decode audio
-            this.updateProgress(10, 'Loading audio file...');
+            this.updateProgress(5, 'Loading audio file...');
             this.audioBuffer = await this.loadAudio(this.audioFile);
 
-            // Step 2: Initialize CQT extractor
-            this.updateProgress(20, 'Initializing CQT extractor...');
-            await this.cqtExtractor.init(CONFIG.audio.sampleRate);
+            // Step 2: Process audio in worker (CQT + onset detection + classification)
+            this.updateProgress(10, 'Processing audio...');
 
-            // Step 3: Extract full CQT for visualization
-            this.updateProgress(30, 'Extracting CQT spectrogram...');
-            const fullCQT = await this.cqtExtractor.extractFullCQT(this.audioBuffer, CONFIG);
+            // Update config before processing
+            this.classificationService.updateConfig(CONFIG);
 
-            // Step 4: Detect onsets
-            this.updateProgress(50, 'Detecting onsets with spectral flux...');
-            let onsets = this.onsetDetector.detect(this.audioBuffer, CONFIG);
+            const audioData = this.audioBuffer.getChannelData(0);
+            const { fullCQT, onsets, predictions } = await this.classificationService.processAudio(
+                audioData,
+                this.audioBuffer.duration
+            );
 
-            // Step 4.5: Filter subsequent onsets if enabled
-            if (CONFIG.onset.ignoreSubsequentOnsets) {
-                onsets = this.filterSubsequentOnsets(onsets, CONFIG.classification.windowSize);
-            }
-
-            // Step 5: Visualize CQT and onsets
-            this.updateProgress(60, 'Rendering visualization...');
+            // Step 3: Render visualization
+            this.updateProgress(95, 'Rendering visualization...');
             this.visualizationSection.style.display = 'block';
             this.visualizer.drawCQT(this.cqtCanvas, fullCQT, onsets, this.annotations, this.audioBuffer.duration);
             this.visualizer.drawOnsetList(document.getElementById('onsetList'), onsets);
 
-            // Step 6: Classify chords at each onset
-            this.updateProgress(70, 'Classifying chords...');
-            const predictions = await this.classifyChords(onsets);
-
-            // Step 7: Calculate WCSR
-            this.updateProgress(90, 'Calculating WCSR score...');
+            // Step 4: Calculate WCSR
+            this.updateProgress(98, 'Calculating WCSR score...');
             const results = this.validator.calculate(predictions, this.annotations);
 
-            // Step 8: Display results
+            // Step 5: Display results
             this.updateProgress(100, 'Validation complete!');
             this.displayResults(results, predictions);
 
@@ -281,50 +276,6 @@ class ChordValidationApp {
             sampleRate: CONFIG.audio.sampleRate
         });
         return await audioContext.decodeAudioData(arrayBuffer);
-    }
-
-    async classifyChords(onsets) {
-        const predictions = [];
-        const audioData = this.audioBuffer.getChannelData(0);
-        const sampleRate = this.audioBuffer.sampleRate;
-        const windowSamples = Math.floor(CONFIG.classification.windowSize * sampleRate);
-
-        for (let i = 0; i < onsets.length; i++) {
-            const onset = onsets[i];
-            const startSample = Math.floor(onset.time * sampleRate);
-            const endSample = Math.min(startSample + windowSamples, audioData.length);
-
-            // Determine the end time for this chord segment
-            let endTime;
-            if (i < onsets.length - 1) {
-                endTime = onsets[i + 1].time;
-            } else {
-                endTime = this.audioBuffer.duration;
-            }
-
-            // Extract window
-            const windowData = audioData.slice(startSample, endSample);
-
-            if (windowData.length < windowSamples * 0.5) {
-                continue; // Skip if window too short
-            }
-
-            // Extract CQT features for this window
-            const cqtFeatures = await this.cqtExtractor.extractFeatures(windowData, CONFIG);
-
-            // Classify
-            const result = await this.classifier.predict(cqtFeatures);
-
-            predictions.push({
-                start: onset.time,
-                end: endTime,
-                chord: result.chord,
-                confidence: result.confidence,
-                mirexChord: result.mirexChord
-            });
-        }
-
-        return predictions;
     }
 
     displayResults(results, predictions) {
