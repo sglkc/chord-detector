@@ -30,6 +30,12 @@ class ChordValidationApp {
         this.currentModelName = CONFIG.classification.model;
         this.currentCqtBackend = CONFIG.classification.cqtBackend;
 
+        // Worker for background classification
+        this.classificationWorker = null;
+        this.workerReady = false;
+        this.pendingWorkerCallbacks = new Map();
+        this.workerMessageId = 0;
+
         this.onsetDetector = new OnsetDetector();
         this.cqtExtractor = new CQTExtractor(this.currentCqtBackend);
         this.classifier = new ChordClassifier();
@@ -38,6 +44,7 @@ class ChordValidationApp {
 
         this.initElements();
         this.bindEvents();
+        this.initClassificationWorker();
         this.loadModel();
     }
 
@@ -194,12 +201,114 @@ class ChordValidationApp {
         }
     }
 
+    /**
+     * Initialize the classification worker for background processing
+     */
+    initClassificationWorker() {
+        try {
+            // Use classic worker (not module) for better compatibility with importScripts
+            this.classificationWorker = new Worker('./modules/classification-worker.js');
+
+            this.classificationWorker.onmessage = (event) => {
+                this.handleWorkerMessage(event.data);
+            };
+
+            this.classificationWorker.onerror = (error) => {
+                console.error('Classification worker error:', error);
+                this.workerReady = false;
+            };
+
+            console.log('Classification worker initialized');
+        } catch (error) {
+            console.warn('Failed to initialize classification worker, will use main thread:', error);
+            this.classificationWorker = null;
+        }
+    }
+
+    /**
+     * Handle messages from the classification worker
+     */
+    handleWorkerMessage(data) {
+        const { type, id, ...rest } = data;
+
+        switch (type) {
+            case 'ready':
+                this.workerReady = true;
+                console.log('Classification worker ready');
+                if (this.pendingWorkerCallbacks.has(id)) {
+                    this.pendingWorkerCallbacks.get(id).resolve();
+                    this.pendingWorkerCallbacks.delete(id);
+                }
+                break;
+
+            case 'progress':
+                // Update progress bar based on worker progress
+                const { current, total, percent } = rest;
+                const overallPercent = 70 + Math.round((percent / 100) * 20); // 70-90% range
+                this.updateProgress(overallPercent, `Classifying chords... (${current}/${total})`);
+                break;
+
+            case 'result':
+                if (this.pendingWorkerCallbacks.has(id)) {
+                    this.pendingWorkerCallbacks.get(id).resolve(rest.predictions);
+                    this.pendingWorkerCallbacks.delete(id);
+                }
+                break;
+
+            case 'error':
+                console.error('Worker error:', rest.error);
+                if (this.pendingWorkerCallbacks.has(id)) {
+                    this.pendingWorkerCallbacks.get(id).reject(new Error(rest.error));
+                    this.pendingWorkerCallbacks.delete(id);
+                }
+                break;
+
+            case 'status':
+                console.log('Worker status:', rest.message);
+                break;
+        }
+    }
+
+    /**
+     * Send a message to the worker and wait for response
+     */
+    sendWorkerMessage(type, payload) {
+        return new Promise((resolve, reject) => {
+            const id = ++this.workerMessageId;
+            this.pendingWorkerCallbacks.set(id, { resolve, reject });
+            this.classificationWorker.postMessage({ type, payload, id });
+        });
+    }
+
+    /**
+     * Initialize the worker with model and configuration
+     */
+    async initializeWorker() {
+        if (!this.classificationWorker || this.workerReady) return;
+
+        const modelPath = `${window.location.origin}/models/${this.currentModelName}/model.json`;
+
+        await this.sendWorkerMessage('init', {
+            modelPath,
+            backend: this.currentCqtBackend,
+            sampleRate: CONFIG.audio.sampleRate,
+            config: CONFIG
+        });
+    }
+
     async handleModelChange() {
         const newModel = this.configInputs.modelSelect.value;
         if (newModel !== this.currentModelName) {
             this.currentModelName = newModel;
             this.model = null;
             this.classifier = new ChordClassifier();
+
+            // Reset worker so it reinitializes with new model
+            this.workerReady = false;
+            if (this.classificationWorker) {
+                this.classificationWorker.postMessage({ type: 'dispose', id: 0 });
+            }
+
             await this.loadModel();
         }
     }
@@ -253,9 +362,9 @@ class ChordValidationApp {
             this.visualizer.drawCQT(this.cqtCanvas, fullCQT, onsets, this.annotations, this.audioBuffer.duration);
             this.visualizer.drawOnsetList(document.getElementById('onsetList'), onsets);
 
-            // Step 6: Classify chords at each onset
+            // Step 6: Classify chords at each onset (using worker for non-blocking processing)
             this.updateProgress(70, 'Classifying chords...');
-            const predictions = await this.classifyChords(onsets);
+            const predictions = await this.classifyChordsAsync(onsets);
 
             // Step 7: Calculate WCSR
             this.updateProgress(90, 'Calculating WCSR score...');
@@ -283,7 +392,46 @@ class ChordValidationApp {
         return await audioContext.decodeAudioData(arrayBuffer);
     }
 
-    async classifyChords(onsets) {
+    /**
+     * Classify chords using Web Worker for non-blocking processing
+     * Falls back to main thread if worker is not available
+     */
+    async classifyChordsAsync(onsets) {
+        // Try to use worker for background processing
+        if (this.classificationWorker) {
+            try {
+                // Initialize worker if not ready
+                if (!this.workerReady) {
+                    this.updateProgress(70, 'Initializing classification worker...');
+                    await this.initializeWorker();
+                }
+
+                // Send classification task to worker
+                const audioData = this.audioBuffer.getChannelData(0);
+
+                const predictions = await this.sendWorkerMessage('classify', {
+                    onsets: onsets,
+                    audioData: audioData, // Will be transferred as ArrayBuffer
+                    sampleRate: this.audioBuffer.sampleRate,
+                    windowSize: CONFIG.classification.windowSize,
+                    audioDuration: this.audioBuffer.duration
+                });
+
+                return predictions;
+            } catch (error) {
+                console.warn('Worker classification failed, falling back to main thread:', error);
+            }
+        }
+
+        // Fallback to main thread with yield for UI responsiveness
+        return this.classifyChordsFallback(onsets);
+    }
+
+    /**
+     * Fallback classification on main thread with periodic yields
+     * to keep UI responsive
+     */
+    async classifyChordsFallback(onsets) {
         const predictions = [];
         const audioData = this.audioBuffer.getChannelData(0);
         const sampleRate = this.audioBuffer.sampleRate;
@@ -322,6 +470,14 @@ class ChordValidationApp {
                 confidence: result.confidence,
                 mirexChord: result.mirexChord
             });
+
+            // Update progress and yield to keep UI responsive
+            if (i % 2 === 0) {
+                const percent = 70 + Math.round(((i + 1) / onsets.length) * 20);
+                this.updateProgress(percent, `Classifying chords... (${i + 1}/${onsets.length})`);
+                // Yield to the event loop periodically
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
         }
 
         return predictions;
