@@ -66,6 +66,34 @@ export class ClassificationService {
     console.log('[ClassificationService] Ready');
   }
 
+  /**
+   * Serialize config for sending to worker (removes functions)
+   */
+  _serializeConfig(config) {
+    return {
+      audio: {
+        sampleRate: config.audio?.sampleRate || 48000,
+        hopSize: config.audio?.hopSize || 512,
+        minFrequency: config.audio?.minFrequency || 130.81
+      },
+      onset: {
+        threshold: config.onset?.threshold || 0.15,
+        minInterval: config.onset?.minInterval || 100,
+        preBuffer: config.onset?.preBuffer || 50,
+        frameSize: config.onset?.frameSize || 2048,
+        smoothingWindow: config.onset?.smoothingWindow || 5,
+        ignoreSubsequentOnsets: config.onset?.ignoreSubsequentOnsets || false
+      },
+      classification: {
+        model: config.classification?.model || 'graph-v2',
+        windowSize: config.classification?.windowSize || 2.0,
+        cqtBins: config.classification?.cqtBins || 36,
+        cqtTimeFrames: config.classification?.cqtTimeFrames || 200,
+        confidenceThreshold: config.classification?.confidenceThreshold || 0.5
+      }
+    };
+  }
+
   async _initWorker() {
     return new Promise((resolve, reject) => {
       try {
@@ -88,7 +116,7 @@ export class ClassificationService {
           payload: {
             modelPath,
             sampleRate: this.options.config.audio.sampleRate,
-            config: this.options.config
+            config: this._serializeConfig(this.options.config)
           }
         });
 
@@ -173,7 +201,7 @@ export class ClassificationService {
 
     const result = await this._sendWorkerMessage('process-audio', {
       audioData: audioData,
-      config: this.options.config,
+      config: this._serializeConfig(this.options.config),
       audioDuration
     });
 
