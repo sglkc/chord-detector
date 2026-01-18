@@ -2,9 +2,12 @@
  * Classification Worker
  * Runs chord classification in a separate thread to avoid blocking the UI
  * 
- * This is a classic worker (not ES module) because:
- * 1. importScripts works better with CDN resources
- * 2. Better browser compatibility
+ * Supports:
+ * - Batch classification (multiple onsets)
+ * - Single-shot classification
+ * - Real-time streaming classification
+ * 
+ * This is a classic worker (not ES module) for better browser compatibility.
  */
 
 // Import TensorFlow.js in the worker
@@ -15,6 +18,11 @@ let model = null;
 let isGraphModel = false;
 let config = null;
 let cqtInitialized = false;
+let isStreaming = false;
+
+// Model input shape (detected from loaded model)
+let modelInputBins = 36;
+let modelInputFrames = 200;
 
 // CQT configuration
 let currentSampleRate = 48000;
@@ -62,7 +70,7 @@ function modelToMirex(chord) {
 }
 
 // ============================================================================
-// Simple CQT Implementation (inline to avoid module imports in worker)
+// CQT Implementation (optimized for real-time)
 // ============================================================================
 
 /**
@@ -76,10 +84,10 @@ function initCQT(sr, bins, bpo, hop, minFreq) {
   fmin = minFreq;
 
   // Calculate required FFT size based on lowest frequency
-  const minWinLen = Math.ceil(sr / fmin * 4); // 4 cycles at minimum frequency
+  const minWinLen = Math.ceil(sr / fmin * 4);
   fftSize = 1;
   while (fftSize < minWinLen) fftSize <<= 1;
-  fftSize = Math.min(fftSize, 8192); // Cap for performance
+  fftSize = Math.min(fftSize, 8192);
 
   // Pre-compute frequency bins
   const frequencies = new Float32Array(nBins);
@@ -123,19 +131,20 @@ function initCQT(sr, bins, bpo, hop, minFreq) {
 
 /**
  * Extract CQT features from audio window
+ * Uses user-configurable parameters (nBins is set by initCQT)
+ * Returns raw CQT with dimensions - caller handles resize for model
  */
-function extractCQTFeatures(audioData, targetFrames = 200) {
+function extractCQTFeatures(audioData) {
   if (!cqtInitialized) {
     throw new Error('CQT not initialized');
   }
 
-  const numFrames = Math.floor((audioData.length - fftSize) / hopLength) + 1;
-  const actualFrames = Math.max(1, numFrames);
+  const numFrames = Math.max(1, Math.floor((audioData.length - fftSize) / hopLength) + 1);
 
-  // Compute CQT for each frame
-  const cqt = new Float32Array(nBins * actualFrames);
+  // Compute CQT for each frame using configured nBins
+  const cqt = new Float32Array(nBins * numFrames);
 
-  for (let frame = 0; frame < actualFrames; frame++) {
+  for (let frame = 0; frame < numFrames; frame++) {
     const frameStart = frame * hopLength;
 
     for (let bin = 0; bin < nBins; bin++) {
@@ -156,8 +165,7 @@ function extractCQTFeatures(audioData, targetFrames = 200) {
       }
 
       // Magnitude
-      const magnitude = Math.sqrt(realSum * realSum + imagSum * imagSum);
-      cqt[bin * actualFrames + frame] = magnitude;
+      cqt[bin * numFrames + frame] = Math.sqrt(realSum * realSum + imagSum * imagSum);
     }
   }
 
@@ -172,20 +180,52 @@ function extractCQTFeatures(audioData, targetFrames = 200) {
     }
   }
 
-  // Resize to target frames (200)
-  if (actualFrames !== targetFrames) {
-    const resized = new Float32Array(nBins * targetFrames);
-    for (let bin = 0; bin < nBins; bin++) {
-      for (let t = 0; t < targetFrames; t++) {
-        const srcT = (t / targetFrames) * actualFrames;
-        const srcIdx = Math.min(Math.floor(srcT), actualFrames - 1);
-        resized[bin * targetFrames + t] = cqt[bin * actualFrames + srcIdx];
-      }
-    }
-    return resized;
+  return { cqt, numBins: nBins, numFrames };
+}
+
+/**
+ * Resize CQT features to model's expected input shape
+ * Uses bilinear interpolation for better quality
+ */
+function resizeCQTForModel(cqtData, targetBins, targetFrames) {
+  const { cqt, numBins: srcBins, numFrames: srcFrames } = cqtData;
+
+  // If already matching, return as flat array
+  if (srcBins === targetBins && srcFrames === targetFrames) {
+    return cqt;
   }
 
-  return cqt;
+  const resized = new Float32Array(targetBins * targetFrames);
+
+  for (let b = 0; b < targetBins; b++) {
+    for (let t = 0; t < targetFrames; t++) {
+      // Map to source coordinates
+      const srcB = (b / targetBins) * srcBins;
+      const srcT = (t / targetFrames) * srcFrames;
+
+      // Bilinear interpolation
+      const b0 = Math.floor(srcB);
+      const b1 = Math.min(b0 + 1, srcBins - 1);
+      const t0 = Math.floor(srcT);
+      const t1 = Math.min(t0 + 1, srcFrames - 1);
+
+      const bFrac = srcB - b0;
+      const tFrac = srcT - t0;
+
+      // Get four neighbors
+      const v00 = cqt[b0 * srcFrames + t0];
+      const v01 = cqt[b0 * srcFrames + t1];
+      const v10 = cqt[b1 * srcFrames + t0];
+      const v11 = cqt[b1 * srcFrames + t1];
+
+      // Interpolate
+      const v0 = v00 * (1 - tFrac) + v01 * tFrac;
+      const v1 = v10 * (1 - tFrac) + v11 * tFrac;
+      resized[b * targetFrames + t] = v0 * (1 - bFrac) + v1 * bFrac;
+    }
+  }
+
+  return resized;
 }
 
 // ============================================================================
@@ -196,20 +236,28 @@ function extractCQTFeatures(audioData, targetFrames = 200) {
  * Load the TensorFlow.js model
  */
 async function loadModel(modelPath) {
-  // Try loading as layers model first
+  // Try layers model first
   try {
     model = await tf.loadLayersModel(modelPath);
     isGraphModel = false;
     console.log('[Worker] Layers model loaded successfully');
 
-    // Warm up the model
-    const dummyInput = tf.zeros([1, 36, 200, 1]);
+    // Detect model input shape
+    if (model.inputs && model.inputs.length > 0 && model.inputs[0].shape) {
+      const shape = model.inputs[0].shape;
+      if (shape[1]) modelInputBins = shape[1];
+      if (shape[2]) modelInputFrames = shape[2];
+    }
+    console.log(`[Worker] Model expects input: ${modelInputBins}×${modelInputFrames}`);
+
+    // Warm up with detected shape
+    const dummyInput = tf.zeros([1, modelInputBins, modelInputFrames, 1]);
     await model.predict(dummyInput).data();
     dummyInput.dispose();
 
     return { success: true, type: 'layers' };
   } catch (layersError) {
-    console.warn('[Worker] Failed to load as layers model, trying graph model...', layersError.message);
+    console.warn('[Worker] Trying graph model...', layersError.message);
   }
 
   // Fallback to graph model
@@ -218,8 +266,16 @@ async function loadModel(modelPath) {
     isGraphModel = true;
     console.log('[Worker] Graph model loaded successfully');
 
-    // Warm up the model
-    const dummyInput = tf.zeros([1, 36, 200, 1]);
+    // Detect model input shape
+    if (model.inputs && model.inputs.length > 0 && model.inputs[0].shape) {
+      const shape = model.inputs[0].shape;
+      if (shape[1]) modelInputBins = shape[1];
+      if (shape[2]) modelInputFrames = shape[2];
+    }
+    console.log(`[Worker] Model expects input: ${modelInputBins}×${modelInputFrames}`);
+
+    // Warm up with detected shape
+    const dummyInput = tf.zeros([1, modelInputBins, modelInputFrames, 1]);
     const warmupResult = model.execute(dummyInput);
     await warmupResult.data();
     warmupResult.dispose();
@@ -233,25 +289,17 @@ async function loadModel(modelPath) {
 }
 
 /**
- * Predict chord from CQT features
+ * Predict chord from CQT features (already resized to model input shape)
+ * Returns full result with top predictions
  */
 async function predict(features) {
   if (!model) {
     throw new Error('Model not loaded');
   }
 
-  let numBins = 36;
-  let numFrames = 200;
-
-  if (model.inputs && model.inputs.length > 0 && model.inputs[0].shape) {
-    const inputShape = model.inputs[0].shape;
-    if (inputShape[1]) numBins = inputShape[1];
-    if (inputShape[2]) numFrames = inputShape[2];
-  }
-
   const inputTensor = tf.tidy(() => {
     let tensor = tf.tensor1d(features);
-    tensor = tensor.reshape([numBins, numFrames]);
+    tensor = tensor.reshape([modelInputBins, modelInputFrames]);
     tensor = tensor.expandDims(0).expandDims(-1);
     return tensor;
   });
@@ -262,32 +310,50 @@ async function predict(features) {
       : model.predict(inputTensor);
     const probabilities = await prediction.data();
 
-    let maxProb = 0;
-    let maxIndex = 0;
+    // Find top predictions
+    const indexed = Array.from(probabilities).map((prob, idx) => ({
+      index: idx,
+      probability: prob,
+      chord: CHORD_LABELS[idx],
+      mirexChord: modelToMirex(CHORD_LABELS[idx])
+    }));
+    indexed.sort((a, b) => b.probability - a.probability);
 
-    for (let i = 0; i < probabilities.length; i++) {
-      if (probabilities[i] > maxProb) {
-        maxProb = probabilities[i];
-        maxIndex = i;
-      }
-    }
-
-    const chord = CHORD_LABELS[maxIndex];
-    const mirexChord = modelToMirex(chord);
+    const top = indexed[0];
+    const topPredictions = indexed.slice(0, 3);
 
     prediction.dispose();
     inputTensor.dispose();
 
     return {
-      chord: chord,
-      mirexChord: mirexChord,
-      confidence: maxProb,
-      classIndex: maxIndex
+      chord: top.chord,
+      mirexChord: top.mirexChord,
+      confidence: top.probability,
+      classIndex: top.index,
+      topPredictions: topPredictions
     };
   } catch (error) {
     inputTensor.dispose();
     throw error;
   }
+}
+
+/**
+ * Classify a single audio segment
+ * Extracts CQT with user params, resizes to model input, then predicts
+ */
+async function classifySingle(audioData) {
+  if (!cqtInitialized) {
+    throw new Error('CQT not initialized');
+  }
+
+  // Extract CQT with user-configured params (nBins, hopLength, etc.)
+  const cqtData = extractCQTFeatures(audioData);
+
+  // Resize to model's expected input shape
+  const features = resizeCQTForModel(cqtData, modelInputBins, modelInputFrames);
+
+  return await predict(features);
 }
 
 /**
@@ -302,7 +368,6 @@ async function classifyBatch(tasks, audioData, sr, windowSize, audioDuration) {
     const startSample = Math.floor(task.time * sr);
     const endSample = Math.min(startSample + windowSamples, audioData.length);
 
-    // Determine end time
     let endTime;
     if (i < tasks.length - 1) {
       endTime = tasks[i + 1].time;
@@ -310,19 +375,20 @@ async function classifyBatch(tasks, audioData, sr, windowSize, audioDuration) {
       endTime = audioDuration;
     }
 
-    // Extract window
     const windowData = audioData.slice(startSample, endSample);
 
     if (windowData.length < windowSamples * 0.5) {
-      continue; // Skip if window too short
+      continue;
     }
 
     try {
-      // Extract CQT features
-      const cqtFeatures = extractCQTFeatures(windowData, 200);
+      // Extract CQT with user-configured params
+      const cqtData = extractCQTFeatures(windowData);
 
-      // Classify
-      const result = await predict(cqtFeatures);
+      // Resize to model's expected input shape
+      const features = resizeCQTForModel(cqtData, modelInputBins, modelInputFrames);
+
+      const result = await predict(features);
 
       predictions.push({
         start: task.time,
@@ -340,7 +406,7 @@ async function classifyBatch(tasks, audioData, sr, windowSize, audioDuration) {
         percent: Math.round(((i + 1) / tasks.length) * 100)
       });
     } catch (error) {
-      console.error(`[Worker] Error classifying onset at ${task.time}:`, error);
+      console.error(`[Worker] Error at onset ${task.time}:`, error);
     }
   }
 
@@ -351,16 +417,12 @@ async function classifyBatch(tasks, audioData, sr, windowSize, audioDuration) {
 // Message Handler
 // ============================================================================
 
-/**
- * Handle messages from the main thread
- */
 self.onmessage = async function (event) {
   const { type, payload, id } = event.data;
 
   try {
     switch (type) {
       case 'init': {
-        // Initialize model and CQT
         const { modelPath, sampleRate: sr, config: cfg } = payload;
         config = cfg;
 
@@ -372,7 +434,6 @@ self.onmessage = async function (event) {
           return;
         }
 
-        // Initialize CQT
         self.postMessage({ type: 'status', message: 'Initializing CQT...' });
         initCQT(
           sr || 48000,
@@ -387,9 +448,9 @@ self.onmessage = async function (event) {
       }
 
       case 'classify': {
+        // Batch classification
         const { onsets, audioData, sampleRate: sr, windowSize, audioDuration } = payload;
 
-        // Convert audioData back to Float32Array if needed
         const audioArray = audioData instanceof Float32Array
           ? audioData
           : new Float32Array(audioData);
@@ -402,16 +463,60 @@ self.onmessage = async function (event) {
           audioDuration
         );
 
-        self.postMessage({
-          type: 'result',
-          id,
-          predictions
-        });
+        self.postMessage({ type: 'result', id, predictions });
+        break;
+      }
+
+      case 'classify-single': {
+        // Single shot classification
+        const { audioData, sampleRate: sr } = payload;
+
+        const audioArray = audioData instanceof Float32Array
+          ? audioData
+          : new Float32Array(audioData);
+
+        const prediction = await classifySingle(audioArray);
+        self.postMessage({ type: 'result', id, prediction });
+        break;
+      }
+
+      case 'start-stream': {
+        // Start real-time streaming mode
+        isStreaming = true;
+        console.log('[Worker] Streaming mode started');
+        break;
+      }
+
+      case 'stream-classify': {
+        // Real-time streaming classification
+        if (!isStreaming) break;
+
+        const { audioData } = payload;
+        const audioArray = audioData instanceof Float32Array
+          ? audioData
+          : new Float32Array(audioData);
+
+        try {
+          const prediction = await classifySingle(audioArray);
+          self.postMessage({
+            type: 'stream-result',
+            prediction,
+            timestamp: Date.now()
+          });
+        } catch (error) {
+          console.error('[Worker] Stream classify error:', error);
+        }
+        break;
+      }
+
+      case 'stop-stream': {
+        isStreaming = false;
+        console.log('[Worker] Streaming mode stopped');
         break;
       }
 
       case 'dispose': {
-        // Clean up resources
+        isStreaming = false;
         if (model) {
           model.dispose();
           model = null;
@@ -427,11 +532,7 @@ self.onmessage = async function (event) {
     }
   } catch (error) {
     console.error('[Worker] Error:', error);
-    self.postMessage({
-      type: 'error',
-      id,
-      error: error.message
-    });
+    self.postMessage({ type: 'error', id, error: error.message });
   }
 };
 

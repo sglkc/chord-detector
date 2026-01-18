@@ -4,17 +4,14 @@
  */
 
 import { CQTExtractor } from './modules/cqt-extractor.js';
-import { ChordClassifier } from './modules/chord-classifier.js';
 import { CONFIG } from './modules/config.js';
+import { ClassificationService } from './modules/classification-service.js';
 
 class SingleChordClassifier {
   constructor() {
     this.files = [];
     this.audioBuffers = new Map();
     this.results = new Map();
-    this.model = null;
-    this.cqtExtractor = null;
-    this.classifier = null;
     this.audioContext = null;
     this.currentlyPlaying = null;
     this.currentSource = null;
@@ -22,6 +19,19 @@ class SingleChordClassifier {
     // Current model and backend
     this.currentModelName = 'graph';
     this.currentCqtBackend = CONFIG.classification.cqtBackend;
+
+    // Classification service for non-blocking classification
+    this.classificationService = new ClassificationService({
+      model: this.currentModelName,
+      cqtBackend: this.currentCqtBackend,
+      mode: 'auto',
+      onProgress: (percent, message) => {
+        this.updateProgress(percent, message);
+      }
+    });
+
+    // CQT extractor for visualization only
+    this.cqtExtractor = null;
 
     this.initElements();
     this.bindEvents();
@@ -131,7 +141,7 @@ class SingleChordClassifier {
 
     try {
       // Initialize components
-      this.updateProgress(5, 'Loading model...');
+      this.updateProgress(5, 'Initializing...');
       await this.initializeComponents();
 
       const totalFiles = this.files.length;
@@ -151,11 +161,11 @@ class SingleChordClassifier {
           const audioBuffer = await this.loadAudioFile(file);
           this.audioBuffers.set(cardId, audioBuffer);
 
-          // Extract CQT features for the entire audio
-          const features = await this.extractFeatures(audioBuffer);
+          // Get audio data for classification
+          const audioData = audioBuffer.getChannelData(0);
 
-          // Classify
-          const result = await this.classifier.predict(features);
+          // Classify using ClassificationService
+          const result = await this.classificationService.classify(audioData, audioBuffer.sampleRate);
           this.results.set(cardId, result);
 
           // Extract CQT for visualization
@@ -169,6 +179,9 @@ class SingleChordClassifier {
         }
 
         this.processedCount.textContent = `${i + 1} processed`;
+
+        // Yield to keep UI responsive
+        await new Promise(resolve => setTimeout(resolve, 0));
       }
 
       this.updateProgress(100, 'Classification complete!');
@@ -196,31 +209,35 @@ class SingleChordClassifier {
     const selectedModel = this.modelSelect?.value || CONFIG.classification.model;
     const selectedBackend = this.cqtBackendSelect?.value || CONFIG.classification.cqtBackend;
 
-    // Initialize CQT extractor (or reinitialize if backend changed)
-    if (!this.cqtExtractor || this.currentCqtBackend !== selectedBackend) {
-      this.currentCqtBackend = selectedBackend;
-      this.cqtExtractor = new CQTExtractor(selectedBackend);
-      await this.cqtExtractor.init(CONFIG.audio.sampleRate);
-      console.log(`CQT backend initialized: ${selectedBackend}`);
+    // Update classification service if settings changed
+    if (this.currentModelName !== selectedModel) {
+      this.currentModelName = selectedModel;
+      await this.classificationService.setModel(selectedModel);
+      console.log(`Model updated: ${selectedModel}`);
     }
 
-    // Initialize classifier and load model (or reload if model changed)
-    if (!this.classifier || this.currentModelName !== selectedModel) {
-      this.currentModelName = selectedModel;
-      this.classifier = new ChordClassifier();
-      const modelPath = `models/${selectedModel}/model.json`;
-      await this.classifier.loadModel(modelPath);
-      console.log(`Model loaded: ${selectedModel}`);
+    if (this.currentCqtBackend !== selectedBackend) {
+      this.currentCqtBackend = selectedBackend;
+      await this.classificationService.setCqtBackend(selectedBackend);
+      console.log(`CQT backend updated: ${selectedBackend}`);
+    }
+
+    // Initialize the classification service (loads model if needed)
+    await this.classificationService.init();
+
+    // Initialize CQT extractor for visualization (separate from classification)
+    if (!this.cqtExtractor) {
+      this.cqtExtractor = new CQTExtractor(selectedBackend);
+      await this.cqtExtractor.init(CONFIG.audio.sampleRate);
     }
   }
 
-  handleModelChange() {
-    // Reset classifier to force reload on next classification
-    this.classifier = null;
+  async handleModelChange() {
+    // Service will reload model on next init
     console.log(`Model will change to: ${this.modelSelect.value}`);
   }
 
-  handleCqtBackendChange() {
+  async handleCqtBackendChange() {
     // Reset extractor to force reinitialization on next classification  
     this.cqtExtractor = null;
     console.log(`CQT backend will change to: ${this.cqtBackendSelect.value}`);
@@ -240,26 +257,6 @@ class SingleChordClassifier {
       reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsArrayBuffer(file);
     });
-  }
-
-  async extractFeatures(audioBuffer) {
-    // Get audio data from the entire buffer
-    const audioData = audioBuffer.getChannelData(0);
-
-    // Calculate how many samples we need for the window
-    const windowSizeSamples = Math.floor(CONFIG.classification.windowSize * audioBuffer.sampleRate);
-
-    // Use the entire audio or truncate to window size
-    const samplesToUse = Math.min(audioData.length, windowSizeSamples);
-    const windowData = audioData.slice(0, samplesToUse);
-
-    // Extract CQT features
-    const features = await this.cqtExtractor.extractFeatures(
-      new Float32Array(windowData),
-      CONFIG
-    );
-
-    return features;
   }
 
   createCardPlaceholder(cardId, fileName) {
