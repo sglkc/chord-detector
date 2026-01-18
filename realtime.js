@@ -24,8 +24,8 @@ class RealtimeChordDetector {
       onProgress: (percent, message) => {
         this.updateStatus(message);
       },
-      onResult: (result) => {
-        this.handleClassificationResult(result);
+      onResult: (result, cqtData) => {
+        this.handleClassificationResult(result, cqtData);
       }
     });
 
@@ -60,6 +60,30 @@ class RealtimeChordDetector {
     this.currentChordEl = document.getElementById('currentChord');
     this.chordConfidenceEl = document.getElementById('chordConfidence');
     this.historyList = document.getElementById('historyList');
+
+    // CQT Visualization
+    this.cqtCanvas = document.getElementById('cqtCanvas');
+    this.cqtCtx = this.cqtCanvas.getContext('2d');
+    this.cqtInfo = document.getElementById('cqtInfo');
+
+    // Pre-compute CQT colormap (viridis-like)
+    this.cqtColormap = this.generateColormap();
+  }
+
+  /**
+   * Generate a viridis-like colormap for CQT visualization
+   */
+  generateColormap() {
+    const colors = [];
+    for (let i = 0; i < 256; i++) {
+      const t = i / 255;
+      // Viridis-inspired colors
+      const r = Math.floor(255 * Math.min(1, 0.267 + 2.2 * t - 1.8 * t * t));
+      const g = Math.floor(255 * (0.004 + 1.0 * t - 0.35 * t * t));
+      const b = Math.floor(255 * Math.max(0, 0.329 + 1.2 * t - 2.0 * t * t + 0.8 * t * t * t));
+      colors.push([r, g, b]);
+    }
+    return colors;
   }
 
   bindEvents() {
@@ -291,7 +315,7 @@ class RealtimeChordDetector {
     this.updateStatus('Ready');
   }
 
-  handleClassificationResult(result) {
+  handleClassificationResult(result, cqtData) {
     // Update current chord display
     this.currentChordEl.textContent = result.mirexChord || result.chord;
     this.currentChordEl.classList.add('detected');
@@ -300,8 +324,63 @@ class RealtimeChordDetector {
     const confidence = (result.confidence * 100).toFixed(1);
     this.chordConfidenceEl.textContent = `${confidence}% confidence`;
 
+    // Render CQT visualization
+    if (cqtData) {
+      this.renderCQT(cqtData);
+    }
+
     // Add to history
     this.addToHistory(result);
+  }
+
+  /**
+   * Render CQT spectrogram on canvas
+   * Uses ImageData for efficient rendering
+   */
+  renderCQT(cqtData) {
+    const { data, bins, frames } = cqtData;
+
+    // Update info label
+    this.cqtInfo.textContent = `${bins} bins × ${frames} frames`;
+
+    // Get canvas dimensions
+    const canvasWidth = this.cqtCanvas.width;
+    const canvasHeight = this.cqtCanvas.height;
+
+    // Create image data
+    const imageData = this.cqtCtx.createImageData(canvasWidth, canvasHeight);
+    const pixels = imageData.data;
+
+    // Scale factors
+    const xScale = frames / canvasWidth;
+    const yScale = bins / canvasHeight;
+
+    // Fill pixels
+    for (let y = 0; y < canvasHeight; y++) {
+      for (let x = 0; x < canvasWidth; x++) {
+        // Map canvas coordinates to CQT coordinates
+        const frame = Math.floor(x * xScale);
+        const bin = bins - 1 - Math.floor(y * yScale); // Flip Y axis (low freq at bottom)
+
+        // Get CQT value (data is in bins × frames format, row-major)
+        const idx = bin * frames + frame;
+        const value = Math.min(1, Math.max(0, data[idx] || 0));
+
+        // Map to color
+        const colorIdx = Math.floor(value * 255);
+        const [r, g, b] = this.cqtColormap[colorIdx];
+
+        // Set pixel
+        const pixelIdx = (y * canvasWidth + x) * 4;
+        pixels[pixelIdx] = r;
+        pixels[pixelIdx + 1] = g;
+        pixels[pixelIdx + 2] = b;
+        pixels[pixelIdx + 3] = 255;
+      }
+    }
+
+    // Draw to canvas
+    this.cqtCtx.putImageData(imageData, 0, 0);
   }
 
   addToHistory(result) {

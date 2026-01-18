@@ -54,12 +54,12 @@ let fftSize = 4096;
 
 // Chord labels
 const CHORD_LABELS = [
-  'A', 'Am', 'Adim', 'A#', 'A#m', 'A#dim',
-  'B', 'Bm', 'Bdim', 'C', 'Cm', 'Cdim',
-  'C#', 'C#m', 'C#dim', 'D', 'Dm', 'Ddim',
-  'D#', 'D#m', 'D#dim', 'E', 'Em', 'Edim',
-  'F', 'Fm', 'Fdim', 'F#', 'F#m', 'F#dim',
-  'G', 'Gm', 'Gdim', 'G#', 'G#m', 'G#dim'
+  'A#dim', 'A#', 'A#m', 'Adim', 'A', 'Am',
+  'Bdim', 'B', 'Bm', 'C#dim', 'C#', 'C#m',
+  'Cdim', 'C', 'Cm', 'D#dim', 'D#', 'D#m',
+  'Ddim', 'D', 'Dm', 'Edim', 'E', 'Em',
+  'F#dim', 'F#', 'F#m', 'Fdim', 'F', 'Fm',
+  'G#dim', 'G#', 'G#m', 'Gdim', 'G', 'Gm'
 ];
 
 function modelToMirex(chord) {
@@ -96,8 +96,113 @@ function reportProgress(stage, percent, message, data = null) {
 }
 
 // ============================================================================
-// CQT Implementation
+// CQT Implementation (librosa-compatible)
+// Matches librosa.cqt() output for accurate classification
 // ============================================================================
+
+// Complex number class for FFT
+class Complex {
+  constructor(real = 0, imag = 0) {
+    this.real = real;
+    this.imag = imag;
+  }
+  add(other) { return new Complex(this.real + other.real, this.imag + other.imag); }
+  sub(other) { return new Complex(this.real - other.real, this.imag - other.imag); }
+  mul(other) {
+    return new Complex(
+      this.real * other.real - this.imag * other.imag,
+      this.real * other.imag + this.imag * other.real
+    );
+  }
+  conj() { return new Complex(this.real, -this.imag); }
+  magnitude() { return Math.sqrt(this.real * this.real + this.imag * this.imag); }
+  static fromPolar(r, theta) { return new Complex(r * Math.cos(theta), r * Math.sin(theta)); }
+}
+
+// FFT implementation (Cooley-Tukey radix-2)
+function bitReverse(x, bits) {
+  let result = 0;
+  for (let i = 0; i < bits; i++) {
+    result = (result << 1) | (x & 1);
+    x >>= 1;
+  }
+  return result;
+}
+
+function fft(signal) {
+  const n = signal.length;
+  const bits = Math.log2(n);
+
+  // Bit-reversal permutation
+  const result = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const j = bitReverse(i, bits);
+    result[i] = new Complex(signal[j], 0);
+  }
+
+  // Cooley-Tukey iterative FFT
+  for (let size = 2; size <= n; size *= 2) {
+    const halfSize = size / 2;
+    const tableStep = n / size;
+
+    for (let i = 0; i < n; i += size) {
+      for (let j = 0; j < halfSize; j++) {
+        const theta = -2 * Math.PI * j * tableStep / n;
+        const twiddle = Complex.fromPolar(1, theta);
+
+        const a = result[i + j];
+        const b = result[i + j + halfSize].mul(twiddle);
+
+        result[i + j] = a.add(b);
+        result[i + j + halfSize] = a.sub(b);
+      }
+    }
+  }
+
+  return result;
+}
+
+function fftComplex(signal) {
+  const n = signal.length;
+  const bits = Math.log2(n);
+
+  const result = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const j = bitReverse(i, bits);
+    result[i] = new Complex(signal[j].real, signal[j].imag);
+  }
+
+  for (let size = 2; size <= n; size *= 2) {
+    const halfSize = size / 2;
+    const tableStep = n / size;
+
+    for (let i = 0; i < n; i += size) {
+      for (let j = 0; j < halfSize; j++) {
+        const theta = -2 * Math.PI * j * tableStep / n;
+        const twiddle = Complex.fromPolar(1, theta);
+
+        const a = result[i + j];
+        const b = result[i + j + halfSize].mul(twiddle);
+
+        result[i + j] = a.add(b);
+        result[i + j + halfSize] = a.sub(b);
+      }
+    }
+  }
+
+  return result;
+}
+
+function nextPowerOf2(n) {
+  return Math.pow(2, Math.ceil(Math.log2(n)));
+}
+
+// CQT state
+let cqtQ = 0;
+let cqtFrequencies = null;
+let cqtKernelLengths = null;
+let cqtKernelsFFT = null;
+let cqtFFTLength = 0;
 
 function initCQT(sr, bins, bpo, hop, minFreq) {
   currentSampleRate = sr;
@@ -106,79 +211,126 @@ function initCQT(sr, bins, bpo, hop, minFreq) {
   hopLength = hop;
   fmin = minFreq;
 
-  const minWinLen = Math.ceil(sr / fmin * 4);
-  fftSize = 1;
-  while (fftSize < minWinLen) fftSize <<= 1;
-  fftSize = Math.min(fftSize, 8192);
+  // Calculate Q factor (constant for all bins)
+  // Q = 1 / (2^(1/bins_per_octave) - 1) ≈ 16.82 for 12 bins per octave
+  cqtQ = 1 / (Math.pow(2, 1 / binsPerOctave) - 1);
 
-  const frequencies = new Float32Array(nBins);
-  for (let i = 0; i < nBins; i++) {
-    frequencies[i] = fmin * Math.pow(2, i / binsPerOctave);
+  // Calculate center frequencies for each bin
+  cqtFrequencies = new Float32Array(nBins);
+  for (let k = 0; k < nBins; k++) {
+    cqtFrequencies[k] = fmin * Math.pow(2, k / binsPerOctave);
   }
 
-  kernels = new Array(nBins);
-  for (let i = 0; i < nBins; i++) {
-    const freq = frequencies[i];
-    const winLen = Math.min(Math.ceil(sr / freq * 4), fftSize);
-    const halfWin = Math.floor(winLen / 2);
-
-    kernels[i] = {
-      freq, real: new Float32Array(winLen), imag: new Float32Array(winLen),
-      window: new Float32Array(winLen), length: winLen, halfWin
-    };
-
-    for (let j = 0; j < winLen; j++) {
-      kernels[i].window[j] = 0.5 * (1 - Math.cos(2 * Math.PI * j / (winLen - 1)));
-    }
-
-    const omega = 2 * Math.PI * freq / sr;
-    for (let j = 0; j < winLen; j++) {
-      const t = j - halfWin;
-      kernels[i].real[j] = Math.cos(omega * t) * kernels[i].window[j];
-      kernels[i].imag[j] = Math.sin(omega * t) * kernels[i].window[j];
-    }
+  // Calculate window lengths for each bin
+  cqtKernelLengths = new Int32Array(nBins);
+  for (let k = 0; k < nBins; k++) {
+    cqtKernelLengths[k] = Math.ceil(cqtQ * sr / cqtFrequencies[k]);
   }
+
+  // Find maximum kernel length and determine FFT size
+  const maxKernelLength = Math.max(...cqtKernelLengths);
+  cqtFFTLength = nextPowerOf2(maxKernelLength);
+  fftSize = cqtFFTLength;
+
+  // Pre-compute CQT kernels (stored as conjugate of their FFT)
+  cqtKernelsFFT = computeCQTKernels();
 
   cqtInitialized = true;
-  console.log(`[Worker] CQT initialized: ${nBins} bins, sr=${sr}, hop=${hop}, fmin=${fmin.toFixed(2)}Hz`);
+  console.log(`[Worker] CQT initialized (librosa-compatible):`);
+  console.log(`  Q factor: ${cqtQ.toFixed(4)}, FFT length: ${cqtFFTLength}`);
+  console.log(`  ${nBins} bins, sr=${sr}, hop=${hop}, fmin=${fmin.toFixed(2)}Hz`);
+}
+
+function computeCQTKernels() {
+  const kernelsFFT = new Array(nBins);
+
+  for (let k = 0; k < nBins; k++) {
+    const N_k = cqtKernelLengths[k];
+    const f_k = cqtFrequencies[k];
+
+    // Create Hann window
+    const window = new Float32Array(N_k);
+    for (let i = 0; i < N_k; i++) {
+      window[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (N_k - 1)));
+    }
+
+    // Create windowed complex exponential (centered)
+    const kernel = new Array(cqtFFTLength);
+    for (let n = 0; n < cqtFFTLength; n++) {
+      kernel[n] = new Complex(0, 0);
+    }
+
+    // Compute kernel: window[n] * exp(-2πi * f_k * (n - N_k/2) / sr) / N_k
+    const halfN = N_k / 2;
+    for (let n = 0; n < N_k; n++) {
+      const phase = -2 * Math.PI * f_k * (n - halfN) / currentSampleRate;
+      const amplitude = window[n] / N_k;
+      kernel[n] = new Complex(amplitude * Math.cos(phase), amplitude * Math.sin(phase));
+    }
+
+    // Compute FFT of kernel, then take conjugate for correlation
+    const kernelFFT = fftComplex(kernel);
+    kernelsFFT[k] = kernelFFT.map(c => c.conj());
+  }
+
+  return kernelsFFT;
+}
+
+function computeFrameCQT(frame) {
+  // Zero-pad frame to FFT length
+  const paddedFrame = new Float32Array(cqtFFTLength);
+  const copyLength = Math.min(frame.length, cqtFFTLength);
+  for (let i = 0; i < copyLength; i++) {
+    paddedFrame[i] = frame[i];
+  }
+
+  // Compute FFT of frame
+  const frameFFT = fft(paddedFrame);
+
+  // Compute CQT by spectral inner product with each kernel
+  const cqt = new Float32Array(nBins);
+
+  for (let k = 0; k < nBins; k++) {
+    const kernelFFTConj = cqtKernelsFFT[k];
+
+    let sumReal = 0;
+    let sumImag = 0;
+
+    for (let n = 0; n < cqtFFTLength; n++) {
+      sumReal += frameFFT[n].real * kernelFFTConj[n].real - frameFFT[n].imag * kernelFFTConj[n].imag;
+      sumImag += frameFFT[n].real * kernelFFTConj[n].imag + frameFFT[n].imag * kernelFFTConj[n].real;
+    }
+
+    cqt[k] = Math.sqrt(sumReal * sumReal + sumImag * sumImag);
+  }
+
+  return cqt;
 }
 
 /**
  * Extract full CQT spectrogram for visualization
- * Returns 2D array [numFrames][numBins] for easy rendering
  */
 function extractFullCQT(audioData) {
   if (!cqtInitialized) throw new Error('CQT not initialized');
 
-  const numFrames = Math.max(1, Math.floor((audioData.length - fftSize) / hopLength) + 1);
+  const numFrames = Math.floor((audioData.length - 1) / hopLength) + 1;
   const magnitudes = [];
 
-  for (let frame = 0; frame < numFrames; frame++) {
-    const frameStart = frame * hopLength;
-    const frameMags = new Float32Array(nBins);
+  for (let i = 0; i < numFrames; i++) {
+    const centerSample = i * hopLength;
 
-    for (let bin = 0; bin < nBins; bin++) {
-      const kernel = kernels[bin];
-      let realSum = 0, imagSum = 0;
+    const startSample = Math.max(0, centerSample - Math.floor(cqtFFTLength / 2));
+    const frame = new Float32Array(cqtFFTLength);
 
-      const start = Math.max(0, frameStart - kernel.halfWin);
-      const end = Math.min(audioData.length, frameStart + kernel.length - kernel.halfWin);
-
-      for (let j = start; j < end; j++) {
-        const kIdx = j - frameStart + kernel.halfWin;
-        if (kIdx >= 0 && kIdx < kernel.length) {
-          realSum += audioData[j] * kernel.real[kIdx];
-          imagSum += audioData[j] * kernel.imag[kIdx];
-        }
-      }
-
-      frameMags[bin] = Math.sqrt(realSum * realSum + imagSum * imagSum);
+    for (let j = 0; j < cqtFFTLength; j++) {
+      const idx = startSample + j;
+      frame[j] = idx < audioData.length ? audioData[idx] : 0;
     }
 
-    magnitudes.push(frameMags);
+    const frameCQT = computeFrameCQT(frame);
+    magnitudes.push(frameCQT);
   }
 
-  // Generate time array
   const times = new Float32Array(numFrames);
   for (let i = 0; i < numFrames; i++) {
     times[i] = (i * hopLength) / currentSampleRate;
@@ -188,40 +340,45 @@ function extractFullCQT(audioData) {
 }
 
 /**
- * Extract CQT features for classification (returns flat array with dimensions)
+ * Extract CQT features for classification
  */
 function extractCQTFeatures(audioData) {
   if (!cqtInitialized) throw new Error('CQT not initialized');
 
-  const numFrames = Math.max(1, Math.floor((audioData.length - fftSize) / hopLength) + 1);
+  const numFrames = Math.floor((audioData.length - 1) / hopLength) + 1;
   const cqt = new Float32Array(nBins * numFrames);
 
-  for (let frame = 0; frame < numFrames; frame++) {
-    const frameStart = frame * hopLength;
+  for (let i = 0; i < numFrames; i++) {
+    const centerSample = i * hopLength;
 
-    for (let bin = 0; bin < nBins; bin++) {
-      const kernel = kernels[bin];
-      let realSum = 0, imagSum = 0;
+    const startSample = Math.max(0, centerSample - Math.floor(cqtFFTLength / 2));
+    const frame = new Float32Array(cqtFFTLength);
 
-      const start = Math.max(0, frameStart - kernel.halfWin);
-      const end = Math.min(audioData.length, frameStart + kernel.length - kernel.halfWin);
+    for (let j = 0; j < cqtFFTLength; j++) {
+      const idx = startSample + j;
+      frame[j] = idx < audioData.length ? audioData[idx] : 0;
+    }
 
-      for (let j = start; j < end; j++) {
-        const kIdx = j - frameStart + kernel.halfWin;
-        if (kIdx >= 0 && kIdx < kernel.length) {
-          realSum += audioData[j] * kernel.real[kIdx];
-          imagSum += audioData[j] * kernel.imag[kIdx];
-        }
-      }
+    const frameCQT = computeFrameCQT(frame);
 
-      cqt[bin * numFrames + frame] = Math.sqrt(realSum * realSum + imagSum * imagSum);
+    // Store in [bins, frames] format (row-major)
+    for (let b = 0; b < nBins; b++) {
+      cqt[b * numFrames + i] = frameCQT[b];
     }
   }
 
-  // Normalize
-  let maxVal = 0;
-  for (let i = 0; i < cqt.length; i++) if (cqt[i] > maxVal) maxVal = cqt[i];
-  if (maxVal > 0) for (let i = 0; i < cqt.length; i++) cqt[i] /= maxVal;
+  // Normalize (min-max)
+  let minVal = Infinity, maxVal = -Infinity;
+  for (let i = 0; i < cqt.length; i++) {
+    if (cqt[i] < minVal) minVal = cqt[i];
+    if (cqt[i] > maxVal) maxVal = cqt[i];
+  }
+  const range = maxVal - minVal;
+  if (range > 0) {
+    for (let i = 0; i < cqt.length; i++) {
+      cqt[i] = (cqt[i] - minVal) / range;
+    }
+  }
 
   return { cqt, numBins: nBins, numFrames };
 }
@@ -453,10 +610,17 @@ async function processStreamChunk(samples, timestamp) {
         const features = resizeCQTForModel(cqtData, modelInputBins, modelInputFrames);
         const result = await predict(features);
 
+        // Send result WITH CQT visualization data
         self.postMessage({
           type: 'stream-result',
           prediction: result,
-          timestamp: windowStartTime
+          timestamp: windowStartTime,
+          // Include CQT for visualization (matches model input exactly)
+          cqt: {
+            data: Array.from(features),  // Convert to regular array for transfer
+            bins: modelInputBins,
+            frames: modelInputFrames
+          }
         });
       } catch (e) {
         console.error('[Worker] Classification error:', e);

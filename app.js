@@ -189,7 +189,7 @@ class ChordValidationApp {
     }
 
     checkReadyState() {
-        const ready = this.audioFile && this.annotationFile && this.model;
+        const ready = this.audioFile && this.annotationFile;
         this.runButton.disabled = !ready;
     }
 
@@ -198,7 +198,6 @@ class ChordValidationApp {
         try {
             const modelPath = `./models/${this.currentModelName}/model.json`;
             await this.classifier.loadModel(modelPath);
-            this.model = this.classifier.model;
             this.checkReadyState();
             this.updateProgress(0, `Model "${this.currentModelName}" loaded successfully`);
             this.progressSection.style.display = 'none';

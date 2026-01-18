@@ -159,7 +159,8 @@ export class ClassificationService {
         break;
 
       case 'stream-result':
-        this.options.onResult(rest.prediction);
+        // Pass prediction and CQT data to callback
+        this.options.onResult(rest.prediction, rest.cqt);
         break;
 
       case 'stream-ready':

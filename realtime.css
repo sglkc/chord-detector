@@ -231,8 +231,15 @@ body {
 }
 
 @keyframes pulse-recording {
-    0%, 100% { box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3); }
-    50% { box-shadow: 0 4px 25px rgba(231, 76, 60, 0.5); }
+
+    0%,
+    100% {
+        box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 4px 25px rgba(231, 76, 60, 0.5);
+    }
 }
 
 .btn-icon {
@@ -263,8 +270,15 @@ body {
 }
 
 @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
 }
 
 .status-text {
@@ -311,14 +325,65 @@ body {
 }
 
 @keyframes chord-pop {
-    0% { transform: scale(0.8); opacity: 0.5; }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); opacity: 1; }
+    0% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 .chord-confidence {
     font-size: 1rem;
     color: var(--text-muted);
+}
+
+/* CQT Visualization */
+.cqt-section {
+    padding: 20px;
+}
+
+.cqt-info {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+.cqt-wrapper {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+}
+
+#cqtCanvas {
+    flex: 1;
+    background: #1a1a2e;
+    border-radius: var(--border-radius-sm);
+    max-width: 100%;
+    height: auto;
+}
+
+.cqt-labels {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.cqt-label-high,
+.cqt-label-low {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
 }
 
 /* History */
@@ -352,6 +417,7 @@ body {
         opacity: 0;
         transform: translateX(-20px);
     }
+
     to {
         opacity: 1;
         transform: translateX(0);
