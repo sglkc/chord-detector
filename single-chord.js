@@ -1,9 +1,9 @@
 /**
  * Single Chord Classifier
  * Classify individual chord samples from multiple audio files
+ * All heavy processing happens in Web Worker
  */
 
-import { CQTExtractor } from './modules/cqt-extractor.js';
 import { CONFIG } from './modules/config.js';
 import { ClassificationService } from './modules/classification-service.js';
 
@@ -16,22 +16,16 @@ class SingleChordClassifier {
     this.currentlyPlaying = null;
     this.currentSource = null;
 
-    // Current model and backend
+    // Current model
     this.currentModelName = 'graph';
-    this.currentCqtBackend = CONFIG.classification.cqtBackend;
 
-    // Classification service for non-blocking classification
+    // Classification service - handles all heavy processing in worker
     this.classificationService = new ClassificationService({
       model: this.currentModelName,
-      cqtBackend: this.currentCqtBackend,
-      mode: 'auto',
       onProgress: (percent, message) => {
         this.updateProgress(percent, message);
       }
     });
-
-    // CQT extractor for visualization only
-    this.cqtExtractor = null;
 
     this.initElements();
     this.bindEvents();
@@ -47,7 +41,6 @@ class SingleChordClassifier {
 
     // Settings elements
     this.modelSelect = document.getElementById('modelSelect');
-    this.cqtBackendSelect = document.getElementById('cqtBackendSelect');
 
     // Progress elements
     this.progressSection = document.getElementById('progressSection');
@@ -164,15 +157,12 @@ class SingleChordClassifier {
           // Get audio data for classification
           const audioData = audioBuffer.getChannelData(0);
 
-          // Classify using ClassificationService
-          const result = await this.classificationService.classify(audioData, audioBuffer.sampleRate);
+          // Classify using ClassificationService (worker handles CQT + prediction)
+          const result = await this.classificationService.classify(audioData);
           this.results.set(cardId, result);
 
-          // Extract CQT for visualization
-          const cqtData = await this.cqtExtractor.extractFullCQT(audioBuffer, CONFIG);
-
-          // Update card with result
-          this.updateCard(cardId, file, audioBuffer, result, cqtData);
+          // Update card with result (no CQT visualization for single-chord)
+          this.updateCard(cardId, file, audioBuffer, result, null);
         } catch (error) {
           console.error(`Error processing ${file.name}:`, error);
           this.updateCardError(cardId, file.name, error.message);
@@ -205,42 +195,22 @@ class SingleChordClassifier {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
     }
 
-    // Get current selections
+    // Get current model selection
     const selectedModel = this.modelSelect?.value || CONFIG.classification.model;
-    const selectedBackend = this.cqtBackendSelect?.value || CONFIG.classification.cqtBackend;
 
-    // Update classification service if settings changed
+    // Update classification service if model changed
     if (this.currentModelName !== selectedModel) {
       this.currentModelName = selectedModel;
       await this.classificationService.setModel(selectedModel);
       console.log(`Model updated: ${selectedModel}`);
     }
 
-    if (this.currentCqtBackend !== selectedBackend) {
-      this.currentCqtBackend = selectedBackend;
-      await this.classificationService.setCqtBackend(selectedBackend);
-      console.log(`CQT backend updated: ${selectedBackend}`);
-    }
-
     // Initialize the classification service (loads model if needed)
     await this.classificationService.init();
-
-    // Initialize CQT extractor for visualization (separate from classification)
-    if (!this.cqtExtractor) {
-      this.cqtExtractor = new CQTExtractor(selectedBackend);
-      await this.cqtExtractor.init(CONFIG.audio.sampleRate);
-    }
   }
 
   async handleModelChange() {
-    // Service will reload model on next init
     console.log(`Model will change to: ${this.modelSelect.value}`);
-  }
-
-  async handleCqtBackendChange() {
-    // Reset extractor to force reinitialization on next classification  
-    this.cqtExtractor = null;
-    console.log(`CQT backend will change to: ${this.cqtBackendSelect.value}`);
   }
 
   async loadAudioFile(file) {
