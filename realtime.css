@@ -1,139 +1,10 @@
 /**
- * Real-time Chord Detection Styles
- * Matches the light minimalist theme of other pages
+ * realtime.css — page-specific styles for realtime.html.
+ * Base/shared styles live in shared.css.
  */
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
 
-:root {
-    --primary-color: #4a90d9;
-    --primary-dark: #357abd;
-    --primary-light: #6ba3e0;
-    --background-start: #e8f4fc;
-    --background-end: #f5faff;
-    --card-bg: rgba(255, 255, 255, 0.85);
-    --card-border: rgba(255, 255, 255, 0.9);
-    --text-primary: #2c3e50;
-    --text-secondary: #5a6a7a;
-    --text-muted: #8a9aaa;
-    --success-color: #27ae60;
-    --danger-color: #e74c3c;
-    --warning-color: #f39c12;
-    --shadow-soft: 0 4px 20px rgba(74, 144, 217, 0.1);
-    --shadow-medium: 0 8px 32px rgba(74, 144, 217, 0.15);
-    --border-radius: 16px;
-    --border-radius-sm: 8px;
-}
-
-body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: linear-gradient(135deg, var(--background-start) 0%, var(--background-end) 100%);
-    min-height: 100vh;
-    color: var(--text-primary);
-    line-height: 1.6;
-}
-
-.app-container {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 20px;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Header */
-.app-header {
-    margin-bottom: 24px;
-}
-
-.header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 16px;
-}
-
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.logo-icon {
-    font-size: 2.5rem;
-}
-
-.logo-text h1 {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0;
-}
-
-.tagline {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    margin: 0;
-}
-
-.nav-links {
-    display: flex;
-    gap: 12px;
-}
-
-.nav-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: var(--border-radius-sm);
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-    box-shadow: var(--shadow-soft);
-}
-
-.nav-link:hover {
-    background: var(--primary-color);
-    color: white;
-    transform: translateY(-1px);
-}
-
-/* Glass Card */
-.glass-card {
-    background: var(--card-bg);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--card-border);
-    border-radius: var(--border-radius);
-    padding: 24px;
-    box-shadow: var(--shadow-soft);
-    margin-bottom: 20px;
-}
-
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.section-header h2 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0;
-}
-
+/* ── Controls ────────────────────────────────────────────── */
 /* Controls */
 .controls-grid {
     display: grid;
@@ -157,8 +28,8 @@ body {
 .control-select,
 .control-input {
     padding: 10px 14px;
-    border: 1px solid #dce4ec;
-    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
     font-size: 0.95rem;
     color: var(--text-primary);
     background: white;
@@ -168,7 +39,7 @@ body {
 .control-select:focus,
 .control-input:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.1);
 }
 
@@ -187,9 +58,10 @@ body {
 .checkbox-item input[type="checkbox"] {
     width: 18px;
     height: 18px;
-    accent-color: var(--primary-color);
+    accent-color: var(--primary);
 }
 
+/* ── Record Controls ──────────────────────────────────────── */
 /* Record Controls */
 .record-controls {
     display: flex;
@@ -204,7 +76,7 @@ body {
     align-items: center;
     gap: 10px;
     padding: 14px 28px;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     color: white;
     border: none;
     border-radius: 50px;
@@ -226,7 +98,7 @@ body {
 }
 
 .btn-record.recording {
-    background: linear-gradient(135deg, var(--danger-color), #c0392b);
+    background: linear-gradient(135deg, var(--danger), #c0392b);
     animation: pulse-recording 1.5s infinite;
 }
 
@@ -260,12 +132,9 @@ body {
     transition: background 0.3s ease;
 }
 
-.status-dot.ready {
-    background: var(--success-color);
-}
-
+.status-dot.ready     { background: var(--success); }
 .status-dot.recording {
-    background: var(--danger-color);
+    background: var(--danger);
     animation: blink 1s infinite;
 }
 
@@ -286,6 +155,7 @@ body {
     color: var(--text-secondary);
 }
 
+/* ── Chord Display ───────────────────────────────────────── */
 /* Chord Display */
 .chord-display {
     text-align: center;
@@ -311,7 +181,7 @@ body {
 .current-chord {
     font-size: 5rem;
     font-weight: 800;
-    color: var(--primary-color);
+    color: var(--primary);
     line-height: 1;
     min-height: 100px;
     display: flex;
@@ -345,6 +215,7 @@ body {
     color: var(--text-muted);
 }
 
+/* ── CQT Visualization ────────────────────────────────────── */
 /* CQT Visualization */
 .cqt-section {
     padding: 20px;
@@ -365,7 +236,7 @@ body {
 #cqtCanvas {
     flex: 1;
     background: #1a1a2e;
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-sm);
     max-width: 100%;
     height: auto;
 }
@@ -386,6 +257,7 @@ body {
     transform: rotate(180deg);
 }
 
+/* ── History ──────────────────────────────────────────────── */
 /* History */
 .history-list {
     max-height: 300px;
@@ -408,7 +280,7 @@ body {
     gap: 16px;
     padding: 12px 16px;
     background: rgba(74, 144, 217, 0.05);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-sm);
     animation: slide-in 0.3s ease;
 }
 
@@ -427,7 +299,7 @@ body {
 .history-chord {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--primary-color);
+    color: var(--primary);
     min-width: 80px;
 }
 
@@ -448,87 +320,16 @@ body {
     color: var(--text-muted);
 }
 
-.btn-secondary {
-    padding: 8px 16px;
-    background: transparent;
-    border: 1px solid var(--primary-color);
-    color: var(--primary-color);
-    border-radius: var(--border-radius-sm);
-    font-size: 0.85rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.btn-secondary:hover {
-    background: var(--primary-color);
-    color: white;
-}
-
-.btn-small {
+/* btn-secondary — handled by shared.css */
+.btn-secondary.btn-small {
     padding: 6px 12px;
     font-size: 0.8rem;
 }
 
-/* Footer */
-.app-footer {
-    margin-top: auto;
-    padding-top: 20px;
-}
+/* ── Footer — handled by shared.css ───────────────────────────── */
 
-.footer-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 24px;
-    background: var(--card-bg);
-    border-radius: var(--border-radius);
-    border: 1px solid var(--card-border);
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-}
-
-.model-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.badge-icon {
-    font-size: 1.2rem;
-}
-
-.tech-stack {
-    display: flex;
-    gap: 12px;
-}
-
-.tech-item {
-    padding: 4px 10px;
-    background: rgba(74, 144, 217, 0.1);
-    border-radius: 20px;
-    font-size: 0.75rem;
-    color: var(--primary-color);
-}
-
-/* Responsive */
+/* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
-    .header-content {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .controls-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .current-chord {
-        font-size: 3.5rem;
-    }
-
-    .footer-content {
-        flex-direction: column;
-        gap: 12px;
-        text-align: center;
-    }
+    .controls-grid { grid-template-columns: 1fr; }
+    .current-chord { font-size: 3.5rem; }
 }

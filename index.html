@@ -5,22 +5,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Piano Chord Detection Validation System</title>
+    <link rel="stylesheet" href="shared.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-    <div class="container">
-        <header>
-            <h1>🎹 Piano Chord Detection Validation</h1>
-            <p class="subtitle">CNN-based chord recognition with WCSR evaluation</p>
-            <nav class="header-nav">
-                <a href="single-chord.html" class="nav-btn">🎵 Single Chord Classifier</a>
-                <a href="realtime.html" class="nav-btn">🎤 Real-time Detection</a>
-            </nav>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">🎹</span>
+                    <div class="logo-text">
+                        <h1>Piano Chord Detection Validation</h1>
+                        <p class="tagline">CNN-based chord recognition with WCSR evaluation</p>
+                    </div>
+                </div>
+                <nav class="nav-links">
+                    <a href="single-chord.html" class="nav-link">🎵 Single Chord</a>
+                    <a href="realtime.html" class="nav-link">🎤 Real-time</a>
+                </nav>
+            </div>
         </header>
+        <main class="main-content">
 
         <!-- Configuration Panel -->
-        <section class="config-panel">
+        <section class="config-panel glass-card">
             <h2>⚙️ Configuration Parameters</h2>
             <div class="config-grid">
                 <div class="config-group">
@@ -77,7 +86,7 @@
         </section>
 
         <!-- File Upload Section -->
-        <section class="upload-section">
+        <section class="upload-section glass-card">
             <h2>📁 Upload Files</h2>
             <div class="upload-grid">
                 <div class="upload-box">
@@ -103,8 +112,11 @@
         </section>
 
         <!-- Progress Section -->
-        <section class="progress-section" id="progressSection" style="display: none;">
-            <h2>🔄 Processing</h2>
+        <section class="progress-section glass-card" id="progressSection" style="display: none;">
+            <div class="progress-header">
+                <h2>🔄 Processing</h2>
+                <span class="progress-percent" id="progressPercent">0%</span>
+            </div>
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill"></div>
             </div>
@@ -112,7 +124,7 @@
         </section>
 
         <!-- CQT Visualization -->
-        <section class="visualization-section" id="visualizationSection" style="display: none;">
+        <section class="visualization-section glass-card" id="visualizationSection" style="display: none;">
             <h2>📊 CQT Spectrogram &amp; Onset Detection</h2>
             <div class="cqt-controls">
                 <button id="playButton" class="btn-play">
@@ -135,7 +147,7 @@
         </section>
 
         <!-- Results Section -->
-        <section class="results-section" id="resultsSection" style="display: none;">
+        <section class="results-section glass-card" id="resultsSection" style="display: none;">
             <h2>📈 Validation Results</h2>
 
             <!-- WCSR Score -->
@@ -210,18 +222,21 @@
             </div>
         </section>
 
-        <!-- Model Info -->
-        <section class="model-info">
-            <h2>🧠 Model Information</h2>
-            <div class="model-details">
-                <p><strong>Architecture:</strong> CNN (Conv2D → MaxPool → Conv2D → MaxPool → Conv2D → MaxPool → Dense →
-                    Dropout → Softmax)</p>
-                <p><strong>Input Shape:</strong> 36 × 200 × 1 (CQT bins × time frames × channels)</p>
-                <p><strong>Output Classes:</strong> 36 (12 roots × 3 types: major, minor, diminished)</p>
-                <p><strong>Chord Labels:</strong> A, A#, B, C, C#, D, D#, E, F, F#, G, G# × {major, minor, diminished}
-                </p>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <div class="footer-content">
+                <div class="model-badge">
+                    <span class="badge-icon">🧠</span>
+                    <span>CNN Model: 36 classes (12 roots × 3 types)</span>
+                </div>
+                <div class="tech-stack">
+                    <span class="tech-item">TensorFlow.js</span>
+                    <span class="tech-item">Web Audio API</span>
+                </div>
             </div>
-        </section>
+        </footer>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
