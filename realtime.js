@@ -20,7 +20,7 @@ class RealtimeChordDetector {
 
     // Classification service
     this.classificationService = new ClassificationService({
-      model: 'graph',
+      model: CONFIG.classification.model,
       onProgress: (percent, message) => {
         this.updateStatus(message);
       },
@@ -41,7 +41,6 @@ class RealtimeChordDetector {
   initElements() {
     // Controls
     this.inputDeviceSelect = document.getElementById('inputDevice');
-    this.modelSelect = document.getElementById('modelSelect');
     this.recordBtn = document.getElementById('recordBtn');
     this.clearHistoryBtn = document.getElementById('clearHistory');
 
@@ -89,7 +88,6 @@ class RealtimeChordDetector {
   bindEvents() {
     this.recordBtn.addEventListener('click', () => this.toggleRecording());
     this.clearHistoryBtn.addEventListener('click', () => this.clearHistory());
-    this.modelSelect.addEventListener('change', () => this.handleModelChange());
     this.inputDeviceSelect.addEventListener('change', () => this.handleDeviceChange());
   }
 
@@ -135,12 +133,6 @@ class RealtimeChordDetector {
       console.error('Failed to get audio devices:', error);
       this.inputDeviceSelect.innerHTML = '<option value="">No microphone access</option>';
     }
-  }
-
-  async handleModelChange() {
-    const newModel = this.modelSelect.value;
-    await this.classificationService.setModel(newModel);
-    console.log(`Model changed to: ${newModel}`);
   }
 
   handleDeviceChange() {

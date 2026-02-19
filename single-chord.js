@@ -39,9 +39,6 @@ class SingleChordClassifier {
     this.classifyBtn = document.getElementById('classifyBtn');
     this.clearBtn = document.getElementById('clearBtn');
 
-    // Settings elements
-    this.modelSelect = document.getElementById('modelSelect');
-
     // Progress elements
     this.progressSection = document.getElementById('progressSection');
     this.progressFill = document.getElementById('progressFill');
@@ -80,8 +77,7 @@ class SingleChordClassifier {
     this.classifyBtn.addEventListener('click', () => this.classifyAll());
     this.clearBtn.addEventListener('click', () => this.clearAll());
 
-    // Model and backend selection
-    this.modelSelect?.addEventListener('change', () => this.handleModelChange());
+    // CQT backend selection
     this.cqtBackendSelect?.addEventListener('change', () => this.handleCqtBackendChange());
   }
 
@@ -195,8 +191,8 @@ class SingleChordClassifier {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
     }
 
-    // Get current model selection
-    const selectedModel = this.modelSelect?.value || CONFIG.classification.model;
+    // Use model from config (graph-v2)
+    const selectedModel = CONFIG.classification.model;
 
     // Update classification service if model changed
     if (this.currentModelName !== selectedModel) {
@@ -207,10 +203,6 @@ class SingleChordClassifier {
 
     // Initialize the classification service (loads model if needed)
     await this.classificationService.init();
-  }
-
-  async handleModelChange() {
-    console.log(`Model will change to: ${this.modelSelect.value}`);
   }
 
   async loadAudioFile(file) {

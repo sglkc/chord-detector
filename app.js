@@ -69,8 +69,7 @@ class ChordValidationApp {
             ignoreSubsequentOnsets: document.getElementById('ignoreSubsequentOnsets'),
             windowSize: document.getElementById('windowSize'),
             cqtBins: document.getElementById('cqtBins'),
-            confidenceThreshold: document.getElementById('confidenceThreshold'),
-            modelSelect: document.getElementById('modelSelect')
+            confidenceThreshold: document.getElementById('confidenceThreshold')
         };
 
         // File inputs
@@ -115,9 +114,6 @@ class ChordValidationApp {
                 input.addEventListener('change', () => this.updateConfig());
             }
         });
-
-        // Model selection change - requires model reload
-        this.configInputs.modelSelect?.addEventListener('change', () => this.handleModelChange());
 
         // CQT backend change - requires extractor reinitialization
         this.configInputs.cqtBackendSelect?.addEventListener('change', () => this.handleCqtBackendChange());
@@ -205,15 +201,6 @@ class ChordValidationApp {
         } catch (error) {
             console.error('Failed to load model:', error);
             this.updateProgress(0, 'Failed to load model: ' + error.message);
-        }
-    }
-
-    async handleModelChange() {
-        const newModel = this.configInputs.modelSelect.value;
-        if (newModel !== this.currentModelName) {
-            this.currentModelName = newModel;
-            await this.classificationService.setModel(newModel);
-            console.log(`Model changed to: ${newModel}`);
         }
     }
 
