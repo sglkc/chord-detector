@@ -10,6 +10,8 @@ import { Visualizer } from './modules/visualizer.js';
 import { CONFIG } from './modules/config.js';
 import { ClassificationService } from './modules/classification-service.js';
 
+const SESSION_KEY = 'chordDetectionConfig';
+
 class ChordValidationApp {
     constructor() {
         this.audioFile = null;
@@ -40,6 +42,7 @@ class ChordValidationApp {
         this.visualizer = new Visualizer();
 
         this.initElements();
+        this.loadConfigFromSession();
         this.bindEvents();
         this.initService();
     }
@@ -136,6 +139,55 @@ class ChordValidationApp {
         CONFIG.classification.windowSize = parseFloat(this.configInputs.windowSize.value);
         CONFIG.classification.cqtBins = parseInt(this.configInputs.cqtBins.value);
         CONFIG.classification.confidenceThreshold = parseFloat(this.configInputs.confidenceThreshold.value);
+
+        this.saveConfigToSession();
+    }
+
+    loadConfigFromSession() {
+        try {
+            const saved = sessionStorage.getItem(SESSION_KEY);
+            if (!saved) return;
+            const data = JSON.parse(saved);
+
+            if (data.audio) Object.assign(CONFIG.audio, data.audio);
+            if (data.onset) Object.assign(CONFIG.onset, data.onset);
+            if (data.classification) Object.assign(CONFIG.classification, data.classification);
+
+            // Reflect in UI
+            this.configInputs.sampleRate.value = CONFIG.audio.sampleRate;
+            this.configInputs.hopSize.value = CONFIG.audio.hopSize;
+            this.configInputs.minFrequency.value = CONFIG.audio.minFrequency;
+            this.configInputs.onsetThreshold.value = CONFIG.onset.threshold;
+            this.configInputs.minOnsetInterval.value = CONFIG.onset.minInterval;
+            this.configInputs.preOnsetBuffer.value = CONFIG.onset.preBuffer;
+            this.configInputs.ignoreSubsequentOnsets.checked = CONFIG.onset.ignoreSubsequentOnsets;
+            this.configInputs.windowSize.value = CONFIG.classification.windowSize;
+            this.configInputs.cqtBins.value = CONFIG.classification.cqtBins;
+            this.configInputs.confidenceThreshold.value = CONFIG.classification.confidenceThreshold;
+        } catch (e) {
+            console.warn('Failed to load config from session:', e);
+        }
+    }
+
+    saveConfigToSession() {
+        try {
+            sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+                audio: { ...CONFIG.audio },
+                onset: {
+                    threshold: CONFIG.onset.threshold,
+                    minInterval: CONFIG.onset.minInterval,
+                    preBuffer: CONFIG.onset.preBuffer,
+                    ignoreSubsequentOnsets: CONFIG.onset.ignoreSubsequentOnsets,
+                },
+                classification: {
+                    windowSize: CONFIG.classification.windowSize,
+                    cqtBins: CONFIG.classification.cqtBins,
+                    confidenceThreshold: CONFIG.classification.confidenceThreshold,
+                },
+            }));
+        } catch (e) {
+            console.warn('Failed to save config to session:', e);
+        }
     }
 
     async handleAudioFile(event) {

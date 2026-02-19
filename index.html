@@ -21,6 +21,7 @@
                     </div>
                 </div>
                 <nav class="nav-links">
+                    <a href="bulk-validation.html" class="nav-link">📦 Bulk Validation</a>
                     <a href="single-chord.html" class="nav-link">🎵 Single Chord</a>
                     <a href="realtime.html" class="nav-link">🎤 Real-time</a>
                 </nav>
@@ -28,199 +29,200 @@
         </header>
         <main class="main-content">
 
-        <!-- Configuration Panel -->
-        <section class="config-panel glass-card">
-            <h2>⚙️ Configuration Parameters</h2>
-            <div class="config-grid">
-                <div class="config-group">
-                    <h3>Audio Processing</h3>
-                    <label>
-                        Sample Rate (Hz)
-                        <input type="number" id="sampleRate" value="48000" min="8000" max="96000">
-                    </label>
-                    <label>
-                        Hop Size (samples)
-                        <input type="number" id="hopSize" value="512" min="64" max="4096">
-                    </label>
-                    <label>
-                        Min Frequency (Hz)
-                        <input type="number" id="minFrequency" value="130.8" step="0.1" min="20" max="500">
-                    </label>
-                </div>
-                <div class="config-group">
-                    <h3>Onset Detection</h3>
-                    <label>
-                        Spectral Flux Threshold
-                        <input type="number" id="onsetThreshold" value="0.15" step="0.01" min="0.01" max="1.0">
-                    </label>
-                    <label>
-                        Min Onset Interval (ms)
-                        <input type="number" id="minOnsetInterval" value="100" min="10" max="1000">
-                    </label>
-                    <label>
-                        Pre-Onset Buffer (ms)
-                        <input type="number" id="preOnsetBuffer" value="50" min="0" max="200">
-                    </label>
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="ignoreSubsequentOnsets" checked>
-                        <span>Ignore subsequent onsets in window</span>
-                    </label>
-                </div>
-                <div class="config-group">
-                    <h3>Classification</h3>
-                    <label>
-                        Window Size (seconds)
-                        <input type="number" id="windowSize" value="2.0" step="0.1" min="0.5" max="5.0">
-                    </label>
-                    <label>
-                        CQT Bins
-                        <input type="number" id="cqtBins" value="36" min="12" max="84">
-                    </label>
-                    <label>
-                        Confidence Threshold
-                        <input type="number" id="confidenceThreshold" value="0.5" step="0.05" min="0.1" max="0.99">
-                    </label>
-                </div>
+            <!-- Configuration Panel -->
+            <section class="config-panel glass-card">
+                <h2>⚙️ Configuration Parameters</h2>
+                <div class="config-grid">
+                    <div class="config-group">
+                        <h3>Audio Processing</h3>
+                        <label>
+                            Sample Rate (Hz)
+                            <input type="number" id="sampleRate" value="48000" min="8000" max="96000">
+                        </label>
+                        <label>
+                            Hop Size (samples)
+                            <input type="number" id="hopSize" value="512" min="64" max="4096">
+                        </label>
+                        <label>
+                            Min Frequency (Hz)
+                            <input type="number" id="minFrequency" value="130.8" step="0.1" min="20" max="500">
+                        </label>
+                    </div>
+                    <div class="config-group">
+                        <h3>Onset Detection</h3>
+                        <label>
+                            Spectral Flux Threshold
+                            <input type="number" id="onsetThreshold" value="0.15" step="0.01" min="0.01" max="1.0">
+                        </label>
+                        <label>
+                            Min Onset Interval (ms)
+                            <input type="number" id="minOnsetInterval" value="100" min="10" max="1000">
+                        </label>
+                        <label>
+                            Pre-Onset Buffer (ms)
+                            <input type="number" id="preOnsetBuffer" value="50" min="0" max="200">
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="ignoreSubsequentOnsets" checked>
+                            <span>Ignore subsequent onsets in window</span>
+                        </label>
+                    </div>
+                    <div class="config-group">
+                        <h3>Classification</h3>
+                        <label>
+                            Window Size (seconds)
+                            <input type="number" id="windowSize" value="2.0" step="0.1" min="0.5" max="5.0">
+                        </label>
+                        <label>
+                            CQT Bins
+                            <input type="number" id="cqtBins" value="36" min="12" max="84">
+                        </label>
+                        <label>
+                            Confidence Threshold
+                            <input type="number" id="confidenceThreshold" value="0.5" step="0.05" min="0.1" max="0.99">
+                        </label>
+                    </div>
 
-            </div>
-        </section>
-
-        <!-- File Upload Section -->
-        <section class="upload-section glass-card">
-            <h2>📁 Upload Files</h2>
-            <div class="upload-grid">
-                <div class="upload-box">
-                    <label for="audioFile" class="upload-label">
-                        <span class="upload-icon">🎵</span>
-                        <span>Audio File (WAV)</span>
-                        <input type="file" id="audioFile" accept=".wav,audio/*">
-                    </label>
-                    <p class="file-name" id="audioFileName">No file selected</p>
                 </div>
-                <div class="upload-box">
-                    <label for="annotationFile" class="upload-label">
-                        <span class="upload-icon">📝</span>
-                        <span>Annotation File (TXT)</span>
-                        <input type="file" id="annotationFile" accept=".txt">
-                    </label>
-                    <p class="file-name" id="annotationFileName">No file selected</p>
+            </section>
+
+            <!-- File Upload Section -->
+            <section class="upload-section glass-card">
+                <h2>📁 Upload Files</h2>
+                <div class="upload-grid">
+                    <div class="upload-box">
+                        <label for="audioFile" class="upload-label">
+                            <span class="upload-icon">🎵</span>
+                            <span>Audio File (WAV)</span>
+                            <input type="file" id="audioFile" accept=".wav,audio/*">
+                        </label>
+                        <p class="file-name" id="audioFileName">No file selected</p>
+                    </div>
+                    <div class="upload-box">
+                        <label for="annotationFile" class="upload-label">
+                            <span class="upload-icon">📝</span>
+                            <span>Annotation File (TXT)</span>
+                            <input type="file" id="annotationFile" accept=".txt">
+                        </label>
+                        <p class="file-name" id="annotationFileName">No file selected</p>
+                    </div>
                 </div>
-            </div>
-            <button id="runValidation" class="btn-primary" disabled>
-                <span class="btn-icon">▶️</span> Run Validation
-            </button>
-        </section>
-
-        <!-- Progress Section -->
-        <section class="progress-section glass-card" id="progressSection" style="display: none;">
-            <div class="progress-header">
-                <h2>🔄 Processing</h2>
-                <span class="progress-percent" id="progressPercent">0%</span>
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
-            </div>
-            <p class="progress-text" id="progressText">Initializing...</p>
-        </section>
-
-        <!-- CQT Visualization -->
-        <section class="visualization-section glass-card" id="visualizationSection" style="display: none;">
-            <h2>📊 CQT Spectrogram &amp; Onset Detection</h2>
-            <div class="cqt-controls">
-                <button id="playButton" class="btn-play">
-                    <span class="play-icon">▶</span>
-                    <span class="play-text">Play</span>
+                <button id="runValidation" class="btn-primary" disabled>
+                    <span class="btn-icon">▶️</span> Run Validation
                 </button>
-                <span class="playback-time" id="playbackTime">0:00.000 / 0:00.000</span>
-            </div>
-            <div class="cqt-container">
-                <div class="cqt-canvas-wrapper">
-                    <canvas id="cqtCanvas" width="1200" height="300"></canvas>
-                    <div class="playback-cursor" id="playbackCursor"></div>
-                </div>
-                <div class="cqt-legend">
-                    <span class="legend-item"><span class="legend-color onset-line"></span> Detected Onsets</span>
-                    <span class="legend-item"><span class="legend-color gt-region"></span> Ground Truth Regions</span>
-                </div>
-            </div>
-            <div class="onset-list" id="onsetList"></div>
-        </section>
+            </section>
 
-        <!-- Results Section -->
-        <section class="results-section glass-card" id="resultsSection" style="display: none;">
-            <h2>📈 Validation Results</h2>
-
-            <!-- WCSR Score -->
-            <div class="score-card">
-                <div class="score-main">
-                    <span class="score-label">Weighted Chord Symbol Recall (WCSR)</span>
-                    <span class="score-value" id="wcsrScore">--</span>
+            <!-- Progress Section -->
+            <section class="progress-section glass-card" id="progressSection" style="display: none;">
+                <div class="progress-header">
+                    <h2>🔄 Processing</h2>
+                    <span class="progress-percent" id="progressPercent">0%</span>
                 </div>
-                <div class="score-details">
-                    <div class="score-detail">
-                        <span>Total Duration</span>
-                        <span id="totalDuration">--</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p class="progress-text" id="progressText">Initializing...</p>
+            </section>
+
+            <!-- CQT Visualization -->
+            <section class="visualization-section glass-card" id="visualizationSection" style="display: none;">
+                <h2>📊 CQT Spectrogram &amp; Onset Detection</h2>
+                <div class="cqt-controls">
+                    <button id="playButton" class="btn-play">
+                        <span class="play-icon">▶</span>
+                        <span class="play-text">Play</span>
+                    </button>
+                    <span class="playback-time" id="playbackTime">0:00.000 / 0:00.000</span>
+                </div>
+                <div class="cqt-container">
+                    <div class="cqt-canvas-wrapper">
+                        <canvas id="cqtCanvas" width="1200" height="300"></canvas>
+                        <div class="playback-cursor" id="playbackCursor"></div>
                     </div>
-                    <div class="score-detail">
-                        <span>Correct Duration</span>
-                        <span id="correctDuration">--</span>
-                    </div>
-                    <div class="score-detail">
-                        <span>Chords Detected</span>
-                        <span id="chordsDetected">--</span>
+                    <div class="cqt-legend">
+                        <span class="legend-item"><span class="legend-color onset-line"></span> Detected Onsets</span>
+                        <span class="legend-item"><span class="legend-color gt-region"></span> Ground Truth
+                            Regions</span>
                     </div>
                 </div>
-            </div>
+                <div class="onset-list" id="onsetList"></div>
+            </section>
 
-            <!-- Timeline Visualization -->
-            <div class="timeline-section">
-                <h3>🎼 Chord Timeline Comparison</h3>
-                <div class="timeline-container">
-                    <div class="timeline-row">
-                        <span class="timeline-label">Ground Truth</span>
-                        <div class="timeline-track" id="gtTimeline"></div>
+            <!-- Results Section -->
+            <section class="results-section glass-card" id="resultsSection" style="display: none;">
+                <h2>📈 Validation Results</h2>
+
+                <!-- WCSR Score -->
+                <div class="score-card">
+                    <div class="score-main">
+                        <span class="score-label">Weighted Chord Symbol Recall (WCSR)</span>
+                        <span class="score-value" id="wcsrScore">--</span>
                     </div>
-                    <div class="timeline-row">
-                        <span class="timeline-label">Predicted</span>
-                        <div class="timeline-track" id="predTimeline"></div>
+                    <div class="score-details">
+                        <div class="score-detail">
+                            <span>Total Duration</span>
+                            <span id="totalDuration">--</span>
+                        </div>
+                        <div class="score-detail">
+                            <span>Correct Duration</span>
+                            <span id="correctDuration">--</span>
+                        </div>
+                        <div class="score-detail">
+                            <span>Chords Detected</span>
+                            <span id="chordsDetected">--</span>
+                        </div>
                     </div>
-                    <div class="timeline-axis" id="timelineAxis"></div>
                 </div>
-            </div>
 
-            <!-- Per-Chord Accuracy -->
-            <div class="chord-accuracy-section">
-                <h3>🎯 Per-Chord Accuracy</h3>
-                <div class="chord-accuracy-grid" id="chordAccuracyGrid"></div>
-            </div>
-
-            <!-- Comparison Table -->
-            <div class="comparison-section">
-                <h3>📋 Detailed Comparison</h3>
-                <div class="table-container">
-                    <table class="comparison-table" id="comparisonTable">
-                        <thead>
-                            <tr>
-                                <th>Start (s)</th>
-                                <th>End (s)</th>
-                                <th>Ground Truth</th>
-                                <th>Predicted</th>
-                                <th>Confidence</th>
-                                <th>Match</th>
-                            </tr>
-                        </thead>
-                        <tbody id="comparisonTableBody">
-                        </tbody>
-                    </table>
+                <!-- Timeline Visualization -->
+                <div class="timeline-section">
+                    <h3>🎼 Chord Timeline Comparison</h3>
+                    <div class="timeline-container">
+                        <div class="timeline-row">
+                            <span class="timeline-label">Ground Truth</span>
+                            <div class="timeline-track" id="gtTimeline"></div>
+                        </div>
+                        <div class="timeline-row">
+                            <span class="timeline-label">Predicted</span>
+                            <div class="timeline-track" id="predTimeline"></div>
+                        </div>
+                        <div class="timeline-axis" id="timelineAxis"></div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Confusion Matrix -->
-            <div class="confusion-section">
-                <h3>🔢 Confusion Matrix (Top Errors)</h3>
-                <div class="confusion-grid" id="confusionGrid"></div>
-            </div>
-        </section>
+                <!-- Per-Chord Accuracy -->
+                <div class="chord-accuracy-section">
+                    <h3>🎯 Per-Chord Accuracy</h3>
+                    <div class="chord-accuracy-grid" id="chordAccuracyGrid"></div>
+                </div>
+
+                <!-- Comparison Table -->
+                <div class="comparison-section">
+                    <h3>📋 Detailed Comparison</h3>
+                    <div class="table-container">
+                        <table class="comparison-table" id="comparisonTable">
+                            <thead>
+                                <tr>
+                                    <th>Start (s)</th>
+                                    <th>End (s)</th>
+                                    <th>Ground Truth</th>
+                                    <th>Predicted</th>
+                                    <th>Confidence</th>
+                                    <th>Match</th>
+                                </tr>
+                            </thead>
+                            <tbody id="comparisonTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Confusion Matrix -->
+                <div class="confusion-section">
+                    <h3>🔢 Confusion Matrix (Top Errors)</h3>
+                    <div class="confusion-grid" id="confusionGrid"></div>
+                </div>
+            </section>
 
         </main>
 
