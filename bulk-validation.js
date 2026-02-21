@@ -79,16 +79,11 @@ class BulkValidationApp {
 
     // Config inputs
     this.configInputs = {
-      sampleRate: document.getElementById('sampleRate'),
-      hopSize: document.getElementById('hopSize'),
-      minFrequency: document.getElementById('minFrequency'),
       onsetThreshold: document.getElementById('onsetThreshold'),
       minOnsetInterval: document.getElementById('minOnsetInterval'),
       preOnsetBuffer: document.getElementById('preOnsetBuffer'),
       ignoreSubsequentOnsets: document.getElementById('ignoreSubsequentOnsets'),
       windowSize: document.getElementById('windowSize'),
-      cqtBins: document.getElementById('cqtBins'),
-      confidenceThreshold: document.getElementById('confidenceThreshold'),
     };
   }
 
@@ -100,21 +95,15 @@ class BulkValidationApp {
       const data = JSON.parse(saved);
 
       // Apply to CONFIG
-      if (data.audio) Object.assign(CONFIG.audio, data.audio);
       if (data.onset) Object.assign(CONFIG.onset, data.onset);
       if (data.classification) Object.assign(CONFIG.classification, data.classification);
 
       // Apply to UI
-      this.configInputs.sampleRate.value = CONFIG.audio.sampleRate;
-      this.configInputs.hopSize.value = CONFIG.audio.hopSize;
-      this.configInputs.minFrequency.value = CONFIG.audio.minFrequency;
       this.configInputs.onsetThreshold.value = CONFIG.onset.threshold;
       this.configInputs.minOnsetInterval.value = CONFIG.onset.minInterval;
       this.configInputs.preOnsetBuffer.value = CONFIG.onset.preBuffer;
       this.configInputs.ignoreSubsequentOnsets.checked = CONFIG.onset.ignoreSubsequentOnsets;
       this.configInputs.windowSize.value = CONFIG.classification.windowSize;
-      this.configInputs.cqtBins.value = CONFIG.classification.cqtBins;
-      this.configInputs.confidenceThreshold.value = CONFIG.classification.confidenceThreshold;
     } catch (e) {
       console.warn('Failed to load config from session:', e);
     }
@@ -122,18 +111,12 @@ class BulkValidationApp {
 
   /** Read UI inputs → CONFIG object → sessionStorage */
   updateConfig() {
-    CONFIG.audio.sampleRate = parseInt(this.configInputs.sampleRate.value);
-    CONFIG.audio.hopSize = parseInt(this.configInputs.hopSize.value);
-    CONFIG.audio.minFrequency = parseFloat(this.configInputs.minFrequency.value);
-
     CONFIG.onset.threshold = parseFloat(this.configInputs.onsetThreshold.value);
     CONFIG.onset.minInterval = parseInt(this.configInputs.minOnsetInterval.value);
     CONFIG.onset.preBuffer = parseInt(this.configInputs.preOnsetBuffer.value);
     CONFIG.onset.ignoreSubsequentOnsets = this.configInputs.ignoreSubsequentOnsets.checked;
 
     CONFIG.classification.windowSize = parseFloat(this.configInputs.windowSize.value);
-    CONFIG.classification.cqtBins = parseInt(this.configInputs.cqtBins.value);
-    CONFIG.classification.confidenceThreshold = parseFloat(this.configInputs.confidenceThreshold.value);
 
     this.saveConfigToSession();
   }
@@ -141,7 +124,6 @@ class BulkValidationApp {
   saveConfigToSession() {
     try {
       sessionStorage.setItem(SESSION_KEY, JSON.stringify({
-        audio: { ...CONFIG.audio },
         onset: {
           threshold: CONFIG.onset.threshold,
           minInterval: CONFIG.onset.minInterval,
@@ -150,8 +132,6 @@ class BulkValidationApp {
         },
         classification: {
           windowSize: CONFIG.classification.windowSize,
-          cqtBins: CONFIG.classification.cqtBins,
-          confidenceThreshold: CONFIG.classification.confidenceThreshold,
         },
       }));
     } catch (e) {

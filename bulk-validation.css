@@ -18,8 +18,12 @@
 .config-group {
     background: rgba(74, 144, 217, 0.04);
     border: 1px solid var(--border-color);
-    padding: 16px;
+    padding: 16px 20px;
     border-radius: var(--radius-sm);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    align-items: flex-end;
 }
 
 .config-group h3 {
@@ -33,10 +37,11 @@
 
 .config-group label {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    font-size: 0.9rem;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    min-width: 150px;
 }
 
 .config-group input {
@@ -55,12 +60,12 @@
 }
 
 .config-group label.checkbox-label {
-    justify-content: flex-start;
-    gap: 10px;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
     cursor: pointer;
-    padding: 8px 0;
-    margin-top: 5px;
-    border-top: 1px solid var(--border-color);
+    padding: 0;
+    align-self: center;
 }
 
 .config-group label.checkbox-label input[type="checkbox"] {
