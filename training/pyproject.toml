@@ -3,7 +3,7 @@ name = "training"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = "~=3.10.0"
 dependencies = [
     "audioread>=3.1.0",
     "ipykernel>=7.1.0",
@@ -14,7 +14,13 @@ dependencies = [
     "numpy>=1.26.4",
     "scikit-learn>=1.7.2",
     "seaborn>=0.13.2",
-    "tensorflow==2.15.0",
+    "tensorflow[and-cuda]==2.15.0",
     "tensorflowjs>=4.22.0",
     "tqdm>=4.67.1",
 ]
+
+[tool.pyright]
+typeCheckingMode = "off"
+
+[[tool.uv.index]]
+url = "https://pypi.nvidia.com/"
