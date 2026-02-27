@@ -87,6 +87,7 @@ export class ClassificationService {
       classification: {
         model: config.classification?.model || 'graph-v2',
         windowSize: config.classification?.windowSize || 2.0,
+        flexibleWindow: config.classification?.flexibleWindow || false,
         cqtBins: config.classification?.cqtBins || 36,
         cqtTimeFrames: config.classification?.cqtTimeFrames || 200,
         confidenceThreshold: config.classification?.confidenceThreshold || 0.5

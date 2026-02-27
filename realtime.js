@@ -49,6 +49,12 @@ class RealtimeChordDetector {
     this.minOnsetIntervalInput = document.getElementById('minOnsetInterval');
     this.windowSizeInput = document.getElementById('windowSize');
     this.ignoreSubsequentInput = document.getElementById('ignoreSubsequent');
+    this.flexibleWindowInput = document.getElementById('flexibleWindow');
+
+    // Mutual exclusion: flexible window disables ignore subsequent
+    this.flexibleWindowInput.addEventListener('change', () => {
+      this.ignoreSubsequentInput.disabled = this.flexibleWindowInput.checked;
+    });
 
     // Status
     this.statusIndicator = document.getElementById('statusIndicator');
@@ -194,7 +200,8 @@ class RealtimeChordDetector {
           windowSize: parseFloat(this.windowSizeInput.value),
           threshold: parseFloat(this.onsetThresholdInput.value),
           minInterval: parseInt(this.minOnsetIntervalInput.value),
-          ignoreSubsequent: this.ignoreSubsequentInput.checked
+          ignoreSubsequent: this.ignoreSubsequentInput.checked,
+          flexibleWindow: this.flexibleWindowInput.checked
         }
       });
 

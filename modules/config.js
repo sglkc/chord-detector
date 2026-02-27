@@ -25,6 +25,7 @@ export const CONFIG = {
     classification: {
         model: 'graph',          // Classification model: 'graph', 'layers'
         windowSize: 2.0,            // Window size in seconds
+        flexibleWindow: false,      // If true, use onset-to-onset boundaries instead of fixed window
         cqtBins: 36,                // Number of CQT frequency bins
         cqtTimeFrames: 200,         // Number of time frames for model input
         confidenceThreshold: 0.5,   // Minimum confidence for valid prediction

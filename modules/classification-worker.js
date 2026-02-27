@@ -414,6 +414,35 @@ function resizeCQTForModel(cqtData, targetBins, targetFrames) {
   return resized;
 }
 
+/**
+ * Fit CQT to model input shape by padding or truncating the time dimension.
+ * - If numFrames < targetFrames: zero-pad on the right
+ * - If numFrames > targetFrames: truncate to first targetFrames
+ * - Bins dimension is assumed to match (or handled via resizeCQTForModel).
+ */
+function fitCQTForModel(cqtData, targetBins, targetFrames) {
+  const { cqt, numBins: srcBins, numFrames: srcFrames } = cqtData;
+
+  // If bins don't match, resize bins via interpolation first
+  if (srcBins !== targetBins) {
+    return resizeCQTForModel(cqtData, targetBins, targetFrames);
+  }
+
+  if (srcFrames === targetFrames) return cqt;
+
+  const result = new Float32Array(targetBins * targetFrames);
+  const copyFrames = Math.min(srcFrames, targetFrames);
+
+  for (let b = 0; b < targetBins; b++) {
+    for (let t = 0; t < copyFrames; t++) {
+      result[b * targetFrames + t] = cqt[b * srcFrames + t];
+    }
+    // Remaining frames (if srcFrames < targetFrames) stay as 0 (zero-padded)
+  }
+
+  return result;
+}
+
 // ============================================================================
 // Onset Detection (Spectral Flux)
 // ============================================================================
@@ -591,43 +620,50 @@ async function processStreamChunk(samples, timestamp) {
   const threshold = streamConfig?.threshold || 0.15;
   const minInterval = (streamConfig?.minInterval || 100) / 1000; // Convert ms to seconds
   const ignoreSubsequent = streamConfig?.ignoreSubsequent !== false;
+  const flexibleWindow = streamConfig?.flexibleWindow || false;
 
   // If we're capturing a window, add samples to it
   if (isCapturingWindow) {
+    // In flexible window mode, check for a new onset that should end the current window early
+    if (flexibleWindow) {
+      const currentTime = timestamp / 1000;
+      const timeSinceLastOnset = currentTime - lastOnsetTime;
+
+      if (timeSinceLastOnset >= minInterval && windowBufferSize > 0) {
+        const hasNewOnset = detectOnsetRealtime(samples, threshold);
+
+        if (hasNewOnset) {
+          // Classify the current (short) buffer immediately
+          await classifyAndSendWindow(flexibleWindow);
+
+          // Start a new window with the current samples
+          lastOnsetTime = currentTime;
+          windowStartTime = timestamp;
+          windowBuffer = new Float32Array(windowSamples);
+          windowBufferSize = 0;
+
+          const toAdd = Math.min(windowSamples, samples.length);
+          windowBuffer.set(samples.subarray(0, toAdd), 0);
+          windowBufferSize = toAdd;
+
+          self.postMessage({ type: 'onset-detected', timestamp });
+          return;
+        }
+      }
+    }
+
     const remaining = windowSamples - windowBufferSize;
     const toAdd = Math.min(remaining, samples.length);
 
     windowBuffer.set(samples.subarray(0, toAdd), windowBufferSize);
     windowBufferSize += toAdd;
 
-    // Check if window is complete
+    // Check if window is complete (reached max size)
     if (windowBufferSize >= windowSamples) {
-      isCapturingWindow = false;
-
-      // Classify the window
-      try {
-        const cqtData = extractCQTFeatures(windowBuffer);
-        const features = resizeCQTForModel(cqtData, modelInputBins, modelInputFrames);
-        const result = await predict(features);
-
-        // Send result WITH CQT visualization data
-        self.postMessage({
-          type: 'stream-result',
-          prediction: result,
-          timestamp: windowStartTime,
-          // Include CQT for visualization (matches model input exactly)
-          cqt: {
-            data: Array.from(features),  // Convert to regular array for transfer
-            bins: modelInputBins,
-            frames: modelInputFrames
-          }
-        });
-      } catch (e) {
-        console.error('[Worker] Classification error:', e);
-      }
+      await classifyAndSendWindow(flexibleWindow);
 
       // Reset if not ignoring subsequent
-      if (!ignoreSubsequent) {
+      if (!ignoreSubsequent && !flexibleWindow) {
         lastOnsetTime = -Infinity;
       }
     }
@@ -660,6 +696,37 @@ async function processStreamChunk(samples, timestamp) {
         timestamp: timestamp
       });
     }
+  }
+}
+
+/**
+ * Classify the current window buffer and send the result.
+ * Supports both fixed (resize) and flexible (pad/truncate) modes.
+ */
+async function classifyAndSendWindow(flexibleWindow) {
+  isCapturingWindow = false;
+
+  const usedBuffer = windowBuffer.subarray(0, windowBufferSize);
+
+  try {
+    const cqtData = extractCQTFeatures(usedBuffer);
+    const features = flexibleWindow
+      ? fitCQTForModel(cqtData, modelInputBins, modelInputFrames)
+      : resizeCQTForModel(cqtData, modelInputBins, modelInputFrames);
+    const result = await predict(features);
+
+    self.postMessage({
+      type: 'stream-result',
+      prediction: result,
+      timestamp: windowStartTime,
+      cqt: {
+        data: Array.from(features),
+        bins: modelInputBins,
+        frames: modelInputFrames
+      }
+    });
+  } catch (e) {
+    console.error('[Worker] Classification error:', e);
   }
 }
 
@@ -769,6 +836,7 @@ async function classifySingle(audioData) {
 
 async function processAudio(audioData, cfg, audioDuration) {
   const results = { fullCQT: null, onsets: [], predictions: [] };
+  const flexibleWindow = cfg.classification?.flexibleWindow || false;
 
   // Step 1: Extract full CQT for visualization
   reportProgress('cqt', 10, 'Extracting CQT spectrogram...');
@@ -780,8 +848,8 @@ async function processAudio(audioData, cfg, audioDuration) {
   let onsets = detectOnsets(audioData, cfg);
   reportProgress('onset', 45, `Found ${onsets.length} onsets`);
 
-  // Step 2.5: Filter subsequent onsets if enabled
-  if (cfg.onset?.ignoreSubsequentOnsets) {
+  // Step 2.5: Filter subsequent onsets if enabled (skip when flexible window is on)
+  if (!flexibleWindow && cfg.onset?.ignoreSubsequentOnsets) {
     onsets = filterSubsequentOnsets(onsets, cfg.classification?.windowSize || 2.0);
     reportProgress('onset', 50, `Filtered to ${onsets.length} onsets`);
   }
@@ -801,16 +869,31 @@ async function processAudio(audioData, cfg, audioDuration) {
   for (let i = 0; i < onsets.length; i++) {
     const onset = onsets[i];
     const startSample = Math.floor(onset.time * sr);
-    const endSample = Math.min(startSample + windowSamples, audioData.length);
 
-    const endTime = (i < onsets.length - 1) ? onsets[i + 1].time : audioDuration;
+    let endSample, endTime;
+
+    if (flexibleWindow) {
+      // Flexible window: extend to next onset or end of audio
+      endTime = (i < onsets.length - 1) ? onsets[i + 1].time : audioDuration;
+      endSample = Math.min(Math.floor(endTime * sr), audioData.length);
+    } else {
+      // Fixed window: use configured window size
+      endSample = Math.min(startSample + windowSamples, audioData.length);
+      endTime = (i < onsets.length - 1) ? onsets[i + 1].time : audioDuration;
+    }
 
     const windowData = audioData.slice(startSample, endSample);
-    if (windowData.length < windowSamples * 0.5) continue;
+
+    // Skip very short segments (less than 10ms worth of samples)
+    const minSamples = flexibleWindow ? Math.floor(sr * 0.01) : Math.floor(windowSamples * 0.5);
+    if (windowData.length < minSamples) continue;
 
     try {
       const cqtData = extractCQTFeatures(windowData);
-      const features = resizeCQTForModel(cqtData, modelInputBins, modelInputFrames);
+      // Flexible: pad/truncate to model input; Fixed: resize via interpolation
+      const features = flexibleWindow
+        ? fitCQTForModel(cqtData, modelInputBins, modelInputFrames)
+        : resizeCQTForModel(cqtData, modelInputBins, modelInputFrames);
       const result = await predict(features);
 
       results.predictions.push({
@@ -895,14 +978,15 @@ self.onmessage = async function (event) {
 
       case 'start-stream': {
         // Initialize streaming with config
-        const { sampleRate, windowSize, threshold, minInterval, ignoreSubsequent } = payload || {};
+        const { sampleRate, windowSize, threshold, minInterval, ignoreSubsequent, flexibleWindow } = payload || {};
 
         streamConfig = {
           sampleRate: sampleRate || currentSampleRate,
           windowSize: windowSize || 2.0,
           threshold: threshold || 0.15,
           minInterval: minInterval || 100,
-          ignoreSubsequent: ignoreSubsequent !== false
+          ignoreSubsequent: ignoreSubsequent !== false,
+          flexibleWindow: flexibleWindow || false
         };
 
         // Reset streaming state

@@ -84,6 +84,7 @@ class BulkValidationApp {
       preOnsetBuffer: document.getElementById('preOnsetBuffer'),
       ignoreSubsequentOnsets: document.getElementById('ignoreSubsequentOnsets'),
       windowSize: document.getElementById('windowSize'),
+      flexibleWindow: document.getElementById('flexibleWindow'),
     };
   }
 
@@ -104,6 +105,8 @@ class BulkValidationApp {
       this.configInputs.preOnsetBuffer.value = CONFIG.onset.preBuffer;
       this.configInputs.ignoreSubsequentOnsets.checked = CONFIG.onset.ignoreSubsequentOnsets;
       this.configInputs.windowSize.value = CONFIG.classification.windowSize;
+      this.configInputs.flexibleWindow.checked = CONFIG.classification.flexibleWindow || false;
+      this.configInputs.ignoreSubsequentOnsets.disabled = CONFIG.classification.flexibleWindow || false;
     } catch (e) {
       console.warn('Failed to load config from session:', e);
     }
@@ -117,6 +120,10 @@ class BulkValidationApp {
     CONFIG.onset.ignoreSubsequentOnsets = this.configInputs.ignoreSubsequentOnsets.checked;
 
     CONFIG.classification.windowSize = parseFloat(this.configInputs.windowSize.value);
+    CONFIG.classification.flexibleWindow = this.configInputs.flexibleWindow.checked;
+
+    // Mutual exclusion: flexible window disables ignore subsequent onsets
+    this.configInputs.ignoreSubsequentOnsets.disabled = CONFIG.classification.flexibleWindow;
 
     this.saveConfigToSession();
   }
@@ -132,6 +139,7 @@ class BulkValidationApp {
         },
         classification: {
           windowSize: CONFIG.classification.windowSize,
+          flexibleWindow: CONFIG.classification.flexibleWindow,
         },
       }));
     } catch (e) {
