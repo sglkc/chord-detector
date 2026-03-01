@@ -22,5 +22,8 @@ dependencies = [
 [tool.pyright]
 typeCheckingMode = "off"
 
+[tool.uv]
+index-strategy = "unsafe-best-match"
+
 [[tool.uv.index]]
 url = "https://pypi.nvidia.com/"
