@@ -9,8 +9,9 @@ wheels/
 # Virtual environments
 .venv
 
-datasets/
-CNN_audio_model_tfjs
+datasets*
 *.keras
 *.npz
-models
+models*
+
+.ipynb_checkpoints
