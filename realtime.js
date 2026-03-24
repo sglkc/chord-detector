@@ -46,8 +46,6 @@ class RealtimeChordDetector {
 
     // Parameters
     this.onsetThresholdInput = document.getElementById('onsetThreshold');
-    this.minOnsetIntervalInput = document.getElementById('minOnsetInterval');
-    this.windowSizeInput = document.getElementById('windowSize');
     this.ignoreSubsequentInput = document.getElementById('ignoreSubsequent');
     this.flexibleWindowInput = document.getElementById('flexibleWindow');
 
@@ -197,9 +195,9 @@ class RealtimeChordDetector {
         type: 'start-stream',
         payload: {
           sampleRate: sampleRate,
-          windowSize: parseFloat(this.windowSizeInput.value),
+          windowSize: CONFIG.classification.windowSize,
           threshold: parseFloat(this.onsetThresholdInput.value),
-          minInterval: parseInt(this.minOnsetIntervalInput.value),
+          minInterval: CONFIG.onset.minInterval,
           ignoreSubsequent: this.ignoreSubsequentInput.checked,
           flexibleWindow: this.flexibleWindowInput.checked
         }

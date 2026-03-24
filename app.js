@@ -64,10 +64,7 @@ class ChordValidationApp {
         // Config inputs
         this.configInputs = {
             onsetThreshold: document.getElementById('onsetThreshold'),
-            minOnsetInterval: document.getElementById('minOnsetInterval'),
-            preOnsetBuffer: document.getElementById('preOnsetBuffer'),
             ignoreSubsequentOnsets: document.getElementById('ignoreSubsequentOnsets'),
-            windowSize: document.getElementById('windowSize'),
             flexibleWindow: document.getElementById('flexibleWindow'),
         };
 
@@ -124,11 +121,7 @@ class ChordValidationApp {
 
     updateConfig() {
         CONFIG.onset.threshold = parseFloat(this.configInputs.onsetThreshold.value);
-        CONFIG.onset.minInterval = parseInt(this.configInputs.minOnsetInterval.value);
-        CONFIG.onset.preBuffer = parseInt(this.configInputs.preOnsetBuffer.value);
         CONFIG.onset.ignoreSubsequentOnsets = this.configInputs.ignoreSubsequentOnsets.checked;
-
-        CONFIG.classification.windowSize = parseFloat(this.configInputs.windowSize.value);
         CONFIG.classification.flexibleWindow = this.configInputs.flexibleWindow.checked;
 
         // Mutual exclusion: flexible window disables ignore subsequent onsets
@@ -149,10 +142,7 @@ class ChordValidationApp {
 
             // Reflect in UI
             this.configInputs.onsetThreshold.value = CONFIG.onset.threshold;
-            this.configInputs.minOnsetInterval.value = CONFIG.onset.minInterval;
-            this.configInputs.preOnsetBuffer.value = CONFIG.onset.preBuffer;
             this.configInputs.ignoreSubsequentOnsets.checked = CONFIG.onset.ignoreSubsequentOnsets;
-            this.configInputs.windowSize.value = CONFIG.classification.windowSize;
             this.configInputs.flexibleWindow.checked = CONFIG.classification.flexibleWindow || false;
             this.configInputs.ignoreSubsequentOnsets.disabled = CONFIG.classification.flexibleWindow || false;
         } catch (e) {

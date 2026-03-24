@@ -13,7 +13,7 @@ export const CONFIG = {
 
     // Onset detection parameters
     onset: {
-        threshold: 0.15,            // Spectral flux threshold (0.0 - 1.0)
+        threshold: 0.35,            // Spectral flux threshold (0.0 - 1.0)
         minInterval: 100,           // Minimum interval between onsets in ms
         preBuffer: 50,              // Pre-onset buffer in ms
         frameSize: 2048,            // FFT frame size for spectral analysis
@@ -25,7 +25,7 @@ export const CONFIG = {
     classification: {
         model: 'graph',          // Classification model: 'graph', 'layers'
         windowSize: 2.0,            // Window size in seconds
-        flexibleWindow: false,      // If true, use onset-to-onset boundaries instead of fixed window
+        flexibleWindow: true,      // If true, use onset-to-onset boundaries instead of fixed window
         cqtBins: 36,                // Number of CQT frequency bins
         cqtTimeFrames: 200,         // Number of time frames for model input
         confidenceThreshold: 0.5,   // Minimum confidence for valid prediction
