@@ -12,6 +12,6 @@ wheels/
 datasets*
 *.keras
 *.npz
-models*
+*models*
 
 .ipynb_checkpoints
