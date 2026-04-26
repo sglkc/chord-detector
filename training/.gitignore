@@ -13,5 +13,6 @@ datasets*
 *.keras
 *.npz
 *models*
+validations*
 
 .ipynb_checkpoints
