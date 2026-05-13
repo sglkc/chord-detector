@@ -4,11 +4,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bulk Validation | Piano Chord Detection</title>
+  <title>Bulk Annotation Viewer | Piano Chord Detection</title>
   <meta name="description"
-    content="Validate multiple audio-annotation pairs at once. Upload WAV and TXT files, auto-match by filename, and view CQT spectrograms with WCSR metrics.">
+    content="View CQT spectrograms with onset detection and ground truth overlays for multiple audio-annotation pairs.">
   <link rel="stylesheet" href="shared.css">
-  <link rel="stylesheet" href="bulk-validation.css">
+  <link rel="stylesheet" href="bulk-viewer.css">
 </head>
 
 <body>
@@ -19,13 +19,13 @@
         <div class="logo">
           <span class="logo-icon">🎹</span>
           <div class="logo-text">
-            <h1>Bulk Validation</h1>
-            <p class="tagline">Batch chord recognition evaluation with WCSR metrics</p>
+            <h1>Bulk Annotation Viewer</h1>
+            <p class="tagline">CQT + onset overlays for paired WAV/TXT files</p>
           </div>
         </div>
         <nav class="nav-links">
-          <a href="index.html" class="nav-link">📊 Single Validation</a>
-          <a href="bulk-viewer.html" class="nav-link">🧾 Bulk Viewer</a>
+          <a href="index.html" class="nav-link">📊 Validation</a>
+          <a href="bulk-validation.html" class="nav-link">📦 Bulk Validation</a>
           <a href="single-chord.html" class="nav-link">🎵 Single Chord</a>
           <a href="realtime.html" class="nav-link">🎤 Real-time</a>
         </nav>
@@ -88,7 +88,7 @@
         <div class="upload-actions">
           <button id="runBtn" class="btn-primary" disabled>
             <span class="btn-icon">▶️</span>
-            <span>Run All Validations</span>
+            <span>Render All CQTs</span>
           </button>
           <button id="clearBtn" class="btn-secondary" disabled>
             <span class="btn-icon">🗑️</span>
@@ -107,26 +107,6 @@
           <div class="progress-fill" id="progressFill"></div>
         </div>
         <p class="progress-text" id="progressText">Initializing...</p>
-      </section>
-
-      <!-- Summary Stats -->
-      <section class="summary-bar glass-card" id="summaryBar" style="display: none;">
-        <div class="summary-item">
-          <span class="summary-label">Processed</span>
-          <span class="summary-value" id="summaryProcessed">0 / 0</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">Avg WCSR</span>
-          <span class="summary-value" id="summaryAvgWcsr">--</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">Best</span>
-          <span class="summary-value" id="summaryBest">--</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">Worst</span>
-          <span class="summary-value" id="summaryWorst">--</span>
-        </div>
       </section>
 
       <!-- Results Grid -->
@@ -151,7 +131,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
-  <script type="module" src="bulk-validation.js"></script>
+  <script type="module" src="bulk-viewer.js"></script>
 </body>
 
 </html>
