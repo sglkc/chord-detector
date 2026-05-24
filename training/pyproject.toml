@@ -16,7 +16,7 @@ dependencies = [
     "numpy>=1.26.4",
     "scikit-learn>=1.7.2",
     "seaborn>=0.13.2",
-    "setuptools>=82.0.0",
+    "setuptools==81.0.0",
     "tensorflow[and-cuda]==2.15.0",
     "tensorflowjs>=4.22.0",
     "tqdm>=4.67.1",
