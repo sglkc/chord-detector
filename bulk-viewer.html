@@ -20,7 +20,7 @@
           <span class="logo-icon">🎹</span>
           <div class="logo-text">
             <h1>Bulk Annotation Viewer</h1>
-            <p class="tagline">CQT + onset overlays for paired WAV/TXT files</p>
+            <p class="tagline">CQT + onset overlays for paired WAV/OGG and TXT files</p>
           </div>
         </div>
         <nav class="nav-links">
@@ -66,11 +66,11 @@
             <div class="upload-icon-wrapper">
               <span class="upload-icon">📂</span>
             </div>
-            <p class="upload-text">Drag & drop WAV and TXT files here</p>
+            <p class="upload-text">Drag & drop WAV/OGG and TXT files here</p>
             <p class="upload-hint">or click to browse</p>
-            <p class="upload-formats">Upload paired WAV audio + TXT annotation files (matched by filename)</p>
+            <p class="upload-formats">Upload paired WAV/OGG audio + TXT annotation files (matched by filename)</p>
           </div>
-          <input type="file" id="bulkFiles" accept=".wav,.txt,audio/wav" multiple>
+          <input type="file" id="bulkFiles" accept=".wav,.ogg,.txt,audio/*" multiple>
         </div>
 
         <!-- File Pairing Summary -->
@@ -120,7 +120,7 @@
       <div class="footer-content">
         <div class="model-badge">
           <span class="badge-icon">🧠</span>
-          <span>CNN Model: 36 classes (12 roots × 3 types)</span>
+          <span>CNN Model: 216×188 CQT (C1-C7, 3 bins/note)</span>
         </div>
         <div class="tech-stack">
           <span class="tech-item">TensorFlow.js</span>

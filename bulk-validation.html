@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bulk Validation | Piano Chord Detection</title>
   <meta name="description"
-    content="Validate multiple audio-annotation pairs at once. Upload WAV and TXT files, auto-match by filename, and view CQT spectrograms with WCSR metrics.">
+    content="Validate multiple audio-annotation pairs at once. Upload audio and text files, auto-match by filename, and view CQT spectrograms with WCSR metrics.">
   <link rel="stylesheet" href="shared.css">
   <link rel="stylesheet" href="bulk-validation.css">
 </head>
@@ -66,11 +66,11 @@
             <div class="upload-icon-wrapper">
               <span class="upload-icon">📂</span>
             </div>
-            <p class="upload-text">Drag & drop WAV and TXT files here</p>
+            <p class="upload-text">Drag & drop WAV/OGG and TXT files here</p>
             <p class="upload-hint">or click to browse</p>
-            <p class="upload-formats">Upload paired WAV audio + TXT annotation files (matched by filename)</p>
+            <p class="upload-formats">Upload paired WAV/OGG audio + TXT annotation files (matched by filename)</p>
           </div>
-          <input type="file" id="bulkFiles" accept=".wav,.txt,audio/wav" multiple>
+          <input type="file" id="bulkFiles" accept=".wav,.ogg,.txt,audio/*" multiple>
         </div>
 
         <!-- File Pairing Summary -->
@@ -140,7 +140,7 @@
       <div class="footer-content">
         <div class="model-badge">
           <span class="badge-icon">🧠</span>
-          <span>CNN Model: 36 classes (12 roots × 3 types)</span>
+          <span>CNN Model: 216×188 CQT (C1-C7, 3 bins/note)</span>
         </div>
         <div class="tech-stack">
           <span class="tech-item">TensorFlow.js</span>

@@ -169,7 +169,7 @@ class BulkValidationApp {
     // Filter to wav + txt only
     const valid = files.filter(f => {
       const ext = f.name.split('.').pop().toLowerCase();
-      return ext === 'wav' || ext === 'txt';
+      return ext === 'wav' || ext === 'ogg' || ext === 'txt';
     });
 
     if (valid.length === 0) {
