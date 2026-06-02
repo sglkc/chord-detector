@@ -8,28 +8,35 @@ export const CONFIG = {
     audio: {
         sampleRate: 48000,          // Sample rate in Hz
         hopSize: 512,               // Hop size in samples
-        minFrequency: 130.8,        // Minimum frequency (C3 = 130.81 Hz)
+        minFrequency: 32.70,        // Minimum frequency C1 = 32.70 Hz (was 130.81 C3)
     },
 
-    // Onset detection parameters
+    // Onset detection parameters (Superflux)
     onset: {
-        threshold: 0.35,            // Spectral flux threshold (0.0 - 1.0)
+        threshold: 0.35,            // Base threshold for peak picking (0.0 - 1.0)
         minInterval: 100,           // Minimum interval between onsets in ms
         preBuffer: 50,              // Pre-onset buffer in ms
-        frameSize: 2048,            // FFT frame size for spectral analysis
-        smoothingWindow: 5,         // Smoothing window size for flux
-        ignoreSubsequentOnsets: false, // If true, only keep first onset per window duration
+        // Superflux (applied to CQT, not mel)
+        lag: 2,                     // Superflux lag - compares frames lag apart
+        maxSize: 3,                 // Superflux max size for temporal smoothing
+        // Peak picking (McFee params - best performing in tests)
+        preMax: 30,
+        postMax: 1,                 // Tight window - key to McFee accuracy
+        preAvg: 100,
+        postAvg: 100,
+        wait: 30,
+        delta: 0.07,                // Minimum energy difference for peak
     },
 
     // Classification parameters
     classification: {
-        model: 'graph',          // Classification model: 'graph', 'layers'
+        model: 'latest',          // Classification model: 'graph', 'layers'
         windowSize: 2.0,            // Window size in seconds
         flexibleWindow: true,      // If true, use onset-to-onset boundaries instead of fixed window
-        cqtBins: 36,                // Number of CQT frequency bins
-        cqtTimeFrames: 200,         // Number of time frames for model input
+        cqtBins: 216,               // 6 octaves × 12 notes × 3 bins per note
+        cqtTimeFrames: 188,         // Adjusted for 48kHz/512hop from 2s window
         confidenceThreshold: 0.5,   // Minimum confidence for valid prediction
-        cqtBackend: 'wasm',         // CQT backend: 'wasm' (fastest), 'librosa' (JS fallback), or 'showcqt' (visualization)
+        cqtBackend: 'librosa',      // CQT backend: 'librosa' (librosa-compatible), 'wasm' (fastest), or 'showcqt' (visualization)
     },
 
     // Chord mappings

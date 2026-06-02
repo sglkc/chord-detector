@@ -156,7 +156,7 @@ class BulkViewerApp {
     });
 
     if (valid.length === 0) {
-      alert('Please select WAV and/or TXT files.');
+      alert('Please select WAV, OGG and/or TXT files.');
       return;
     }
 
@@ -180,7 +180,7 @@ class BulkViewerApp {
       if (!map.has(baseName)) map.set(baseName, {});
       const entry = map.get(baseName);
 
-      if (ext === 'wav') entry.wav = file;
+      if (ext === 'wav' || ext === 'ogg') entry.wav = file;
       else if (ext === 'txt') entry.txt = file;
     }
 

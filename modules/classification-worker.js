@@ -444,10 +444,169 @@ function fitCQTForModel(cqtData, targetBins, targetFrames) {
 }
 
 // ============================================================================
-// Onset Detection (Spectral Flux)
+// Onset Detection (Superflux on CQT)
 // ============================================================================
 
-function detectOnsets(audioData, cfg) {
+/**
+ * Compute onset envelope using Superflux algorithm on CQT magnitudes.
+ * Based on librosa.onset.onset_strength(S=..., lag=2, max_size=3)
+ *
+ * @param {Float32Array[]} cqtMagnitudes - Array of CQT magnitude arrays (frame x bins)
+ * @param {Object} cfg - Configuration object
+ * @returns {Float32Array} - Onset strength envelope
+ */
+function computeSuperfluxOnsetEnvelope(cqtMagnitudes, cfg) {
+  const numFrames = cqtMagnitudes.length;
+  const lag = cfg.onset?.lag || 2;
+  const maxSize = cfg.onset?.maxSize || 3;
+
+  // Convert to dB (librosa.power_to_db approximation)
+  // Find global max for reference
+  let globalMax = 0;
+  for (let t = 0; t < numFrames; t++) {
+    const frame = cqtMagnitudes[t];
+    for (let b = 0; b < frame.length; b++) {
+      if (frame[b] > globalMax) globalMax = frame[b];
+    }
+  }
+
+  // Convert to dB (10 * log10(max(val, epsilon)))
+  const epsilon = 1e-10;
+  const cqtDb = new Array(numFrames);
+  for (let t = 0; t < numFrames; t++) {
+    const frame = cqtMagnitudes[t];
+    const dbFrame = new Float32Array(frame.length);
+    for (let b = 0; b < frame.length; b++) {
+      const val = Math.max(frame[b], epsilon) / Math.max(globalMax, epsilon);
+      dbFrame[b] = 10 * Math.log10(val);
+    }
+    cqtDb[t] = dbFrame;
+  }
+
+  // Compute onset envelope via Superflux
+  // odf[t] = sum_b max(S[t, b] - S[t-lag, b], 0)^2
+  const envelope = new Float32Array(numFrames);
+
+  for (let t = lag; t < numFrames; t++) {
+    let sum = 0;
+    for (let b = 0; b < cqtDb[t].length; b++) {
+      const diff = cqtDb[t][b] - cqtDb[t - lag][b];
+      if (diff > 0) {
+        sum += diff * diff;
+      }
+    }
+    envelope[t] = Math.sqrt(sum);
+  }
+
+  // Fill initial frames with 0 (can't compute flux before lag)
+  for (let t = 0; t < lag; t++) {
+    envelope[t] = 0;
+  }
+
+  // Apply temporal smoothing (max_size determines window)
+  // Similar to librosa's default smoothing
+  const smoothed = new Float32Array(numFrames);
+  const halfWindow = Math.floor(maxSize / 2);
+
+  for (let t = 0; t < numFrames; t++) {
+    let maxVal = 0;
+    const winStart = Math.max(0, t - halfWindow);
+    const winEnd = Math.min(numFrames, t + halfWindow + 1);
+    for (let i = winStart; i < winEnd; i++) {
+      if (envelope[i] > maxVal) maxVal = envelope[i];
+    }
+    smoothed[t] = maxVal;
+  }
+
+  return smoothed;
+}
+
+/**
+ * Peak picking with McFee parameters (best performing in tests)
+ * Based on librosa.util.peak_pick
+ */
+function peakPickMcFee(envelope, cfg) {
+  const preMax = cfg.onset?.preMax || 30;
+  const postMax = cfg.onset?.postMax || 1;
+  const preAvg = cfg.onset?.preAvg || 100;
+  const postAvg = cfg.onset?.postAvg || 100;
+  const wait = cfg.onset?.wait || 30;
+  const delta = cfg.onset?.delta || 0.07;
+
+  const numFrames = envelope.length;
+  const peaks = [];
+
+  // Compute local mean and max
+  for (let i = 0; i < numFrames; i++) {
+    // Check if it's a local maximum
+    const maxStart = Math.max(0, i - preMax);
+    const maxEnd = Math.min(numFrames, i + postMax + 1);
+
+    let isLocalMax = true;
+    for (let j = maxStart; j < maxEnd; j++) {
+      if (j !== i && envelope[j] > envelope[i]) {
+        isLocalMax = false;
+        break;
+      }
+    }
+
+    if (!isLocalMax) continue;
+
+    // Check if above local average + delta
+    const avgStart = Math.max(0, i - preAvg);
+    const avgEnd = Math.min(numFrames, i + postAvg + 1);
+
+    let sum = 0;
+    for (let j = avgStart; j < avgEnd; j++) {
+      sum += envelope[j];
+    }
+    const localAvg = sum / (avgEnd - avgStart);
+
+    // Must be above local average + delta
+    if (envelope[i] < localAvg + delta) continue;
+
+    // Check wait period
+    if (peaks.length > 0 && i - peaks[peaks.length - 1].index < wait) {
+      // Replace if this peak is stronger
+      if (envelope[i] > envelope[peaks[peaks.length - 1].index]) {
+        peaks[peaks.length - 1] = { index: i, value: envelope[i] };
+      }
+    } else {
+      peaks.push({ index: i, value: envelope[i] });
+    }
+  }
+
+  return peaks;
+}
+
+/**
+ * Detect onsets using Superflux on CQT (replaces spectral flux on raw audio)
+ */
+function detectOnsetsSuperflux(cqtMagnitudes, cfg) {
+  const sr = cfg.audio?.sampleRate || currentSampleRate;
+  const hop = cfg.audio?.hopSize || hopLength;
+  const minIntervalMs = cfg.onset?.minInterval || 100;
+  const minIntervalSamples = (minIntervalMs / 1000) * sr;
+
+  // Compute onset envelope from CQT
+  const envelope = computeSuperfluxOnsetEnvelope(cqtMagnitudes, cfg);
+
+  // Peak picking
+  const peaks = peakPickMcFee(envelope, cfg);
+
+  // Convert to timestamps
+  return peaks.map(p => ({
+    time: (p.index * hop) / sr,
+    strength: p.value,
+    sample: p.index * hop
+  }));
+}
+
+/**
+ * Legacy onset detection (spectral flux on raw audio) - kept for reference
+ * @deprecated Use detectOnsetsSuperflux instead
+ */
+function detectOnsetsLegacy(audioData, cfg) {
   const sr = cfg.audio?.sampleRate || currentSampleRate;
   const hop = cfg.audio?.hopSize || hopLength;
   const frameSize = cfg.onset?.frameSize || 2048;
@@ -843,9 +1002,9 @@ async function processAudio(audioData, cfg, audioDuration) {
   results.fullCQT = extractFullCQT(audioData);
   reportProgress('cqt', 30, `CQT extracted: ${results.fullCQT.numFrames} frames`);
 
-  // Step 2: Detect onsets
-  reportProgress('onset', 35, 'Detecting onsets...');
-  let onsets = detectOnsets(audioData, cfg);
+  // Step 2: Detect onsets using Superflux on CQT
+  reportProgress('onset', 35, 'Detecting onsets (Superflux)...');
+  let onsets = detectOnsetsSuperflux(results.fullCQT.magnitudes, cfg);
   reportProgress('onset', 45, `Found ${onsets.length} onsets`);
 
   // Step 2.5: Filter subsequent onsets if enabled (skip when flexible window is on)
@@ -938,10 +1097,10 @@ self.onmessage = async function (event) {
         reportProgress('init', 50, 'Initializing CQT...');
         initCQT(
           sr || 48000,
-          cfg?.classification?.cqtBins || 36,
+          cfg?.classification?.cqtBins || 216,
           12,
           cfg?.audio?.hopSize || 512,
-          cfg?.audio?.minFrequency || 130.81
+          cfg?.audio?.minFrequency || 32.70
         );
 
         reportProgress('init', 100, 'Ready');
@@ -954,9 +1113,9 @@ self.onmessage = async function (event) {
         const audioArray = audioData instanceof Float32Array ? audioData : new Float32Array(audioData);
 
         // Reinitialize CQT if config changed
-        const newBins = cfg?.classification?.cqtBins || 36;
+        const newBins = cfg?.classification?.cqtBins || 216;
         const newHop = cfg?.audio?.hopSize || 512;
-        const newFmin = cfg?.audio?.minFrequency || 130.81;
+        const newFmin = cfg?.audio?.minFrequency || 32.70;
         const newSr = cfg?.audio?.sampleRate || 48000;
 
         if (nBins !== newBins || hopLength !== newHop || fmin !== newFmin || currentSampleRate !== newSr) {

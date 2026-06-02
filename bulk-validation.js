@@ -2,7 +2,7 @@
  * Bulk Validation App
  * Validate multiple audio-annotation pairs at once.
  * Matches WAV+TXT by filename, processes async with progressive card rendering.
- * 
+ *
  * Config is shared across pages via sessionStorage.
  */
 
@@ -173,7 +173,7 @@ class BulkValidationApp {
     });
 
     if (valid.length === 0) {
-      alert('Please select WAV and/or TXT files.');
+      alert('Please select WAV, OGG and/or TXT files.');
       return;
     }
 
@@ -201,7 +201,7 @@ class BulkValidationApp {
       if (!map.has(baseName)) map.set(baseName, {});
       const entry = map.get(baseName);
 
-      if (ext === 'wav') entry.wav = file;
+      if (ext === 'wav' || ext === 'ogg') entry.wav = file;
       else if (ext === 'txt') entry.txt = file;
     }
 

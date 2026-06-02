@@ -1,23 +1,23 @@
 /**
  * CQT Feature Extraction Module (Pluggable)
- * 
+ *
  * This module provides a unified interface for CQT extraction with
  * pluggable backends. Switch between implementations easily.
- * 
+ *
  * Available backends:
- * - 'wasm': WebAssembly CQT (fastest, recommended)
- * - 'librosa': Pure JS librosa-compatible CQT (fallback)
+ * - 'librosa': Pure JS librosa-compatible CQT (recommended - matches Python output)
+ * - 'wasm': WebAssembly CQT (fastest, but different algorithm)
  * - 'showcqt': ShowCQT-based visualization CQT (faster, but less accurate for ML)
- * 
+ *
  * Usage:
  *   import { CQTExtractor } from './cqt-extractor.js';
- *   
- *   // Use default (wasm)
+ *
+ *   // Use default (librosa)
  *   const extractor = new CQTExtractor();
- *   
+ *
  *   // Or specify backend
- *   const extractor = new CQTExtractor('librosa');
- *   
+ *   const extractor = new CQTExtractor('wasm');
+ *
  *   // Switch backend at runtime
  *   extractor.setBackend('wasm');
  */
@@ -33,13 +33,13 @@ const BACKENDS = {
     'showcqt': ShowCQTExtractor,
 };
 
-// Default backend (WASM for best performance)
-const DEFAULT_BACKEND = 'wasm';
+// Default backend (librosa for Python compatibility)
+const DEFAULT_BACKEND = 'librosa';
 
 export class CQTExtractor {
     /**
      * Create a pluggable CQT extractor
-     * @param {string} backend - Backend to use: 'librosa' or 'showcqt'
+     * @param {string} backend - Backend to use: 'librosa', 'wasm', or 'showcqt'
      */
     constructor(backend = DEFAULT_BACKEND) {
         this.backendName = null;
