@@ -1,0 +1,32 @@
+[project]
+name = "training"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = "~=3.10.0"
+dependencies = [
+    "audioread>=3.1.0",
+    "ipykernel>=7.1.0",
+    "ipywidgets>=8.1.8",
+    "jupyter>=1.1.1",
+    "librosa>=0.11.0",
+    "matplotlib>=3.10.8",
+    "miditoolkit>=1.0.1",
+    "mir-eval>=0.8.2",
+    "numpy>=1.26.4",
+    "scikit-learn>=1.7.2",
+    "seaborn>=0.13.2",
+    "setuptools==81.0.0",
+    "tensorflow[and-cuda]==2.15.0",
+    "tensorflowjs>=4.22.0",
+    "tqdm>=4.67.1",
+]
+
+[tool.pyright]
+typeCheckingMode = "off"
+
+[tool.uv]
+index-strategy = "unsafe-best-match"
+
+[[tool.uv.index]]
+url = "https://pypi.nvidia.com/"
