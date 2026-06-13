@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Real-Time Chord Detection Demo</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Real-Time Chord Detection</h1>
+    <p class="subtitle">
+      Browser microphone &rarr; librosa CQT &rarr; Superflux onsets
+      &rarr; CNN classifier
+    </p>
+  </header>
+
+  <main>
+    <section class="chord-card">
+      <div id="chord" class="chord-label">--</div>
+      <div id="chord-meta" class="chord-meta">awaiting audio&hellip;</div>
+    </section>
+
+    <section class="canvas-card">
+      <div class="canvas-header">
+        <span>Constant-Q Spectrogram (scrolling, dB)</span>
+        <span id="cqt-meta" class="meta">0 cols</span>
+      </div>
+      <canvas id="cqt" width="600" height="216"></canvas>
+    </section>
+
+    <section class="controls">
+      <button id="start" class="primary">Start microphone</button>
+      <button id="reset" class="secondary" disabled>Reset</button>
+      <span id="status" class="status">disconnected</span>
+    </section>
+
+    <details class="readme">
+      <summary>What is this?</summary>
+      <p>
+        This page captures audio from your microphone, streams it to a
+        Python backend over a single WebSocket, and runs the full
+        chord-detection pipeline (librosa CQT, Superflux onset
+        detection, then a small CNN trained on the OPUS chord
+        dataset) on every chunk. The spectrogram and the latest
+        predicted chord are shown back here in real time.
+      </p>
+      <p>
+        Open this page via <code>http://localhost:8000</code>
+        (or HTTPS in production) so the browser will grant microphone
+        access. Play chords on a guitar, keyboard, or open a chord
+        chart on another tab &mdash; any sustained tone should
+        produce a prediction within a second.
+      </p>
+    </details>
+  </main>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
