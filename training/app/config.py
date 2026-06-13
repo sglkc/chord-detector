@@ -84,6 +84,12 @@ PEAK_PICK_PARAMETERS: dict = {
 #: does not enforce this; ``SegmentBuffer`` honors it.
 MIN_ONSET_GAP_MS: int = 80
 
+#: Onsets detected in the first ``ONSET_WARMUP_FRAMES`` of envelope
+#: history are ignored. They are typically the artifact of computing
+#: the spectral flux on a new signal that starts in silence / noise.
+#: One CQT window's worth of frames matches the offline pipeline.
+ONSET_WARMUP_FRAMES: int = CQT_FEATURE_FRAMES
+
 
 # ---------------------------------------------------------------------------
 # Model

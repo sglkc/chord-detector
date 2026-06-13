@@ -107,7 +107,16 @@ class OnsetDetector:
             **self.peak_pick_params,
         )
 
-        new_onsets = onset_frames[onset_frames > self.last_emitted_frame]
+        # The first ``ONSET_WARMUP_FRAMES`` of envelope correspond to
+        # the warmup window (no real audio is being listened to yet).
+        # Superflux often spuriously fires on the transition from the
+        # zero-padded region at the very start of the envelope, so we
+        # drop any onsets that fall in the warmup zone.
+        warmup_threshold = config.ONSET_WARMUP_FRAMES - 1
+        new_onsets = onset_frames[
+            (onset_frames > self.last_emitted_frame)
+            & (onset_frames > warmup_threshold)
+        ]
         if new_onsets.size:
             self.last_emitted_frame = int(new_onsets.max())
 

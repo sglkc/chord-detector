@@ -95,7 +95,11 @@ class CQTStream:
         Returns
         -------
         new_columns:
-            ``(n_bins, k)`` array of freshly computed CQT columns.
+            ``(n_bins, k)`` array of freshly computed CQT columns -
+            ONLY the columns whose sample indices lie after
+            ``last_analyzed_sample`` are returned and appended to
+            ``self.columns``. This keeps the column count consistent
+            with the number of samples that have actually arrived.
         start_sample:
             The sample index (in the original stream) corresponding to
             the *first* column of ``new_columns``. Used by callers to
@@ -123,24 +127,55 @@ class CQTStream:
         cqt_mag = np.abs(cqt_complex)
         cqt_db = librosa.amplitude_to_db(cqt_mag, ref=np.max).astype(np.float32, copy=False)
 
-        n_new_cols = cqt_db.shape[1]
+        # ``start_sample`` of the *whole* recomputed CQT = the sample
+        # index of the first sample in ``window``. The CQT's column k
+        # covers sample ``start_sample + k * hop_length``.
+        window_start = total_appended - window.size
+
+        # Drop the columns that are already represented in
+        # ``self.columns``: anything at or before ``last_analyzed_sample``
+        # is a duplicate from the previous call.
+        if self.last_analyzed_sample <= window_start:
+            # No overlap - return everything.
+            new_cols = cqt_db
+        else:
+            # The first "new" CQT column is the one whose sample index
+            # is just past ``last_analyzed_sample``. That column's index
+            # in ``cqt_db`` is::
+            #
+            #   k = ceil((last_analyzed_sample - window_start + 1) / hop_length)
+            #
+            # which we clamp to ``[0, n_cols]``.
+            import math
+
+            k = int(math.ceil((self.last_analyzed_sample - window_start + 1) / self.hop_length))
+            k = max(0, min(k, cqt_db.shape[1]))
+            new_cols = cqt_db[:, k:]
+
+        if new_cols.shape[1] == 0:
+            # Nothing genuinely new (e.g. only a single chunk arrived
+            # in a tick that produced no fresh columns because of the
+            # CQT's internal overlap).
+            return np.zeros((self.n_bins, 0), dtype=np.float32), self.last_analyzed_sample
+
+        start_sample = window_start + (cqt_db.shape[1] - new_cols.shape[1]) * self.hop_length
 
         # Append. Truncate oldest columns to keep memory bounded.
-        if self.columns.shape[1] + n_new_cols > self.max_columns:
-            keep = self.max_columns - n_new_cols
+        if self.columns.shape[1] + new_cols.shape[1] > self.max_columns:
+            keep = self.max_columns - new_cols.shape[1]
             keep = max(keep, 0)
-            self.columns = np.concatenate([self.columns[:, -keep:], cqt_db], axis=1) if keep else cqt_db.copy()
+            self.columns = (
+                np.concatenate([self.columns[:, -keep:], new_cols], axis=1)
+                if keep
+                else new_cols.copy()
+            )
         else:
-            self.columns = np.concatenate([self.columns, cqt_db], axis=1)
+            self.columns = np.concatenate([self.columns, new_cols], axis=1)
 
-        # ``last_analyzed_sample`` is the absolute sample index of the
-        # *last* column in this update. We don't track the precise
-        # column-to-sample mapping (the audio buffer does that); the
-        # offset between the rolling buffer's tail and the new columns
-        # is ``window.size - n_new_cols * hop_length`` samples.
-        start_sample = total_appended - window.size
-        self.last_analyzed_sample = total_appended
-        return cqt_db, start_sample
+        # Track the absolute sample index of the *last* CQT column we
+        # just produced. This is the watermark for the next call.
+        self.last_analyzed_sample = start_sample + (new_cols.shape[1] - 1) * self.hop_length
+        return new_cols, start_sample
 
     # ------------------------------------------------------------------ #
     # Time helpers
