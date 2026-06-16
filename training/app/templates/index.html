@@ -32,8 +32,50 @@
     <section class="controls">
       <button id="start" class="primary">Start microphone</button>
       <button id="reset" class="secondary" disabled>Reset</button>
+      <span id="model-status" class="model-status loading">model: loading&hellip;</span>
       <span id="status" class="status">disconnected</span>
     </section>
+
+    <details class="settings">
+      <summary>Onset settings</summary>
+      <p class="settings-hint">
+        Tune how aggressively new chords are detected. Higher values =
+        fewer, more confident onsets. Changes apply immediately.
+      </p>
+      <div class="param-row">
+        <label for="param-min-onset-gap">Minimum onset gap (ms)</label>
+        <input
+          id="param-min-onset-gap"
+          class="param-slider"
+          type="range"
+          min="0" max="500" step="10" value="80"
+          data-param-key="min_onset_gap_ms"
+        />
+        <span class="param-value" data-param-label-for="min_onset_gap_ms">80</span>
+      </div>
+      <div class="param-row">
+        <label for="param-peak-delta">Peak-pick delta</label>
+        <input
+          id="param-peak-delta"
+          class="param-slider"
+          type="range"
+          min="0" max="2" step="0.05" value="0"
+          data-param-key="peak_pick_delta"
+        />
+        <span class="param-value" data-param-label-for="peak_pick_delta">default</span>
+      </div>
+      <div class="param-row">
+        <label for="param-peak-wait">Peak-pick wait (frames)</label>
+        <input
+          id="param-peak-wait"
+          class="param-slider"
+          type="range"
+          min="0" max="100" step="1" value="30"
+          data-param-key="peak_pick_wait"
+        />
+        <span class="param-value" data-param-label-for="peak_pick_wait">30</span>
+      </div>
+    </details>
 
     <details class="readme">
       <summary>What is this?</summary>

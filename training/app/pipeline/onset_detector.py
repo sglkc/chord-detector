@@ -54,6 +54,9 @@ class OnsetDetector:
 
         self.envelope: np.ndarray = np.zeros(0, dtype=np.float32)
         self.last_emitted_frame: int = 0
+        # Back-reference to the SegmentBuffer so ``set_param`` can
+        # propagate debounce changes. Wired up by PipelineRunner.
+        self.segments = None
 
     # ------------------------------------------------------------------ #
     # Public API
@@ -126,6 +129,90 @@ class OnsetDetector:
         """Drop the envelope and watermark. Used on disconnect."""
         self.envelope = np.zeros(0, dtype=np.float32)
         self.last_emitted_frame = 0
+
+    # ------------------------------------------------------------------ #
+    # Live tuning
+    # ------------------------------------------------------------------ #
+
+    # Keys that callers are allowed to mutate at runtime via the WS
+    # ``set <key>=<value>`` control command. Whitelist keeps the
+    # attack surface small.
+    _SETTABLE_KEYS: frozenset = frozenset(
+        {
+            "min_onset_gap_ms",
+            "peak_pick_delta",
+            "peak_pick_wait",
+        }
+    )
+
+    def set_param(self, key: str, value: str):
+        """Update one runtime-tunable parameter, validating the key.
+
+        Parameters
+        ----------
+        key:
+            One of ``min_onset_gap_ms``, ``peak_pick_delta``,
+            ``peak_pick_wait``. Snake-case on the wire so it
+            matches the underscore-joined form used in
+            ``app.config``.
+        value:
+            String form of the new value. Coerced to ``int`` or
+            ``float`` based on the key. ``peak_pick_delta`` accepts
+            a numeric value or the literal ``"None"`` (case
+            insensitive) to clear the override and fall back to
+            librosa's default.
+
+        Returns
+        -------
+        The new value (typed). The caller echoes it back to the
+        client as ``{"type": "param_updated", ...}``.
+
+        Raises
+        ------
+        KeyError
+            If ``key`` is not in the whitelist.
+        ValueError
+            If ``value`` cannot be coerced to the expected type.
+        """
+        if key not in self._SETTABLE_KEYS:
+            raise KeyError(f"unknown parameter {key!r}")
+
+        if key == "min_onset_gap_ms":
+            ms = int(value)
+            if ms < 0:
+                raise ValueError("min_onset_gap_ms must be >= 0")
+            # Recompute the debounce frame count and push it to the
+            # linked SegmentBuffer so the next push uses the new gap.
+            frames = max(
+                1,
+                int(
+                    round(
+                        ms * 0.001 * config.AUDIO_SAMPLE_RATE / config.CQT_HOP_LENGTH
+                    )
+                ),
+            )
+            self.min_onset_gap_frames = frames
+            if self.segments is not None:
+                self.segments.set_min_onset_gap_frames(frames)
+            return ms
+
+        if key == "peak_pick_delta":
+            if value.strip().lower() in {"none", "null", ""}:
+                self.peak_pick_params.pop("delta", None)
+                return None
+            f = float(value)
+            self.peak_pick_params["delta"] = f
+            return f
+
+        if key == "peak_pick_wait":
+            n = int(value)
+            if n < 0:
+                raise ValueError("peak_pick_wait must be >= 0")
+            self.peak_pick_params["wait"] = n
+            return n
+
+        # Defensive - should be unreachable thanks to the whitelist.
+        raise KeyError(key)  # pragma: no cover
 
 
 __all__ = ["OnsetDetector"]

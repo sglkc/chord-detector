@@ -96,6 +96,10 @@ class SegmentBuffer:
         self._current_onset_frame: int = 0
         self._last_emitted_onset_frame: int = -10_000  # effectively no debounce at start
 
+    def set_min_onset_gap_frames(self, frame_count: int) -> None:
+        """Live-update the debounce. Called by ``OnsetDetector.set_param``."""
+        self.min_onset_gap_frames = max(1, int(frame_count))
+
     # ------------------------------------------------------------------ #
     # Public API
     # ------------------------------------------------------------------ #

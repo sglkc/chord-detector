@@ -56,8 +56,18 @@ class PipelineRunner:
         self.onsets = OnsetDetector()
         self.segments = SegmentBuffer()
         self.classifier: ChordClassifier | None = None
+        # Model-load status. Surfaced to the client so it can show a
+        # "model: loading..." pill while Keras is still warming up.
+        self.model_status: dict = {
+            "loaded": False,
+            "load_time_s": 0.0,
+            "error": None,
+        }
         if with_classifier:
-            self.classifier = ChordClassifier()
+            self._load_classifier()
+        # Keep SegmentBuffer's debounce in sync with the detector's
+        # live-tuned value.
+        self.onsets.segments = self.segments
 
         # Wall-clock of the first ever audio sample. Used to map
         # segment column indices to "time since first sample" for the
@@ -65,6 +75,34 @@ class PipelineRunner:
         self._start_time: float | None = None
         # Last time we emitted a CQT update. Used for rate-limiting.
         self._last_cqt_emit_ms: float = 0.0
+
+    def _load_classifier(self) -> None:
+        """Load the Keras CNN, recording timing / error on self.model_status."""
+        import time as _time
+        t0 = _time.monotonic()
+        try:
+            self.classifier = ChordClassifier()
+            self.model_status = {
+                "loaded": True,
+                "load_time_s": _time.monotonic() - t0,
+                "error": None,
+            }
+        except Exception as exc:  # noqa: BLE001 - any TF / IO error is fatal
+            self.classifier = None
+            self.model_status = {
+                "loaded": False,
+                "load_time_s": _time.monotonic() - t0,
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+
+    def reset(self) -> None:
+        """Drop in-flight state so the next chunk starts fresh."""
+        self.segments.reset()
+        self.onsets.reset()
+        self.buffer = AudioRingBuffer()
+        self.cqt = CQTStream()
+        self._start_time = None
+        self._last_cqt_emit_ms = 0.0
 
     # ------------------------------------------------------------------ #
     # Public API

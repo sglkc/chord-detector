@@ -124,7 +124,19 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     try:
         runner = PipelineRunner(with_classifier=True)
         await websocket.send_text(json.dumps({"type": "ready"}))
-        logger.info("WebSocket connected; pipeline ready.")
+        # Push the model load status to the client so the UI can
+        # show a "model: loading..." pill while Keras is still
+        # warming up (or a clear error pill if the .keras file is
+        # missing / corrupted).
+        await websocket.send_text(
+            json.dumps({"type": "model_status", **runner.model_status})
+        )
+        logger.info(
+            "WebSocket connected; pipeline ready. model_loaded=%s "
+            "load_time_s=%.2f",
+            runner.model_status["loaded"],
+            runner.model_status["load_time_s"],
+        )
 
         while True:
             message = await websocket.receive()
@@ -173,35 +185,64 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
 
 
 async def _handle_control(websocket: WebSocket, runner: PipelineRunner, text: str) -> None:
-    """Handle a small set of text-frame control commands."""
-    cmd = text.strip().lower()
-    if cmd == "ping":
+    """Handle a small set of text-frame control commands.
+
+    Supported commands
+    ------------------
+    ``ping``
+        Cheap heartbeat; server replies with ``{"type": "pong"}``.
+    ``reset``
+        Drop in-flight pipeline state on the server side. The
+        client also clears its canvas / chord card.
+    ``set <key>=<value>``
+        Update a runtime-tunable parameter on the pipeline. The
+        key/value pair is forwarded to ``OnsetDetector.set_param``
+        which validates the key against a whitelist. Example::
+
+            set min_onset_gap_ms=300
+            set peak_pick_delta=0.5
+    """
+    cmd = text.strip()
+    if not cmd:
+        return
+    lower = cmd.lower()
+    if lower == "ping":
         await websocket.send_text(json.dumps({"type": "pong"}))
-    elif cmd == "reset":
+        return
+    if lower == "reset":
         runner.reset()
         await websocket.send_text(json.dumps({"type": "ready"}))
-    else:
+        return
+    if lower.startswith("set "):
+        body = cmd[4:].strip()
+        if "=" not in body:
+            await websocket.send_text(
+                json.dumps({"type": "error", "message": f"Bad set command: {cmd!r}"})
+            )
+            return
+        key, value = body.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        try:
+            applied = runner.onsets.set_param(key, value)
+        except (KeyError, ValueError) as exc:
+            await websocket.send_text(
+                json.dumps({"type": "error", "message": f"set: {exc}"})
+            )
+            return
         await websocket.send_text(
-            json.dumps({"type": "error", "message": f"Unknown command: {cmd!r}"})
+            json.dumps(
+                {
+                    "type": "param_updated",
+                    "key": key,
+                    "value": applied,
+                }
+            )
         )
-
-
-# Add reset() to PipelineRunner for the "reset" command.
-def _patch_runner_reset() -> None:
-    """Add a no-arg reset() to PipelineRunner that drops in-flight state."""
-
-    def reset(self: PipelineRunner) -> None:  # type: ignore[override]
-        self.segments.reset()
-        self.onsets.reset()
-        self.cqt = CQTStream()
-        self.buffer = AudioRingBuffer()
-        self._start_time = None
-        self._last_cqt_emit_ms = 0.0
-
-    PipelineRunner.reset = reset  # type: ignore[attr-defined]
-
-
-_patch_runner_reset()
+        return
+    await websocket.send_text(
+        json.dumps({"type": "error", "message": f"Unknown command: {cmd!r}"})
+    )
 
 
 # ---------------------------------------------------------------------------

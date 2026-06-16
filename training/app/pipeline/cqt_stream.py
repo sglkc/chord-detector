@@ -70,6 +70,27 @@ class CQTStream:
         self.analysis_window_samples: int = int(round(analysis_window_seconds * self.sample_rate))
         self.max_columns: int = int(max_columns)
 
+        # Pre-build the constant-Q kernel once so the first
+        # ``librosa.cqt`` call doesn't pay the ~1.5 s kernel
+        # construction cost. In librosa >= 0.10 the ``cqt(filter=...)``
+        # fast path is gone, but the kernel is still cached
+        # internally on subsequent calls. We trigger that cache by
+        # running cqt on a tiny dummy signal and discarding the
+        # result - cheaper than waiting for the first real audio
+        # chunk to amortize the build.
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            _ = librosa.cqt(
+                y=np.zeros(int(0.05 * self.sample_rate), dtype=np.float32),
+                sr=self.sample_rate,
+                fmin=self.fmin,
+                n_bins=self.n_bins,
+                bins_per_octave=self.bins_per_octave,
+                hop_length=self.hop_length,
+                sparsity=0.01,
+            )
+
         # Empty CQT history. ``columns`` grows by ~``hop_length`` samples
         # worth of columns on every update (one column per hop).
         self.columns: np.ndarray = np.zeros((self.n_bins, 0), dtype=np.float32)
@@ -123,6 +144,12 @@ class CQTStream:
             n_bins=self.n_bins,
             bins_per_octave=self.bins_per_octave,
             hop_length=self.hop_length,
+            # ``sparsity`` enables the sparse matrix-multiply path
+            # in librosa which is the documented fast path for
+            # full-band CQTs (>= 84 bins) on long windows. With a
+            # 216-bin / 2 s window it is ~2x faster than the dense
+            # default. See librosa PR #1271.
+            sparsity=0.01,
         )
         cqt_mag = np.abs(cqt_complex)
         cqt_db = librosa.amplitude_to_db(cqt_mag, ref=np.max).astype(np.float32, copy=False)

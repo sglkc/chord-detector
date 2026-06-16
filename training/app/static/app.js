@@ -105,8 +105,10 @@
   }
 
   // Shift the column buffer one column to the left and write the new
-  // column at the right edge. We downsample 216 bins -> CANVAS_H
-  // rows by linear interpolation.
+  // column at the right edge. colBuffer is laid out as a flat
+  // CANVAS_W * nBins array in COLUMN-MAJOR order: column x occupies
+  // indices [x*nBins, (x+1)*nBins). Shifting one column = advancing
+  // the source pointer by nBins elements.
   function appendColumn(newCol) {
     // newCol: Float32Array of length nBins.
     if (newCol.length !== nBins) {
@@ -116,12 +118,17 @@
       colBuffer.fill(DB_MIN);
     }
 
-    // Shift left by 1 column.
+    // Shift left by exactly ONE column (nBins elements).
     colBuffer.copyWithin(0, nBins);
 
-    // Write new column at the rightmost slot.
+    // Write the new column into the rightmost slot. The frequency
+    // axis is BINS (rows). We want bin 0 (lowest frequency) at the
+    // BOTTOM of the canvas and bin (nBins-1) at the TOP. The
+    // browser's y axis grows downward, so we flip the bin index
+    // when writing.
+    const slotStart = (CANVAS_W - 1) * nBins;
     for (let i = 0; i < nBins; i++) {
-      colBuffer[(CANVAS_W - 1) * nBins + i] = newCol[i];
+      colBuffer[slotStart + (nBins - 1 - i)] = newCol[i];
     }
   }
 
@@ -131,11 +138,14 @@
     const data = imageData.data;
 
     // For each canvas column, sample one CQT column from colBuffer
-    // and map each bin -> a row in the image.
+    // and map each bin -> a row in the image. Bin 0 (lowest
+    // frequency) lives at the BOTTOM of the canvas (y = CANVAS_H-1)
+    // and bin (nBins-1) (highest) at the TOP (y = 0). The buffer
+    // is already stored in that flipped order by appendColumn, so
+    // we map canvas-y to the raw bin index directly.
     for (let x = 0; x < CANVAS_W; x++) {
       const colStart = x * nBins;
       for (let y = 0; y < CANVAS_H; y++) {
-        // Map y from [0, CANVAS_H) -> bin index in [0, nBins).
         const binF = (y / (CANVAS_H - 1)) * (nBins - 1);
         const bin0 = Math.floor(binF);
         const bin1 = Math.min(bin0 + 1, nBins - 1);
@@ -163,6 +173,18 @@
   function handleServerMessage(msg) {
     if (msg.type === "ready") {
       setStatus("connected", "connected");
+    } else if (msg.type === "model_status") {
+      setModelStatus(msg);
+    } else if (msg.type === "param_updated") {
+      // Server confirmed a "set" command. Reflect it on the slider
+      // so the UI agrees with the backend.
+      const slider = document.querySelector(
+        `[data-param-key="${msg.key}"]`
+      );
+      if (slider && document.activeElement !== slider) {
+        slider.value = msg.value == null ? "" : String(msg.value);
+        updateSliderLabel(slider);
+      }
     } else if (msg.type === "cqt_columns") {
       ensureBuffers();
       // Re-shape the flat 1-D array into (n_cols, n_bins) and push
@@ -214,6 +236,61 @@
     statusEl.textContent = text;
     statusEl.classList.remove("connected", "error");
     if (klass) statusEl.classList.add(klass);
+  }
+
+  // ----------------------------------------------------------------- //
+  // Model + button state helpers
+  // ----------------------------------------------------------------- //
+
+  const modelStatusEl = $("model-status");
+
+  function setModelStatus(msg) {
+    if (!modelStatusEl) return;
+    if (msg.loaded) {
+      const t = (msg.load_time_s || 0).toFixed(2);
+      modelStatusEl.textContent = `model: ready (${t}s)`;
+      modelStatusEl.classList.remove("loading", "error");
+      modelStatusEl.classList.add("ready");
+    } else if (msg.error) {
+      modelStatusEl.textContent = `model: error — ${msg.error}`;
+      modelStatusEl.classList.remove("loading", "ready");
+      modelStatusEl.classList.add("error");
+    } else {
+      modelStatusEl.textContent = "model: loading…";
+      modelStatusEl.classList.remove("ready", "error");
+      modelStatusEl.classList.add("loading");
+    }
+  }
+
+  function setStartButtonState(isRunning) {
+    if (!startBtn) return;
+    if (isRunning) {
+      startBtn.textContent = "Stop microphone";
+      startBtn.classList.add("danger");
+    } else {
+      startBtn.textContent = "Start microphone";
+      startBtn.classList.remove("danger");
+    }
+  }
+
+  function updateSliderLabel(slider) {
+    const out = document.querySelector(
+      `[data-param-label-for="${slider.dataset.paramKey}"]`
+    );
+    if (out) {
+      out.textContent = slider.value === "" ? "default" : slider.value;
+    }
+  }
+
+  // Push the current value of every .param-slider to the server.
+  // Used on connect so reload-during-session doesn't lose tweaks.
+  function sendAllParams() {
+    if (!socket || socket.readyState !== WebSocket.OPEN) return;
+    document.querySelectorAll(".param-slider").forEach((slider) => {
+      const v = slider.value;
+      if (v === "" || v == null) return;
+      socket.send(`set ${slider.dataset.paramKey}=${v}`);
+    });
   }
 
   // ----------------------------------------------------------------- //
@@ -272,7 +349,7 @@ registerProcessor("mic-processor", MicProcessor);
   async function start() {
     if (running) return;
     running = true;
-    startBtn.disabled = true;
+    setStartButtonState(true);
     resetBtn.disabled = false;
     setStatus("requesting microphone...", null);
 
@@ -282,7 +359,13 @@ registerProcessor("mic-processor", MicProcessor);
       const wsUrl = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws`;
       socket = new WebSocket(wsUrl);
       socket.binaryType = "arraybuffer";
-      socket.onopen = () => setStatus("socket open, requesting mic...", null);
+      socket.onopen = () => {
+        setStatus("socket open, requesting mic...", null);
+        // Replay current slider values so a server-side reset
+        // (e.g. "reset" command) doesn't silently drop the
+        // user's tweaks.
+        sendAllParams();
+      };
       socket.onclose = () => {
         setStatus("disconnected", null);
         stop();
@@ -344,6 +427,7 @@ registerProcessor("mic-processor", MicProcessor);
 
   async function stop() {
     running = false;
+    setStartButtonState(false);
     startBtn.disabled = false;
     if (workletNode) {
       try { workletNode.port.postMessage("stop"); } catch (_) { /* noop */ }
@@ -398,4 +482,20 @@ registerProcessor("mic-processor", MicProcessor);
   const ctx0 = cqtEl.getContext("2d");
   ctx0.fillStyle = "#000";
   ctx0.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+  // ----------------------------------------------------------------- //
+  // Settings panel: each slider has data-param-key="...". Live
+  // values are sent to the server over the existing WebSocket
+  // as ``set <key>=<value>`` text frames.
+  // ----------------------------------------------------------------- //
+  document.querySelectorAll(".param-slider").forEach((slider) => {
+    updateSliderLabel(slider);
+    slider.addEventListener("input", () => {
+      updateSliderLabel(slider);
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        const v = slider.value;
+        socket.send(v === "" ? `set ${slider.dataset.paramKey}=none` : `set ${slider.dataset.paramKey}=${v}`);
+      }
+    });
+  });
 })();
