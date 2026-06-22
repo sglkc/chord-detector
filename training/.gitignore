@@ -14,5 +14,7 @@ datasets*
 *.npz
 *models*
 validations*
+evaluations*
+*cache*
 
 .ipynb_checkpoints
