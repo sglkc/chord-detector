@@ -1,0 +1,17 @@
+# Core LaTeX auxiliary files
+*.aux
+*.log
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# Bibliography auxiliary files
+*.bbl
+*.blg
+
+# Final build output
+sn-article.pdf
+
+# Converted figures
+*.pdf
