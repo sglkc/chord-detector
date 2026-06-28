@@ -25,18 +25,20 @@
 
 %%\documentclass[sn-basic]{sn-jnl}% Basic Springer Nature Reference Style/Chemistry Reference Style
 
-%%Note: the following reference styles support Namedate and Numbered referencing. By default the style follows the most common style. To switch between the options you can add or remove �Numbered� in the optional parenthesis. 
-%%The option is available for: sn-basic.bst, sn-chicago.bst%  
- 
+%%Note: the following reference styles support Namedate and Numbered referencing. By default the style follows the most common style. To switch between the options you can add or remove �Numbered� in the optional parenthesis.
+%%The option is available for: sn-basic.bst, sn-chicago.bst%
+
 %%\documentclass[pdflatex,sn-nature]{sn-jnl}% Style for submissions to Nature Portfolio journals
 %%\documentclass[pdflatex,sn-basic]{sn-jnl}% Basic Springer Nature Reference Style/Chemistry Reference Style
-\documentclass[pdflatex,sn-mathphys-num]{sn-jnl}% Math and Physical Sciences Numbered Reference Style
+% \documentclass[pdflatex,sn-mathphys-num]{sn-jnl}% Math and Physical Sciences Numbered Reference Style
 %%\documentclass[pdflatex,sn-mathphys-ay]{sn-jnl}% Math and Physical Sciences Author Year Reference Style
 %%\documentclass[pdflatex,sn-aps]{sn-jnl}% American Physical Society (APS) Reference Style
 %%\documentclass[pdflatex,sn-vancouver-num]{sn-jnl}% Vancouver Numbered Reference Style
 %%\documentclass[pdflatex,sn-vancouver-ay]{sn-jnl}% Vancouver Author Year Reference Style
 %%\documentclass[pdflatex,sn-apa]{sn-jnl}% APA Reference Style
 %%\documentclass[pdflatex,sn-chicago]{sn-jnl}% Chicago-based Humanities Reference Style
+
+\documentclass[pdflatex,sn-basic,iicol]{sn-jnl}
 
 %%%% Standard Packages
 %%<additional latex packages if required can be included here>
@@ -56,17 +58,18 @@
 \usepackage{algpseudocode}%
 \usepackage{listings}%
 %%%%
+\usepackage{tabularx}
 
 %%%%%=============================================================================%%%%
 %%%%  Remarks: This template is provided to aid authors with the preparation
-%%%%  of original research articles intended for submission to journals published 
-%%%%  by Springer Nature. The guidance has been prepared in partnership with 
-%%%%  production teams to conform to Springer Nature technical requirements. 
-%%%%  Editorial and presentation requirements differ among journal portfolios and 
-%%%%  research disciplines. You may find sections in this template are irrelevant 
-%%%%  to your work and are empowered to omit any such section if allowed by the 
-%%%%  journal you intend to submit to. The submission guidelines and policies 
-%%%%  of the journal take precedence. A detailed User Manual is available in the 
+%%%%  of original research articles intended for submission to journals published
+%%%%  by Springer Nature. The guidance has been prepared in partnership with
+%%%%  production teams to conform to Springer Nature technical requirements.
+%%%%  Editorial and presentation requirements differ among journal portfolios and
+%%%%  research disciplines. You may find sections in this template are irrelevant
+%%%%  to your work and are empowered to omit any such section if allowed by the
+%%%%  journal you intend to submit to. The submission guidelines and policies
+%%%%  of the journal take precedence. A detailed User Manual is available in the
 %%%%  template package for technical guidance.
 %%%%%=============================================================================%%%%
 
@@ -75,7 +78,7 @@
 \newtheorem{theorem}{Theorem}%  meant for continuous numbers
 %%\newtheorem{theorem}{Theorem}[section]% meant for sectionwise numbers
 %% optional argument [theorem] produces theorem numbering sequence instead of independent numbers for Proposition
-\newtheorem{proposition}[theorem]{Proposition}% 
+\newtheorem{proposition}[theorem]{Proposition}%
 %%\newtheorem{proposition}{Proposition}% to get separate numbers for theorem and proposition etc.
 
 \theoremstyle{thmstyletwo}%
@@ -90,50 +93,43 @@
 
 \begin{document}
 
-\title[Article Title]{Article Title}
+\title[Constant-Q Transform ]{Article Title}
 
 %%=============================================================%%
 %% GivenName	-> \fnm{Joergen W.}
 %% Particle	-> \spfx{van der} -> surname prefix
 %% FamilyName	-> \sur{Ploeg}
 %% Suffix	-> \sfx{IV}
-%% \author*[1,2]{\fnm{Joergen W.} \spfx{van der} \sur{Ploeg} 
+%% \author*[1,2]{\fnm{Joergen W.} \spfx{van der} \sur{Ploeg}
 %%  \sfx{IV}}\email{iauthor@gmail.com}
 %%=============================================================%%
 
-\author*[1,2]{\fnm{First} \sur{Author}}\email{iauthor@gmail.com}
+\author*[1]{\fnm{Cikal} \sur{Gemintang Seya}}\email{cikal.gemintang@mhs.itenas.ac.id}
 
-\author[2,3]{\fnm{Second} \sur{Author}}\email{iiauthor@gmail.com}
-\equalcont{These authors contributed equally to this work.}
+\author[1]{\fnm{Jasman} \sur{Pardede}}\email{jasman@itenas.ac.id}
+% \equalcont{These authors contributed equally to this work.}
 
-\author[1,2]{\fnm{Third} \sur{Author}}\email{iiiauthor@gmail.com}
-\equalcont{These authors contributed equally to this work.}
-
-\affil*[1]{\orgdiv{Department}, \orgname{Organization}, \orgaddress{\street{Street}, \city{City}, \postcode{100190}, \state{State}, \country{Country}}}
-
-\affil[2]{\orgdiv{Department}, \orgname{Organization}, \orgaddress{\street{Street}, \city{City}, \postcode{10587}, \state{State}, \country{Country}}}
-
-\affil[3]{\orgdiv{Department}, \orgname{Organization}, \orgaddress{\street{Street}, \city{City}, \postcode{610101}, \state{State}, \country{Country}}}
+\affil*[1]{\orgdiv{Informatics}, \orgname{Institut Teknologi Nasional Bandung}, \orgaddress{\street{Neglasari}, \city{Bandung}, \postcode{40124}, \state{West Java}, \country{Indonesia}}}
 
 %%==================================%%
 %% Sample for unstructured abstract %%
 %%==================================%%
 
-\abstract{The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. Authors are advised to check the author instructions for the journal they are submitting to for word limits and if structural elements like subheadings, citations, or equations are permitted.}
+\abstract{Automatic chord recognition (ACR) is a fundamental task in Music Information Retrieval (MIR) with broad applications in music education, interactive performance feedback, and real-time transcription systems. This paper presents the design, training, cross-validation, and evaluation of a Convolutional Neural Network (CNN) model for 36-class piano chord classification using Constant-Q Transform (CQT) spectrograms as input features, and compares it against a hyperparameter-tuned Support Vector Machine (SVM) with a Radial Basis Function (RBF) kernel. The training dataset consists of 7,200 audio samples of 36 piano chord classes, spanning major, minor, and diminished triads across 12 chromatic roots in the fourth octave, recorded at 48 kHz from a Techno T-9890i keyboard. Generalization performance is evaluated on a separate 1,440-sample evaluation dataset recorded from a different instrument (Yamaha PSR-S910 keyboard) in a different environment, with no overlap with training data. The CNN architecture comprises four sequential Conv2D and MaxPooling2D blocks with filter sizes escalating from 64 to 256, followed by a fully connected dense layer with dropout regularization, trained using the Adam optimizer with early stopping. Both models achieve near-perfect accuracy on cross-validation (CNN: 1.0000, SVM: 1.0000 across five folds). However, cross-dataset evaluation reveals a decisive performance gap: the CNN retains high per-class accuracy across the majority of chord classes, with misclassifications concentrated in harmonically related pairs, while the SVM collapses entirely, misclassifying the overwhelming majority of samples from all classes as C\_diminished\_4, resulting in worse accuracy. These results demonstrate that CNN's hierarchical spectral feature learning generalizes substantially better than the RBF SVM's when acoustic conditions shift between training and evaluation environments, confirming CNN as the superior architecture for practical deployment in piano chord recognition systems.}
 
 %%================================%%
 %% Sample for structured abstract %%
 %%================================%%
 
 % \abstract{\textbf{Purpose:} The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.
-% 
+%
 % \textbf{Methods:} The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.
-% 
+%
 % \textbf{Results:} The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.
-% 
+%
 % \textbf{Conclusion:} The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.}
 
-\keywords{keyword1, Keyword2, Keyword3, Keyword4}
+\keywords{Music Information Retrieval, Automatic Chord Recognition, Constant-Q Transform, Convolutional Neural Network, Support Vector Machine}
 
 %%\pacs[JEL Classification]{D8, H51}
 
@@ -143,455 +139,947 @@
 
 \section{Introduction}\label{sec1}
 
-The Introduction section, of referenced text \cite{bib1} expands on the background of the work (some overlap with the Abstract is acceptable). The introduction should not include subheadings.
+Music, as a universal art form, communicates emotion and structure through its constituent harmonic elements, of which the chord is among the most fundamental \cite{Adegbija2023}\cite{Ito2023}\cite{Putra2025}. A chord, defined as the simultaneous or near-simultaneous sounding of three or more distinct pitches, forms the harmonic backbone of Western tonal music. Identifying chords from raw audio signals, known as Automatic Chord Recognition (ACR), has significant practical applications including music transcription, score following, interactive music education, and real-time performance assistance \cite{Akram2025}\cite{Bortolozzo2021}\cite{Majchrzak2025}. Manual chord transcription is time-consuming and demands substantial ear-training and music theory expertise, creating a clear motivation for automated solutions \cite{Saputra2021}\cite{Telila2023}\cite{Majchrzak2025}.
 
-Springer Nature does not impose a strict layout as standard however authors are advised to check the individual requirements for the journal they are planning to submit to as there may be journal-level preferences. When preparing your text please also be aware that some stylistic choices are not supported in full text XML (publication version), including coloured font. These will not be replicated in the typeset article if it is accepted. 
+ACR is a central problem within Music Information Retrieval (MIR), an interdisciplinary field that combines signal processing, machine learning, and music cognition to extract semantically meaningful information from audio recordings \cite{Majchrzak2025} \cite{Putra2025}. In ACR systems, the general approach involves segmenting an audio signal into short temporal windows, extracting a spectral feature representation from each window, and classifying each segment according to a predefined chord vocabulary \cite{Bortolozzo2021} \cite{Majchrzak2025}. The quality of this pipeline depends critically on two factors: the discriminative power of the feature representation and the generalization capacity of the classifier. Particularly when the classifier must operate on audio recorded from instruments or environments that differ from those in the training data.
 
-\section{Results}\label{sec2}
+Among the various time-frequency representations available for audio feature extraction, the Constant-Q Transform (CQT) is particularly well-suited for music analysis \cite{Li2021} \cite{Li2021}. Unlike the Short-Time Fourier Transform (STFT), which distributes frequency bins linearly, CQT bins are spaced logarithmically, directly aligning each bin with the frequency of a musical semitone \cite{Li2021} \cite{Lacoste2007}. This alignment means that the harmonic structure of a chord which comprising a root note, a third, and a fifth, manifests as a consistent and recognizable pattern of activated frequency bins regardless of the chord's root pitch, making CQT features naturally suited to CNN-based pattern recognition and providing robustness to the different instrument tonal variations inherent in cross-dataset evaluation \cite{Li2021} \cite{Telila2023}. Empirical comparisons confirm that CQT features outperform STFT and CENS chroma features when used as input to CNN classifiers, with CQT achieving 84.2\% accuracy compared to 75.3\% for STFT alone in a standard ACR benchmark \cite{Li2021}.
 
-Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text.
+Convolutional Neural Networks (CNNs) have emerged as the dominant architecture for spectrogram-based audio classification due to their ability to learn hierarchical, locally-invariant feature representations \cite{OShea2015} \cite{Moysis2023} \cite{Zaman2023}. When applied to CQT spectrograms, CNN convolutional kernels learn to identify the characteristic frequency patterns (harmonic overtones and spectral envelope shapes) that distinguish one chord type from another, operating on small local receptive fields rather than requiring the full global feature vector \cite{Akram2025} \cite{Purwono2022}. Multiple studies have demonstrated the effectiveness of the CNN-CQT combination for chord recognition and music transcription tasks across diverse datasets \cite{Li2021} \cite{Telila2023} \cite{Ferdiawan2022} \cite{Li2021} \cite{Ito2023}. Critically, the local spatial nature of CNN feature learning, that is processing small neighborhoods in the time-frequency plane, is expected to provide greater robustness to global acoustic shifts (such as timbre changes between instruments or background noise) compared to classifiers that rely on global feature statistics.
 
-\section{This is an example for first level head---section head}\label{sec3}
+Support Vector Machines (SVM) with RBF kernels represent the established state-of-the-art among conventional machine learning approaches for audio classification and have been applied to chord recognition tasks in numerous studies \cite{Cui2022} \cite{Putra2025}. SVMs seek a maximum-margin hyperplane in a high-dimensional feature space and are particularly effective when a clear class boundary exists in the training distribution \cite{Zaman2023}. However, SVM decision boundaries are defined in terms of the global structure of the training feature space: when the test distribution shifts due to changes in instrument timbre, recording environment, or microphone characteristics, the kernel similarity between test vectors and training support vectors may change substantially, causing the learned boundary to become unreliable. This susceptibility to distribution shift is a known limitation of kernel methods \cite{Zaman2023} \cite{Zaman2023} and is directly tested in the cross-dataset evaluation presented in this paper.
 
-\subsection{This is an example for second level head---subsection head}\label{subsec2}
+Despite the extensive ACR literature, several gaps remain. The majority of published systems focus on offline, large-vocabulary chord recognition using complex architectures, including hybrid CNN-HMM models \cite{Li2021}, CNN-RNN hybrids \cite{OHanlon2021}, conformer-based architectures \cite{Akram2025}, and transformer-attention mechanisms \cite{Akram2025} \cite{Kusaka2024}. These systems are evaluated on test sets or standardized benchmarks that do not test generalization across different datasets. The robustness of classifiers to acoustic domain shift, which arises from differences in instrument brand, piano voice preset, recording device, and room acoustics, has received limited systematic attention. This gap is particularly relevant for practical deployment, where users will interact with classification systems using their own instruments and recording setups, which inevitably differ from those used during model training.
 
-\subsubsection{This is an example for third level head---subsubsection head}\label{subsubsec2}
+This paper addresses these gaps by presenting a focused study of CNN model design, training, cross-validation, and cross-dataset evaluation for 36-class piano chord classification from CQT spectrograms, with a comparative evaluation against a hyperparameter-tuned RBF-SVM on the same feature set. The experimental design explicitly tests generalization under domain shift: the training dataset is recorded on one keyboard (Techno T-9890i, Acoustic Grand Piano voice, Xiaomi Redmi Pad 2 microphone) while the evaluation dataset is recorded on a different instrument (Yamaha PSR-S910, Grand Piano voice, ROG Flow X13 internal microphone) in a different physical environment, with all other conditions held constant. This setup enables a rigorous assessment of whether each model's learned representation generalizes beyond its training domain.
 
-Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. 
+The specific contributions of this paper are:
 
-\section{Equations}\label{sec4}
+\begin{enumerate}[1.]
+\item A complete description and empirical validation of a four-block CNN architecture for 36-class piano chord classification using CQT spectrograms, achieving near-perfect accuracy (1.0000) under within-distribution cross-validation across five stratified folds.
 
-Equations in \LaTeX\ can either be inline or on-a-line by itself (``display equations''). For
-inline equations use the \verb+$...$+ commands. E.g.: The equation
-$H\psi = E \psi$ is written via the command \verb+$H \psi = E \psi$+.
+\item A custom training dataset of 7,200 labeled piano chord audio samples (36 classes, 200 samples per class) and a separate 1,440 sample evaluation dataset recorded on a different instrument in a different acoustic environment, constituting a controlled cross-dataset generalization benchmark.
 
-For display equations (with auto generated equation numbers)
-one can use the equation or align environments:
-\begin{equation}
-\|\tilde{X}(k)\|^2 \leq\frac{\sum\limits_{i=1}^{p}\left\|\tilde{Y}_i(k)\right\|^2+\sum\limits_{j=1}^{q}\left\|\tilde{Z}_j(k)\right\|^2 }{p+q}.\label{eq1}
-\end{equation}
-where,
-\begin{align}
-D_\mu &=  \partial_\mu - ig \frac{\lambda^a}{2} A^a_\mu \nonumber \\
-F^a_{\mu\nu} &= \partial_\mu A^a_\nu - \partial_\nu A^a_\mu + g f^{abc} A^b_\mu A^a_\nu \label{eq2}
-\end{align}
-Notice the use of \verb+\nonumber+ in the align environment at the end
-of each line, except the last, so as not to produce equation numbers on
-lines where no equation numbers are required. The \verb+\label{}+ command
-should only be used at the last line of an align environment where
-\verb+\nonumber+ is not used.
-\begin{equation}
-Y_\infty = \left( \frac{m}{\textrm{GeV}} \right)^{-3}
-    \left[ 1 + \frac{3 \ln(m/\textrm{GeV})}{15}
-    + \frac{\ln(c_2/5)}{15} \right]
-\end{equation}
-The class file also supports the use of \verb+\mathbb{}+, \verb+\mathscr{}+ and
-\verb+\mathcal{}+ commands. As such \verb+\mathbb{R}+, \verb+\mathscr{R}+
-and \verb+\mathcal{R}+ produces $\mathbb{R}$, $\mathscr{R}$ and $\mathcal{R}$
-respectively (refer Subsubsection~\ref{subsubsec2}).
+\item A rigorous comparative evaluation of CNN against a hyperparameter-tuned RBF-SVM under identical experimental conditions, demonstrating parity under within-distribution evaluation but a decisive divergence under cross-dataset testing — the CNN maintains meaningful per-class accuracy while the SVM collapses to degenerate single-class prediction.
 
-\section{Tables}\label{sec5}
+\item A detailed analysis of the CNN's cross-dataset misclassification patterns, identifying the harmonically related chord pairs that constitute the principal sources of error and providing interpretable guidance for future data augmentation and fine-tuning strategies.
+\end{enumerate}
 
-Tables can be inserted via the normal table and tabular environment. To put
-footnotes inside tables you should use \verb+\footnotetext[]{...}+ tag.
-The footnote appears just below the table itself (refer Tables~\ref{tab1} and \ref{tab2}). 
-For the corresponding footnotemark use \verb+\footnotemark[...]+
+\section{Related Works}\label{sec2}
 
-\begin{table}[h]
-\caption{Caption text}\label{tab1}%
-\begin{tabular}{@{}llll@{}}
-\toprule
-Column 1 & Column 2  & Column 3 & Column 4\\
-\midrule
-row 1    & data 1   & data 2  & data 3  \\
-row 2    & data 4   & data 5\footnotemark[1]  & data 6  \\
-row 3    & data 7   & data 8  & data 9\footnotemark[2]  \\
-\botrule
-\end{tabular}
-\footnotetext{Source: This is an example of table footnote. This is an example of table footnote.}
-\footnotetext[1]{Example for a first table footnote. This is an example of table footnote.}
-\footnotetext[2]{Example for a second table footnote. This is an example of table footnote.}
-\end{table}
+The problem of automatic chord recognition has been approached with an evolving range of machine learning methodologies, with the dominant trend shifting progressively from hand-crafted chroma features towards end-to-end deep learning systems.
 
-\noindent
-The input format for the above table is as follows:
+Li \cite{Li2021} investigated a CNN-HMM hybrid approach for audio-based musical chord recognition, comparing three feature types (STFT, CQT, and CENS) as inputs to CNN and DNN classifiers. The study found that CQT features yielded the highest individual accuracy of 84.2\% on the CNN model, compared to 75.3\% for STFT and 80.8\% for CENS, and that combining all three features further boosted performance to 86.5\%. This work established CQT as the preferred spectral feature for CNN-based chord classification and motivates its adoption in the present study.
 
-%%=============================================%%
-%% For presentation purpose, we have included  %%
-%% \bigskip command. Please ignore this.       %%
-%%=============================================%%
-\bigskip
-\begin{verbatim}
-\begin{table}[<placement-specifier>]
-\caption{<table-caption>}\label{<table-label>}%
-\begin{tabular}{@{}llll@{}}
-\toprule
-Column 1 & Column 2 & Column 3 & Column 4\\
-\midrule
-row 1 & data 1 & data 2	 & data 3 \\
-row 2 & data 4 & data 5\footnotemark[1] & data 6 \\
-row 3 & data 7 & data 8	 & data 9\footnotemark[2]\\
-\botrule
-\end{tabular}
-\footnotetext{Source: This is an example of table footnote. 
-This is an example of table footnote.}
-\footnotetext[1]{Example for a first table footnote.
-This is an example of table footnote.}
-\footnotetext[2]{Example for a second table footnote. 
-This is an example of table footnote.}
-\end{table}
-\end{verbatim}
-\bigskip
-%%=============================================%%
-%% For presentation purpose, we have included  %%
-%% \bigskip command. Please ignore this.       %%
-%%=============================================%%
+O'Hanlon and Sandler \cite{OHanlon2021} proposed FifthNet, a compact CNN architecture incorporating a modified CQT representation that achieves performance comparable to larger state-of-the-art models while using substantially fewer parameters. The architecture demonstrated that computationally efficient CNNs can match complex models for chord recognition, providing practical guidance for designing lightweight classifiers. Ito et al. \cite{Ito2023} subsequently modified FifthNet to remove non-causal look-ahead frame dependencies, adapting the architecture for online inference, and observed a 1-2\% improvement in accuracy as an unexpected consequence of removing the look-ahead bias.
 
-\begin{table}[h]
-\caption{Example of a lengthy table which is set to full textwidth}\label{tab2}
-\begin{tabular*}{\textwidth}{@{\extracolsep\fill}lcccccc}
-\toprule%
-& \multicolumn{3}{@{}c@{}}{Element 1\footnotemark[1]} & \multicolumn{3}{@{}c@{}}{Element 2\footnotemark[2]} \\\cmidrule{2-4}\cmidrule{5-7}%
-Project & Energy & $\sigma_{calc}$ & $\sigma_{expt}$ & Energy & $\sigma_{calc}$ & $\sigma_{expt}$ \\
-\midrule
-Element 3  & 990 A & 1168 & $1547\pm12$ & 780 A & 1166 & $1239\pm100$\\
-Element 4  & 500 A & 961  & $922\pm10$  & 900 A & 1268 & $1092\pm40$\\
-\botrule
-\end{tabular*}
-\footnotetext{Note: This is an example of table footnote. This is an example of table footnote this is an example of table footnote this is an example of~table footnote this is an example of table footnote.}
-\footnotetext[1]{Example for a first table footnote.}
-\footnotetext[2]{Example for a second table footnote.}
-\end{table}
+Telila et al. \cite{Telila2023} applied a CNN-CQT system to polyphonic piano automatic music transcription (AMT), achieving frame-level accuracy of 88.2\% (92.5\% excluding silent frames) on a MIDI-synthesized dataset. The study noted that low-energy silent frames substantially degrade measured accuracy and recommended their exclusion from training and evaluation. Moysis et al. \cite{Moysis2023} conducted a comprehensive survey of deep learning methods for music signal processing covering over 150 publications from 2016-2022, identifying CNN as a dominant architecture for chord recognition and confirming that spectrogram-based CNN models routinely achieve higher accuracy than other feature representations.
 
-In case of double column layout, tables which do not fit in single column width should be set to full text width. For this, you need to use \verb+\begin{table*}+ \verb+...+ \verb+\end{table*}+ instead of \verb+\begin{table}+ \verb+...+ \verb+\end{table}+ environment. Lengthy tables which do not fit in textwidth should be set as rotated table. For this, you need to use \verb+\begin{sidewaystable}+ \verb+...+ \verb+\end{sidewaystable}+ instead of \verb+\begin{table*}+ \verb+...+ \verb+\end{table*}+ environment. This environment puts tables rotated to single column width. For tables rotated to double column width, use \verb+\begin{sidewaystable*}+ \verb+...+ \verb+\end{sidewaystable*}+.
+Akram et al. \cite{Akram2025} introduced ChordFormer, a state-of-the-art conformer architecture that combines local CNN feature extraction with transformer self-attention for large-vocabulary ACR, achieving WCSR Root of 84.69\% and MajMin of 84.09\%. While ChordFormer represents the current state-of-the-art for large-vocabulary offline chord recognition, its architectural complexity and reliance on extended temporal context make it less directly applicable to the segment-based, fixed-vocabulary classification scenario studied here. Kusaka and Maezawa \cite{Kusaka2024} proposed Mobile-AMT, achieving an AMT F1-score of 96.30\% with 82.9\% compute reduction, while Hu et al. \cite{Hu2025} adapted Mobile-AMT for strictly causal online operation with latency below 30 ms, confirming that CNN-based architectures can achieve state-of-the-art accuracy even under strict processing constraints.
 
-\begin{sidewaystable}
-\caption{Tables which are too long to fit, should be written using the ``sidewaystable'' environment as shown here}\label{tab3}
-\begin{tabular*}{\textheight}{@{\extracolsep\fill}lcccccc}
-\toprule%
-& \multicolumn{3}{@{}c@{}}{Element 1\footnotemark[1]}& \multicolumn{3}{@{}c@{}}{Element\footnotemark[2]} \\\cmidrule{2-4}\cmidrule{5-7}%
-Projectile & Energy	& $\sigma_{calc}$ & $\sigma_{expt}$ & Energy & $\sigma_{calc}$ & $\sigma_{expt}$ \\
-\midrule
-Element 3 & 990 A & 1168 & $1547\pm12$ & 780 A & 1166 & $1239\pm100$ \\
-Element 4 & 500 A & 961  & $922\pm10$  & 900 A & 1268 & $1092\pm40$ \\
-Element 5 & 990 A & 1168 & $1547\pm12$ & 780 A & 1166 & $1239\pm100$ \\
-Element 6 & 500 A & 961  & $922\pm10$  & 900 A & 1268 & $1092\pm40$ \\
-\botrule
-\end{tabular*}
-\footnotetext{Note: This is an example of table footnote this is an example of table footnote this is an example of table footnote this is an example of~table footnote this is an example of table footnote.}
-\footnotetext[1]{This is an example of table footnote.}
-\end{sidewaystable}
+In the domain of comparative machine learning evaluation, Cui \cite{Cui2022} applied an SVM with Pitch Class Profile (PCP) features for chord recognition, while Putra and Sanjaya \cite{Putra2025} employed SVM with PCP features for automatic chord recognition on guitar and piano, both achieving high accuracy under within-distribution evaluation. These studies, however, do not address the behavior of SVM under different dataset or environment shifts, which is a critical gap that the present paper addresses. The known sensitivity of kernel-based methods to feature distribution changes is well-documented in the broader machine learning literature \cite{Zaman2023} \cite{Zaman2023}: RBF-SVM decision boundaries are implicitly defined relative to the training support vectors, and when the feature distribution shifts (e.g., due to a different instrument's timbre or a different recording device's frequency response), the kernel similarity scores between test samples and support vectors may change drastically, causing systematic misclassification.
 
-\section{Figures}\label{sec6}
+Ferdiawan and Hartono \cite{Ferdiawan2022} applied CNN for piano chord sound detection and confirmed the general efficacy of CNN for chord classification from audio spectrograms. Joysingh et al. \cite{Joysingh2022} demonstrated that spectral-domain onset detection algorithms remain competitive for instruments with fast attack characteristics such as piano. Majchrzak and Madziuk \cite{Majchrzak2025} trained chord recognition models on artificially generated audio and evaluated generalization to real recordings, directly addressing the domain shift problem in ACR, a study closely related in spirit to the cross-dataset evaluation in this paper. Their findings confirm that the gap between training dataset and test set accuracy is a persistent challenge in ACR, which positioned deep feature learning as the better approach than hand-crafted or kernel-based features.
 
-As per the \LaTeX\ standards you need to use eps images for \LaTeX\ compilation and \verb+pdf/jpg/png+ images for \verb+PDFLaTeX+ compilation. This is one of the major difference between \LaTeX\ and \verb+PDFLaTeX+. Each image should be from a single input .eps/vector image file. Avoid using subfigures. The command for inserting images for \LaTeX\ and \verb+PDFLaTeX+ can be generalized. The package used to insert images in \verb+LaTeX/PDFLaTeX+ is the graphicx package. Figures can be inserted via the normal figure environment as shown in the below example:
+The literature review reveals that while CNN-CQT systems have been widely validated for chord classification within controlled dataset conditions, direct head-to-head comparisons with tuned SVM classifiers under cross-dataset evaluation remain underexplored, specifically assessing whether learned representations generalize when acoustic domain conditions change. The present study fills this gap with a controlled experiment using distinct recording hardware, instruments, and environments for training and evaluation.
 
-%%=============================================%%
-%% For presentation purpose, we have included  %%
-%% \bigskip command. Please ignore this.       %%
-%%=============================================%%
-\bigskip
-\begin{verbatim}
-\begin{figure}[<placement-specifier>]
-\centering
-\includegraphics{<eps-file>}
-\caption{<figure-caption>}\label{<figure-label>}
-\end{figure}
-\end{verbatim}
-\bigskip
-%%=============================================%%
-%% For presentation purpose, we have included  %%
-%% \bigskip command. Please ignore this.       %%
-%%=============================================%%
+Springer Nature does not impose a strict layout as standard however authors are advised to check the individual requirements for the journal they are planning to submit to as there may be journal-level preferences. When preparing your text please also be aware that some stylistic choices are not supported in full text XML (publication version), including coloured font. These will not be replicated in the typeset article if it is accepted.
+
+\section{Methods}\label{sec3}
+
+% TODO: methodology diagram
+
+This study uses a quantitative experimental methodology structured around five sequential phases, also seen in Figure 1, which are as follows: (1) dataset acquisition, (2) feature extraction, (3) model training, (4) cross-validation, and (5) comparative evaluation. The experimental pipeline is implemented in Python 3.10 using TensorFlow 2.15, scikit-learn 1.7.2, Librosa 0.11.0, NumPy 1.26.4, Optuna 4.8.0, and Matplotlib 3.10.8. Training is conducted on an ASUS ROG Flow X13 (AMD Ryzen 7 6800HS, NVIDIA GeForce RTX 3050 Ti, 16 GB RAM) with supplementary use of Google Colaboratory (GPU T4/A100, up to 52 GB RAM).
+
+\subsection{Dataset Acquisition}\label{subsec3_1}
+
+\subsubsection{Acquisition Method}\label{subsubsec3_1_1}
+
+A primary dataset of 8,640 labeled piano chord audio samples was collected using a web-based MIDI recording application made specifically for this research, the interface is as shown in Fig. \ref{fig3_1}.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.9\textwidth]{fig.eps}
-\caption{This is a widefig. This is an example of long caption this is an example of long caption  this is an example of long caption this is an example of long caption}\label{fig1}
+\includegraphics[scale=0.5]{example-image-a}
+\caption{The web application used to generate and record the dataset}\label{fig3_1}
 \end{figure}
 
-In case of double column layout, the above format puts figure captions/images to single column width. To get spanned images, we need to provide \verb+\begin{figure*}+ \verb+...+ \verb+\end{figure*}+.
+The application connects to a keyboard via USB MIDI, programmatically triggers chords by sending MIDI note events of each chord, and captures the resulting audio through a microphone. This approach ensures deterministic chord triggering and minimizes occurrences of human error. without manual playing errors and produces recordings with organic acoustic properties arising from the instrument's physical resonance.
 
-For sample purpose, we have included the width of images in the optional argument of \verb+\includegraphics+ tag. Please ignore this. 
+\subsubsection{Dataset Specification}\label{subsubsec3_1_2}
 
-\section{Algorithms, Program codes and Listings}\label{sec7}
+The chord vocabulary covers 36 classes organized as the combination of 12 chromatic root notes (C, C$\sharp$, D, D$\sharp$, E, F, F$\sharp$, G, G$\sharp$, A, A$\sharp$, B) and 3 chord quality types (major, minor, diminished). All chords are in the fourth octave, which provides the clearest harmonic separability and optimal spectral overlap with the CQT frequency range \cite{Telila2023} \cite{Harte2010}. The diminished chord type was included to test the classifier's sensitivity to a harmonically dense and less commonly occurring chord type \cite{Aidinis2024}.
 
-Packages \verb+algorithm+, \verb+algorithmicx+ and \verb+algpseudocode+ are used for setting algorithms in \LaTeX\ using the format:
+\subsubsection{Dataset Categories}\label{subsubsec3_1_3}
 
-%%=============================================%%
-%% For presentation purpose, we have included  %%
-%% \bigskip command. Please ignore this.       %%
-%%=============================================%%
-\bigskip
-\begin{verbatim}
-\begin{algorithm}
-\caption{<alg-caption>}\label{<alg-label>}
-\begin{algorithmic}[1]
-. . .
-\end{algorithmic}
-\end{algorithm}
-\end{verbatim}
-\bigskip
-%%=============================================%%
-%% For presentation purpose, we have included  %%
-%% \bigskip command. Please ignore this.       %%
-%%=============================================%%
-
-You may refer above listed package documentations for more details before setting \verb+algorithm+ environment. For program codes, the ``verbatim'' package is required and the command to be used is \verb+\begin{verbatim}+ \verb+...+ \verb+\end{verbatim}+. 
-
-Similarly, for \verb+listings+, use the \verb+listings+ package. \verb+\begin{lstlisting}+ \verb+...+ \verb+\end{lstlisting}+ is used to set environments similar to \verb+verbatim+ environment. Refer to the \verb+lstlisting+ package documentation for more details.
-
-A fast exponentiation procedure:
-
-\lstset{texcl=true,basicstyle=\small\sf,commentstyle=\small\rm,mathescape=true,escapeinside={(*}{*)}}
-\begin{lstlisting}
-begin
-  for $i:=1$ to $10$ step $1$ do
-      expt($2,i$);  
-      newline() od                (*\textrm{Comments will be set flush to the right margin}*)
-where
-proc expt($x,n$) $\equiv$
-  $z:=1$;
-  do if $n=0$ then exit fi;
-     do if odd($n$) then exit fi;                 
-        comment: (*\textrm{This is a comment statement;}*)
-        $n:=n/2$; $x:=x*x$ od;
-     { $n>0$ };
-     $n:=n-1$; $z:=z*x$ od;
-  print($z$). 
-end
-\end{lstlisting}
-
-\begin{algorithm}
-\caption{Calculate $y = x^n$}\label{algo1}
-\begin{algorithmic}[1]
-\Require $n \geq 0 \vee x \neq 0$
-\Ensure $y = x^n$ 
-\State $y \Leftarrow 1$
-\If{$n < 0$}\label{algln2}
-        \State $X \Leftarrow 1 / x$
-        \State $N \Leftarrow -n$
-\Else
-        \State $X \Leftarrow x$
-        \State $N \Leftarrow n$
-\EndIf
-\While{$N \neq 0$}
-        \If{$N$ is even}
-            \State $X \Leftarrow X \times X$
-            \State $N \Leftarrow N / 2$
-        \Else[$N$ is odd]
-            \State $y \Leftarrow y \times X$
-            \State $N \Leftarrow N - 1$
-        \EndIf
-\EndWhile
-\end{algorithmic}
-\end{algorithm}
-
-%%=============================================%%
-%% For presentation purpose, we have included  %%
-%% \bigskip command. Please ignore this.       %%
-%%=============================================%%
-\bigskip
-\begin{minipage}{\hsize}%
-\lstset{frame=single,framexleftmargin=-1pt,framexrightmargin=-17pt,framesep=12pt,linewidth=0.98\textwidth,language=pascal}% Set your language (you can change the language for each code-block optionally)
-%%% Start your code-block
-\begin{lstlisting}
-for i:=maxint to 0 do
-begin
-{ do nothing }
-end;
-Write('Case insensitive ');
-Write('Pascal keywords.');
-\end{lstlisting}
-\end{minipage}
-
-\section{Cross referencing}\label{sec8}
-
-Environments such as figure, table, equation and align can have a label
-declared via the \verb+\label{#label}+ command. For figures and table
-environments use the \verb+\label{}+ command inside or just
-below the \verb+\caption{}+ command. You can then use the
-\verb+\ref{#label}+ command to cross-reference them. As an example, consider
-the label declared for Figure~\ref{fig1} which is
-\verb+\label{fig1}+. To cross-reference it, use the command 
-\verb+Figure \ref{fig1}+, for which it comes up as
-``Figure~\ref{fig1}''. 
-
-To reference line numbers in an algorithm, consider the label declared for the line number 2 of Algorithm~\ref{algo1} is \verb+\label{algln2}+. To cross-reference it, use the command \verb+\ref{algln2}+ for which it comes up as line~\ref{algln2} of Algorithm~\ref{algo1}.
-
-\subsection{Details on reference citations}\label{subsec7}
-
-Standard \LaTeX\ permits only numerical citations. To support both numerical and author-year citations this template uses \verb+natbib+ \LaTeX\ package. For style guidance please refer to the template user manual.
-
-Here is an example for \verb+\cite{...}+: \cite{bib1}. Another example for \verb+\citep{...}+: \citep{bib2}. For author-year citation mode, \verb+\cite{...}+ prints Jones et al. (1990) and \verb+\citep{...}+ prints (Jones et al., 1990).
-
-All cited bib entries are printed at the end of this article: \cite{bib3}, \cite{bib4}, \cite{bib5}, \cite{bib6}, \cite{bib7}, \cite{bib8}, \cite{bib9}, \cite{bib10}, \cite{bib11}, \cite{bib12} and \cite{bib13}.
-
-\section{Examples for theorem like environments}\label{sec10}
-
-For theorem like environments, we require \verb+amsthm+ package. There are three types of predefined theorem styles exists---\verb+thmstyleone+, \verb+thmstyletwo+ and \verb+thmstylethree+ 
-
-%%=============================================%%
-%% For presentation purpose, we have included  %%
-%% \bigskip command. Please ignore this.       %%
-%%=============================================%%
-\bigskip
-\begin{tabular}{|l|p{19pc}|}
-\hline
-\verb+thmstyleone+ & Numbered, theorem head in bold font and theorem text in italic style \\\hline
-\verb+thmstyletwo+ & Numbered, theorem head in roman font and theorem text in italic style \\\hline
-\verb+thmstylethree+ & Numbered, theorem head in bold font and theorem text in roman style \\\hline
-\end{tabular}
-\bigskip
-%%=============================================%%
-%% For presentation purpose, we have included  %%
-%% \bigskip command. Please ignore this.       %%
-%%=============================================%%
-
-For mathematics journals, theorem styles can be included as shown in the following examples:
-
-\begin{theorem}[Theorem subhead]\label{thm1}
-Example theorem text. Example theorem text. Example theorem text. Example theorem text. Example theorem text. 
-Example theorem text. Example theorem text. Example theorem text. Example theorem text. Example theorem text. 
-Example theorem text. 
-\end{theorem}
-
-Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text.
-
-\begin{proposition}
-Example proposition text. Example proposition text. Example proposition text. Example proposition text. Example proposition text. 
-Example proposition text. Example proposition text. Example proposition text. Example proposition text. Example proposition text. 
-\end{proposition}
-
-Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text.
-
-\begin{example}
-Phasellus adipiscing semper elit. Proin fermentum massa
-ac quam. Sed diam turpis, molestie vitae, placerat a, molestie nec, leo. Maecenas lacinia. Nam ipsum ligula, eleifend
-at, accumsan nec, suscipit a, ipsum. Morbi blandit ligula feugiat magna. Nunc eleifend consequat lorem. 
-\end{example}
-
-Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text.
-
-\begin{remark}
-Phasellus adipiscing semper elit. Proin fermentum massa
-ac quam. Sed diam turpis, molestie vitae, placerat a, molestie nec, leo. Maecenas lacinia. Nam ipsum ligula, eleifend
-at, accumsan nec, suscipit a, ipsum. Morbi blandit ligula feugiat magna. Nunc eleifend consequat lorem. 
-\end{remark}
-
-Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text.
-
-\begin{definition}[Definition sub head]
-Example definition text. Example definition text. Example definition text. Example definition text. Example definition text. Example definition text. Example definition text. Example definition text. 
-\end{definition}
-
-Additionally a predefined ``proof'' environment is available: \verb+\begin{proof}+ \verb+...+ \verb+\end{proof}+. This prints a ``Proof'' head in italic font style and the ``body text'' in roman font style with an open square at the end of each proof environment. 
-
-\begin{proof}
-Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. 
-\end{proof}
-
-Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text.
-
-\begin{proof}[Proof of Theorem~{\upshape\ref{thm1}}]
-Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. 
-\end{proof}
-
-\noindent
-For a quote environment, use \verb+\begin{quote}...\end{quote}+
-\begin{quote}
-Quoted text example. Aliquam porttitor quam a lacus. Praesent vel arcu ut tortor cursus volutpat. In vitae pede quis diam bibendum placerat. Fusce elementum
-convallis neque. Sed dolor orci, scelerisque ac, dapibus nec, ultricies ut, mi. Duis nec dui quis leo sagittis commodo.
-\end{quote}
-
-Sample body text. Sample body text. Sample body text. Sample body text. Sample body text (refer Figure~\ref{fig1}). Sample body text. Sample body text. Sample body text (refer Table~\ref{tab3}). 
-
-\section{Methods}\label{sec11}
-
-Topical subheadings are allowed. Authors must ensure that their Methods section includes adequate experimental and characterization data necessary for others in the field to reproduce their work. Authors are encouraged to include RIIDs where appropriate. 
-
-\textbf{Ethical approval declarations} (only required where applicable) Any article reporting experiment/s carried out on (i)~live vertebrate (or higher invertebrates), (ii)~humans or (iii)~human samples must include an unambiguous statement within the methods section that meets the following requirements: 
+The dataset is divided into two categories, each for their own respective uses:
 
 \begin{enumerate}[1.]
-\item Approval: a statement which confirms that all experimental protocols were approved by a named institutional and/or licensing committee. Please identify the approving body in the methods section
 
-\item Accordance: a statement explicitly saying that the methods were carried out in accordance with the relevant guidelines and regulations
+    \item Training dataset: 200 samples per class with randomized note attack delays of 0-150 ms, totaling 7,200 samples. The dataset is recorded on Xiaomi Pad 2 and played by Techno T-9890i keyboard with Acoustic Grand Piano voice.
 
-\item Informed consent (for experiments involving humans or human tissue samples): include a statement confirming that informed consent was obtained from all participants and/or their legal guardian/s
+    \item Evaluation dataset: 40 samples per class with randomized note attack delays of 0-100 ms, totaling 1,440 samples. The other 20 half of the samples are recorded with relatively higher volume. The dataset is recorded on ROG Flow X13 and played by Yamaha PSR-S910 keyboard with Grand Piano voice.
+
 \end{enumerate}
 
-If your manuscript includes potentially identifying patient/participant information, or if it describes human transplantation research, or if it reports results of a clinical trial then  additional information will be required. Please visit (\url{https://www.nature.com/nature-research/editorial-policies}) for Nature Portfolio journals, (\url{https://www.springer.com/gp/authors-editors/journal-author/journal-author-helpdesk/publishing-ethics/14214}) for Springer Nature journals, or (\url{https://www.biomedcentral.com/getpublished/editorial-policies\#ethics+and+consent}) for BMC.
+Variation in note attack timing simulates natural playing conditions and reduces the risk of the model overfitting to perfectly simultaneous note onsets. All recordings are stored in OGG/OPUS format at 48,000 Hz sample rate, 32-bit depth, mono channel, without any post-processing filters that could alter spectral characteristics. Fig. \ref{fig3_2} shows the distribution of audio durations from all samples inside the training dataset.
 
-\section{Discussion}\label{sec12}
 
-Discussions should be brief and focused. In some disciplines use of Discussion or `Conclusion' is interchangeable. It is not mandatory to use both. Some journals prefer a section `Results and Discussion' followed by a section `Conclusion'. Please refer to Journal-level guidance for any specific requirements. 
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.5]{example-image-a}
+\caption{Training dataset audio duration distribution across classes}\label{fig3_2}
+\end{figure}
 
-\section{Conclusion}\label{sec13}
+\subsection{Constant-Q Transform}\label{subsec3_3}
 
-Conclusions may be used to restate your hypothesis or research question, restate your major findings, explain the relevance and the added value of your work, highlight any limitations of your study, describe future directions for research and recommendations. 
+Feature extraction uses the Constant-Q Transform (CQT) via the \texttt{librosa.cqt()} function. The CQT computes a time-frequency spectrogram representation in which the center frequency of each bin $f_k$ satisfies a constant ratio $Q = \frac{f_k}{\Delta f_k}$, given by:
 
-In some disciplines use of Discussion or 'Conclusion' is interchangeable. It is not mandatory to use both. Please refer to Journal-level guidance for any specific requirements. 
+\begin{equation}
+Q = \frac{f_k}{f_{k+1} - f_k} = \frac{1}{2^{1/B} - 1}
+\end{equation}
 
-\backmatter
+where $B$ is the number of bins per octave \cite{Li2021} \cite{Lacoste2007}. This logarithmic frequency spacing directly aligns each bin with a musical note, making the resulting 2D spectrogram matrix invariant to chord transposition and ideal for CNN-based pattern recognition \cite{Li2021} \cite{Telila2023}.
 
-\bmhead{Supplementary information}
+\subsection{Feature Extraction Parameters}\label{subsec3_4}
 
-If your article has accompanying supplementary file/s please state so here. 
+The extraction parameters are given in Table \ref{tab1}.
 
-Authors reporting data from electrophoretic gels and blots should supply the full unprocessed scans for key as part of their Supplementary information. This may be requested by the editorial team/s if it is missing.
+\begin{table}[h]
+\caption{CQT feature extraction parameters}\label{tab1}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Parameter & Value \\
+\midrule
+Sample Rate        & $48,000$ Hz ($48$ KHz) \\
+Hop Size           & $512$ samples \\
+Number of Octaves  & $6$ \\
+Bins per Octave    & $36$ \\
+Total Bins         & $216$ \\
+Lowest Note        & C1 ($32.70$ Hz) \\
+Highest Note       & C7 ($2,093$ Hz) \\
+Window Function    & Hann window \\
+Frame Size         & $188$ frames \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-Please refer to Journal-level guidance for any specific requirements.
+The choice of $36$ bins per octave ($3$ bins per semitone) provides high frequency resolution sufficient to resolve the harmonic interval differences between major ($4 + 3$ semitones), minor ($3 + 4$ semitones), and diminished ($3 + 3$ semitones) triads, consistent with the configurations used by Akram et al. \cite{Akram2025}, O'Hanlon and Sandler \cite{OHanlon2021}, and Rowe and Tzanetakis \cite{Akram2025}.
 
-\bmhead{Acknowledgements}
+Each audio sample is analyzed to determine the minimum recording duration across the dataset, as shown in Fig. X. Since broken chords with random note delays may be up to $2.7$ seconds long while simultaneous chords are approximately $2.0$ seconds. The frame size is calculated using the following formula:
 
-Acknowledgements are not compulsory. Where included they should be brief. Grant or contribution numbers may be acknowledged.
+\begin{equation}
+\textit{frame} = \frac{\textit{duration} \times \textit{sample rate}}{\textit{hop size}}
+\end{equation}
 
-Please refer to Journal-level guidance for any specific requirements.
+Corresponding to the minimum audio duration of $2.0$ seconds, the fixed frame length is set to $188$ frames and longer recordings are truncated to this length. This ensures all feature matrices have the uniform dimensionality of $216 \times 188 \times 1$ required by the CNN input layer.
 
-\section*{Declarations}
+The output of the CQT extraction is a 2D matrix for each audio sample where rows represent frequency bins ($0$--$215$, corresponding to C1--C7) and columns represent time frames ($0$--$187$, spanning $0$--$2$ seconds). Values in each cell represent the magnitude of the CQT coefficient in decibels (dB), capturing the energy distribution across the musical pitch and time dimensions simultaneously.
 
-Some journals require declarations to be submitted in a standardised format. Please check the Instructions for Authors of the journal to which you are submitting to see if you need to complete this section. If yes, your manuscript must contain the following sections under the heading `Declarations':
+\subsection{CNN Architecture}\label{subsec3_5}
 
-\begin{itemize}
-\item Funding
-\item Conflict of interest/Competing interests (check journal-specific guidelines for which heading to use)
-\item Ethics approval and consent to participate
-\item Consent for publication
-\item Data availability 
-\item Materials availability
-\item Code availability 
-\item Author contribution
-\end{itemize}
+The CNN architecture is adopted and adapted from \cite{Wolf-Monheim2024} \cite{Wolf-Monheim2025}, originally designed for environmental sound classification using spectral and rhythmic features on the ESC-50 dataset \cite{Purwono2022}. The architecture was selected for its relatively compact form consisting of four convolutional blocks without recurrent layers, attention mechanisms, or secondary models, which aligns with the fixed-window classification approach of this study. This contrasts with architectures such as ChordFormer \cite{Akram2025} or FifthNet-online \cite{Ito2023} that are designed for continuous temporal modeling. The complete layer-by-layer architecture is specified in Table \ref{tab2}.
 
-\noindent
-If any of the sections are not relevant to your manuscript, please include the heading and write `Not applicable' for that section. 
+\begin{table*}[h]
+\caption{Proposed CNN architecture specification}\label{tab2}
+\begin{tabular*}{\textwidth}{@{\extracolsep\fill}lll}
+\toprule
+Layer & Output Shape & Kernel / Parameters \\
+\midrule
+BatchNormalization  & $216 \times 188 \times 1$  & - \\
+Conv2D              & $216 \times 188 \times 64$ & $3 \times 3$, ReLU, same padding \\
+MaxPooling2D        & $108 \times 94 \times 64$  & $2 \times 2$, stride $2$ \\
+Conv2D              & $108 \times 94 \times 128$ & $3 \times 3$, ReLU, same padding \\
+MaxPooling2D        & $54 \times 47 \times 128$  & $2 \times 2$, stride $2$ \\
+Conv2D              & $54 \times 47 \times 256$  & $3 \times 3$, ReLU, same padding \\
+MaxPooling2D        & $27 \times 23 \times 256$  & $2 \times 2$, stride $2$ \\
+Conv2D              & $27 \times 23 \times 256$  & $3 \times 3$, ReLU, same padding \\
+MaxPooling2D        & $13 \times 11 \times 256$  & $2 \times 2$, stride $2$ \\
+Flatten             & $36,608$                   & - \\
+Dense               & $256$                      & $256$ neurons, ReLU \\
+Dropout             & $256$                      & rate $0.5$ \\
+Dense (Output)      & $36$                       & Softmax \\
+\bottomrule
+\end{tabular*}
+\end{table*}
 
-%%===================================================%%
-%% For presentation purpose, we have included        %%
-%% \bigskip command. Please ignore this.             %%
-%%===================================================%%
-\bigskip
-\begin{flushleft}%
-Editorial Policies for:
+The Batch Normalization layer at the input normalizes the CQT magnitude values along the frequency axis, ensuring consistent input statistics across samples and accelerating training convergence \cite{Purwono2022}.
 
-\bigskip\noindent
-Springer journals and proceedings: \url{https://www.springer.com/gp/editorial-policies}
+The four Conv2D-MaxPooling2D blocks form a progressive feature hierarchy: the first block ($64$ filters) learns low-level spectral edges and texture features; the second block ($128$ filters) captures mid-level harmonic interval patterns; the third and fourth blocks ($256$ filters each) acquire high-level chord quality representations. The ReLU activation function is used throughout the convolutional and dense layers to introduce nonlinearity while maintaining efficient gradient flow \cite{OShea2015} \cite{Purwono2022}.
 
-\bigskip\noindent
-Nature Portfolio journals: \url{https://www.nature.com/nature-research/editorial-policies}
+MaxPooling with a $2 \times 2$ kernel and stride $2$ at each block reduces the spatial resolution by half, concentrating the learned representation while reducing the parameter count and providing limited translation invariance within the time-frequency plane \cite{Purwono2022}.
 
-\bigskip\noindent
-\textit{Scientific Reports}: \url{https://www.nature.com/srep/journal-policies/editorial-policies}
+After the fourth pooling block, the feature map ($13 \times 11 \times 256$) is flattened to a $36,608$-dimensional vector and passed through a Dense layer with $256$ ReLU neurons for classification learning. A Dropout layer (rate $= 0.5$) randomly deactivates $50\%$ of neurons during training iterations to prevent co-adaptation of neurons and reduce overfitting \cite{Purwono2022}. The output Dense layer uses Softmax activation to produce a probability distribution over the $36$ chord classes, enabling the model to output both a classification decision and a confidence score \cite{Hossin2015}.
 
-\bigskip\noindent
-BMC journals: \url{https://www.biomedcentral.com/getpublished/editorial-policies}
-\end{flushleft}
+\subsection{CNN Training Parameters}\label{subsec3_6}
 
-\begin{appendices}
+Training parameters are presented in Table \ref{tab3}, which are also derived from \cite{Wolf-Monheim2024} \cite{Wolf-Monheim2025}.
 
-\section{Section title of first appendix}\label{secA1}
+\begin{table}[h]
+\caption{CNN Training Parameters}\label{tab3}
+\begin{tabularx}{\columnwidth}{@{}lX@{}}
+\toprule
+Parameter & Value \\
+\midrule
+Random State & $42$ \\
+Training Set Size & $80\%$ ($5,760$ samples) \\
+Validation Set Size & $10\%$ ($720$ samples) \\
+Test Set Size & $10\%$ ($720$ samples) \\
+Batch Size & $32$ \\
+Initial Learning Rate & $0.001$ \\
+Optimizer & Adam \\
+Weight Initialization & Glorot (Xavier) uniform \\
+Loss Function & Categorical Cross-Entropy \\
+Maximum Epochs & $50$ \\
+Early Stopping Patience & $6$ epochs (on validation loss) \\
+LR Reduction Factor & $0.1$ (after $2$ epochs without validation loss improvement) \\
+\botrule
+\end{tabularx}
+\end{table}
 
-An appendix contains supplementary information that is not an essential part of the text itself but which may be helpful in providing a more comprehensive understanding of the research problem or it is information that is too cumbersome to be included in the body of the paper.
+The dataset is split into training ($80\%$), validation ($10\%$), and test ($10\%$) partitions using stratified random sampling to ensure class balance, with a fixed random seed of $42$ across splits for full reproducibility. The Adam optimizer is used with an initial learning rate of $0.001$. Glorot (Xavier) uniform weight initialization is applied to all Conv2D and Dense layers, ensuring that variance is preserved through the network depth during initialization \cite{Purwono2022}.
+
+Two regularization callbacks are applied during training. ReduceLROnPlateau callback reduces the learning rate by a factor of $0.1$ when validation loss does not improve for $2$ consecutive epochs, allowing fine-grained parameter updates as the model approaches convergence. EarlyStopping callback terminates training if validation loss does not improve for $6$ consecutive epochs, saving the best model weights with lowest validation loss for final evaluation. These mechanisms together prevent overfitting and wasted computation.
+
+The final model evaluation uses the $10\%$ test set, which was held out entirely during training and validation and contains no samples seen during the training or cross-validation phases. The test set in training comprises $20$ samples per class.
+
+\subsection{Cross Validation Method}\label{subsec3_7}
+
+To validate the statistical robustness of the classification results and rule out variance from a single train/test split, 5-fold cross-validation is performed on the full training dataset. In each fold, $80\%$ of the data is used for training and $20\%$ for validation/test. Each fold involves a complete re-training of the model from initialization with fixed random seed per fold, ensuring that performance is measured across five independent data splits.
+
+\subsection{SVM Hyperparameter Tuning}\label{subsec3_8}
+
+An RBF-kernel SVM is configured as a comparative baseline using the scikit-learn SVC implementation \cite{Pedregosa2011}. The identical CQT features used for CNN training are used as SVM input, ensuring a fair comparison. Because SVM operates on flattened feature vectors, each $216 \times 188$ CQT matrix is reshaped into a $40,608$-dimensional vector before classification.
+
+Hyperparameter optimization is performed using the Optuna library \cite{Akiba2019} with RandomSampler over 10 trials. The search space is defined as follows: $C \in \{0.1, 1, 10, 100, 1000\}$ and $\gamma \in \{10^{-6}, 10^{-5}, 10^{-4}, 10^{-3}\}$, following the ranges recommended by Chang and Lin \cite{Chang2011} and consistent with related ACR studies \cite{Putra2025} \cite{Zaman2023}. Each trial is evaluated using stratified 5-fold cross-validation accuracy.
+
+\subsection{Evaluation Metrics}\label{subsec3_9}
+
+Model performance is evaluated using the standard classification metrics derived from the confusion matrix \cite{Hossin2015}, where the calculations are based on what is seen in Tables \ref{tab1}.
+
+\begin{table}[h]
+\caption{Confusion matrix calculation for evaluation metrics}\label{tab4}
+\begin{tabular}{@{}lll@{}}
+\toprule
+                    & Actual Positive       & Actual Negative \\
+\midrule
+Predicted Positive  & True Positive (TP)    & False Negative (FN) \\
+Predicted Negative  & False Positive (FP)   & True Negative (TN) \\
+\botrule
+\end{tabular}
+\end{table}
+
+The formula for each metrics are as follows:
+
+\begin{enumerate}[1.]
+
+    \item Accuracy: the proportion of correctly classified samples. Measures the ratio of correct predictions over the total number of instances evaluated.
+
+    \begin{equation}
+    \textit{Accuracy}=\frac{TP+TN}{TP+FP+TN+FN} \label{eq1}
+    \end{equation}
+
+    \item Precision: the proportion of positive predictions that are correct. Measures the positive patterns that are correctly predicted from the total predicted patterns in a positive class.
+
+    \begin{equation}
+    \textit{Precision}=\frac{TP}{TP+FP} \label{eq2}
+    \end{equation}
+
+    \item Recall: the proportion of true positives correctly identified. Measures the fraction of positive patterns that are correctly classified.
+
+    \begin{equation}
+    \textit{Recall}=\frac{TP}{TP+TN} \label{eq3}
+    \end{equation}
+
+    \item F1-score: represents the harmonic mean of precision and recall values.
+
+    \begin{equation}
+    \textit{F1-score}=\frac{2\times\textit{Precision}\times\textit{}{Recall}}{\textit{Precision}+\textit{Recall}} \label{eq4}
+    \end{equation}
+
+\end{enumerate}
+
+For multi-class classification with 36 classes, macro-averaged precision, recall, and F1-score are reported, giving equal weight to each class regardless of sample count. All metrics are computed from the confusion matrix over the test sets.
+
+\section{Result and Discussion}\label{sec4}
+
+% TODO: intro paragraph
+
+\subsection{CQT Feature Extraction}\label{subsec4_1}
+
+Feature extraction successfully transforms all $8,640$ ($7,200$ training dataset, $1,440$ evaluation dataset) piano chord audio recordings into $216 \times 188$ CQT decibel matrices. Each matrix captures the time-frequency energy distribution across $216$ frequency bins (C1 to C7, $6$ octaves $\times 36$ bins/octave) and $188$ time frames covering $2$ seconds of audio at a $48$ kHz sample rate with $512$-sample hop length, as defined in Table X. Four samples of extracted features from the training dataset shown in Fig. \ref{fig4_1}, consisting of D$\sharp$\_diminished\_4, A\_diminished\_4, E\_minor\_4, and F\_diminished\_4 class.
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.5]{example-image-a}
+\caption{Extracted CQT spectrogram samples}\label{fig4_1}
+\end{figure}
+
+\subsection{CNN Training and Validation}\label{subsec4_2}
+
+% TODO: intro paragraph
+
+\subsubsection{CNN Training Result}\label{subsubsec4_2_1}
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.5]{example-image-a}
+\caption{CNN training epoch graph}\label{fig4_2}
+\end{figure}
+
+As shown in Fig. \ref{fig4_2}, the CNN model converges extremely rapidly. Training reaches a validation accuracy of 99.85\% by epoch 2, and continues improving to 100\% validation accuracy by epoch 3. Training accuracy increases from 47.65\% at epoch 1, accelerates to 98.41\% at epoch 2, and reaches its peak of 99.91\% at epoch 8. Early stopping is triggered after epoch 10 (6 epochs with no validation loss improvement), with the model saving the best weights from epoch 4. The rapid convergence is consistent with the high discriminability of the CQT features for this training dataset.
+
+The learning curve is characteristic of a well-regularized model: training accuracy consistently lags behind validation accuracy during early epochs due to the dropout regularization, which deactivates neurons stochastically during training but is disabled during validation evaluation. No signs of overfitting are observed, given that validation loss consistently decreases and the gap between training and validation metrics narrows smoothly.
+
+After training, the model is evaluated on the 10\% test set split, containing 1,080 samples with 20 per class. The resulting confusion matrix in Fig. X shows zero misclassifications across all 36 chord classes: the model achieves perfect test accuracy, precision, recall, and F1-score of 1.0000. The confusion matrix diagonal is uniformly filled, indicating that the model discriminates all 36 major, minor, and diminished chord classes in the fourth octave without any confusion between classes at all. The confusion matrix is shown in Fig. \ref{fig4_3}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.5]{example-image-a}
+\caption{CNN training evaluation confusion matrix}\label{fig4_3}
+\end{figure}
+
+This result indicates that the combination of CQT spectrograms with 36 bins per octave capturing each semitone at high frequency resolution and the hierarchical feature extraction capability of the four-block CNN is sufficient to perfectly separate all 36 chord classes in this training dataset. The interval differences between chord types for major (M3 + m3), minor (m3 + M3), and diminished (m3 + m3), which correspond to shifts of 1-2 bins in the CQT representation are effectively captured by the $3 \times 3$ convolutional kernels applied at multiple scales.
+
+\subsubsection{CNN Cross-Validation}\label{subsubsec4_2_2}
+
+Table \ref{tab4_1} presents the 5-fold cross-validation results.
+
+\begin{table*}[h]
+\caption{CNN 5-fold cross-validation results}\label{tab4_1}
+\begin{tabular*}{\textwidth}{@{\extracolsep\fill}llllllll}
+\toprule
+&  & \multicolumn{3}{l}{Accuracy} & \multicolumn{3}{l}{Loss} \\
+\cmidrule(lr){3-5} \cmidrule(lr){6-8}
+Fold & Epochs & Train & Validation & Test & Train & Validation & Test \\
+\midrule
+Fold 1  & $11$   & $0.9979$ & $1.0000$  & $1.0000$  & $0.0051$  & $0.0000$  & $0.0003$      \\
+Fold 2  & $21$   & $0.9979$ & $1.0000$  & $1.0000$  & $0.0051$  & $0.0000$  & $0.0000$      \\
+Fold 3  & $19$   & $0.9969$ & $1.0000$  & $1.0000$  & $0.0063$  & $0.0000$  & $0.0000$      \\
+Fold 4  & $15$   & $0.9967$ & $1.0000$  & $1.0000$  & $0.0091$  & $0.0000$  & $0.0000$      \\
+Fold 5  & $14$   & $0.9985$ & $1.0000$  & $1.0000$  & $0.0058$  & $0.0000$  & $0.0001$      \\
+Mean    & $16$   & $0.9976$ & $1.0000$  & $1.0000$  & $0.0074$  & $0.0000$  & $0.0001$ \\
+Std.    & $3.58$ & $0.0007$ & $0.0000$  & $0.0000$  & $0.0020$  & $0.0000$  & $0.0001$ \\
+\bottomrule
+\end{tabular*}
+\end{table*}
+
+Across all five folds with respective epochs mean and standard deviation of $16 \pm 3.58$, the CNN achieves perfect validation and test accuracy ($1.0000$) with zero standard deviation, confirming that the result is not an artifact of a particular random data split. The mean training accuracy of $0.9976$ with a standard deviation of $0.0007$ indicates slight variation across folds attributable to the effects of dropout and mini-batch gradient descent, but these do not affect the generalization performance on the test data. The near-zero mean test loss ($0.0001 \pm 0.0001$) further confirms that the model's output probability distributions sharply peaked on the correct class across all test samples. The results are also visualized as a graph in Fig. \ref{fig4_4}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.5]{example-image-a}
+\caption{CNN 5-fold cross-validation training graph}\label{fig4_4}
+\end{figure}
+
+These cross-validation results provide strong statistical evidence that the CNN architecture that is trained on CQT features learns a highly reliable and generalizable decision boundary for 36-class piano chord classification specifically on this training dataset. The consistency across folds also rules out data split bias as a possible explanation for the high accuracy.
+
+\subsection{SVM Hyperparameter Tuning}\label{subsec4_3}
+
+% TODO: intro paragraph
+
+\subsubsection{SVM Training Result}\label{subsubsec4_3_1}
+
+Hyperparameter tuning using Optuna's RandomSampler, as shown in the tuning process in Fig. \ref{fig4_5}, converges at trial 7 with $C = 1000$ and $\gamma = 10^{-5}$, at which point the SVM achieves perfect validation accuracy.
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.5]{example-image-a}
+\caption{SVM hyperparameter tuning process}\label{fig4_5}
+\end{figure}
+
+The search terminates early due to early convergence, confirming that the chosen hyperparameter space includes the globally optimal configuration for this dataset. The final SVM model trained with these parameters achieves perfect accuracy ($1.000$) on the $10\%$ test set, with the confusion matrix showing zero misclassifications across all $36$ chord classes as illustrated in Fig. \ref{fig4_6}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.5]{example-image-a}
+\caption{SVM training confusion matrix}\label{fig4_6}
+\end{figure}
+
+\subsubsection{SVM Cross-Validation}\label{subsubsec4_3_2}
+
+Table \ref{tab4_2} presents the 5-fold cross-validation results for SVM.
+
+\begin{table}[h]
+\caption{SVM cross-validation on 5-fold cross-validation}\label{tab4_2}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Fold    & Accuracy  & Macro F1  & Weighted F1 \\
+\midrule
+Fold 1  & $1.0000$  & $1.0000$  & $1.0000$    \\
+Fold 2  & $1.0000$  & $1.0000$  & $1.0000$    \\
+Fold 3  & $1.0000$  & $1.0000$  & $1.0000$    \\
+Fold 4  & $1.0000$  & $1.0000$  & $1.0000$    \\
+Fold 5  & $1.0000$  & $1.0000$  & $1.0000$    \\
+Mean    & $1.0000$  & $1.0000$  & $1.0000$    \\
+Std.    & $0.0000$  & $0.0000$  & $0.0000$    \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The SVM achieves perfect accuracy and F1-score across all five cross-validation folds with zero standard deviation, identical to the CNN. This result demonstrates that the extracted CQT features are sufficiently discriminative that both a machine learning classifier and a deep convolutional network can perfectly separate the $36$ chord classes. The SVM's perfect performance may be attributed to the high-dimensional, acoustically well-separated nature of the full-length CQT feature vectors in this controlled recording environment.
+
+\subsection{CNN vs. SVM Cross-Validation}\label{subsec4_4}
+
+Table \ref{tab4_3} summarizes the comparative performance of both models using 5-fold cross-validation.
+
+\begin{table}[h]
+\caption{SVM cross-validation on 5-fold cross-validation}\label{tab4_3}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+& \multicolumn{2}{l}{CNN} & \multicolumn{2}{l}{SVM} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+Fold & Accuracy & F1-Score & Accuracy & F1-Score \\
+\midrule
+Fold 1 & $1.0000$ & $1.0000$ & $1.0000$ & $1.0000$ \\
+Fold 2 & $1.0000$ & $1.0000$ & $1.0000$ & $1.0000$ \\
+Fold 3 & $1.0000$ & $1.0000$ & $1.0000$ & $1.0000$ \\
+Fold 4 & $1.0000$ & $1.0000$ & $1.0000$ & $1.0000$ \\
+Fold 5 & $1.0000$ & $1.0000$ & $1.0000$ & $1.0000$ \\
+Mean   & $1.0000$ & $1.0000$ & $1.0000$ & $1.0000$ \\
+Std.   & $0.0000$ & $0.0000$ & $0.0000$ & $0.0000$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Under the training dataset, both CNN and SVM achieve perfect and indistinguishable performance. This result is notable in that it demonstrates the discriminative sufficiency of the CQT representation itself. When the input features are complete and unambiguous, even a machine learning classifier can perfectly separate the $36$ chord classes. CNN's additional computational complexity does not yield any measurable benefit under these conditions. However, the equivalence of results under ideal conditions shifts the evaluative question to performance under different environments in an unseen evaluation dataset, which is addressed in the following subsection.
+
+\subsection{Evaluation Dataset Testing}\label{subsec4_5}
+
+% TODO: intro paragraph
+
+\subsubsection{CNN Evaluation}\label{subsubsec4_5_1}
+
+To assess the generalization of the trained CNN model beyond its training distribution, the model is evaluated on a separate $1,440$ sample evaluation dataset recorded from a Yamaha PSR-S910 keyboard using the Grand Piano voice, captured via the internal microphone of an ASUS ROG Flow X13 laptop. This evaluation dataset was recorded in a different physical environment from the training data and introduces acoustic differences arising from instrument brand, piano voice synthesis algorithm, and recording device frequency response. No samples from the evaluation dataset were used during the training or cross-validation process. Each of the $36$ chord classes is represented by $40$ samples in the evaluation set, recorded with randomized note attack delays of $0$--$100$ ms (compared to $0$--$150$ ms in training). The confusion matrix is shown in Fig. \ref{fig4_7}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.5]{example-image-a}
+\caption{Confusion matrix of CNN test on evaluation dataset}\label{fig4_7}
+\end{figure}
+
+The resulting confusion matrix shows that the CNN retains substantial predictive capability on the unseen dataset. The majority of chord classes are classified with perfect or near-perfect accuracy ($40/40$ correct), including all B, C$\sharp$, D$\sharp$, D, F$\sharp$, F, G, and G$\sharp$ major and minor classes. Misclassifications are not random but instead follow systematic harmonic relationships between specific chord pairs, as detailed in Table \ref{tab4_4} below.
+
+\begin{table}[h]
+\caption{CNN misclassified classes count}\label{tab4_4}
+\begin{tabular}{@{}lll@{}}
+\toprule
+True Class & Predicted Class & Count \\
+\midrule
+A\_diminished\_4        & A$\sharp$\_major\_4       & $20$ \\
+C\_diminished\_4        & C$\sharp$\_diminished\_4  & $16$ \\
+E\_diminished\_4        & F\_diminished\_4          & $10$ \\
+E\_diminished\_4        & D$\sharp$\_diminished\_4  & $7$  \\
+F$\sharp$\_major\_4     & G$\sharp$\_major\_4       & $5$  \\
+F$\sharp$\_minor\_4     & F$\sharp$\_diminished\_4  & $5$  \\
+G$\sharp$\_minor\_4     & G$\sharp$\_diminished\_4  & $4$  \\
+E\_minor\_4             & F$\sharp$\_diminished\_4  & $3$  \\
+B\_major\_4             & A$\sharp$\_major\_4       & $2$  \\
+B\_major\_4             & F$\sharp$\_major\_4       & $2$  \\
+D$\sharp$\_diminished\_4& C$\sharp$\_diminished\_4  & $2$  \\
+A$\sharp$\_major\_4     & A$\sharp$\_minor\_4       & $1$  \\
+A\_major\_4             & B\_minor\_4               & $1$  \\
+C\_major\_4             & D$\sharp$\_major\_4       & $1$  \\
+D\_minor\_4             & C$\sharp$\_minor\_4       & $1$  \\
+F$\sharp$\_minor\_4     & E$\sharp$\_minor\_4       & $1$  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The overall test accuracy of the CNN on the alternative dataset, computed across all $1,440$ samples, is reported in Table \ref{tab4_4}. Classes that are perfectly classified without any errors include all A\_diminished, A$\sharp$\_major, A$\sharp$\_minor, B\_diminished, B\_minor, C\_major, C\_minor, D$\sharp$\_diminished, D$\sharp$\_major, D$\sharp$\_minor, D\_diminished, D\_major, F$\sharp$\_diminished, F$\sharp$\_major, F\_diminished, F\_major, F\_minor, G$\sharp$\_major, G\_diminished, G\_major, and G\_minor, among others, demonstrating that the model has learned transferable harmonic representations for the majority of the chord vocabulary.
+
+\subsubsection{SVM Evaluation}\label{subsubsec4_5_2}
+
+The evaluation dataset is also used to evaluate the trained RBF-SVM model under the same unseen dataset conditions. The SVM was trained and its hyperparameters tuned exclusively on the training dataset without performing fine-tuning or adaptation for the new dataset. The confusion matrix of the evaluation is shown in Fig. \ref{fig4_8}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.5]{example-image-a}
+\caption{Confusion matrix of SVM test on evaluation dataset}\label{fig4_8}
+\end{figure}
+
+% TODO: missclassification table?
+
+The SVM's evaluation on the alternative dataset reveals a severe generalization failure. As shown in the performance evaluation, the model overwhelmingly predicts C\_diminished\_4 for the vast majority of test samples, regardless of the true label. The pattern suggests that the SVM has learned a decision boundary in the high-dimensional CQT feature space that is closely calibrated to the specific timbre and spectral envelope of the Techno T-9890i keyboard. When the Yamaha PSR-S910's different piano voice synthesis produces CQT feature vectors with a shifted global spectral envelope, the RBF kernel similarity between these test vectors and the training support vectors causes a large fraction of test samples to fall closest to the C\_diminished\_4 support vectors. That is a single attractor in the learned feature space that captures the Yamaha's spectral characteristics under the model's (mismatched) training distribution.
+
+\subsubsection{CNN vs. SVM on Evaluation Dataset}\label{subsubsec4_5_3}
+
+Fig. \ref{fig4_9} visualizes the difference between CNN and SVM metrics on test set evaluation.
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.5]{example-image-a}
+\caption{Comparison between CNN and SVM metrics on evaluation dataset}\label{fig4_9}
+\end{figure}
+
+Table \ref{tab4_5} presents the comprehensive comparison of CNN and SVM performance on both training dataset (5-fold cross-validation) and evaluation dataset.
+
+\begin{table*}[h]
+\caption{CNN vs. SVM on cross-validation and evaluation dataset}\label{tab4_5}
+\begin{tabular*}{\textwidth}{@{\extracolsep\fill}lllllll}
+\toprule
+& \multicolumn{3}{l}{CNN} & \multicolumn{3}{l}{SVM} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+Metric    & Training & Validation & Evaluation & Training & Validation & Evaluation \\
+\midrule
+Accuracy  & $1.00$   & $1.00$     & $0.89$     & $1.00$   & $1.00$     & $0.29$ \\
+Precision & $1.00$   & $1.00$     & $0.91$     & $1.00$   & $1.00$     & $0.64$ \\
+Recall    & $1.00$   & $1.00$     & $0.89$     & $1.00$   & $1.00$     & $0.29$ \\
+F1-Score  & $1.00$   & $1.00$     & $0.87$     & $1.00$   & $1.00$     & $0.36$ \\
+\bottomrule
+\end{tabular*}
+\end{table*}
+
+The results in Table \ref{tab4_5} and the confusion matrices in Figs. \ref{fig4_8} and \ref{fig4_9} together reveal a decisive performance divergence between CNN and SVM when the evaluation domain shifts from the training instrument to a different keyboard and recording environment. Under training dataset's 5-fold cross-validation, both models achieve perfect scores across all metrics ($1.0000$), confirming that the CQT features extracted from the instrument used in training dataset are linearly separable for both classifier types under controlled conditions.
+
+On the evaluation dataset, the CNN sustains a high level of performance with $89\%$ accuracy, $91\%$ precision, $89\%$ recall, and $87\%$ F1-score. This demonstrates that the model's learned spectral representations retain substantial discriminative power when applied to a Yamaha PSR-S910 keyboard recorded with a different device in a different environment. The moderate drop from $1.00$ to $0.87$ F1-score reflects the misclassifications concentrated in a small number of harmonically related chord pairs, which are A$\sharp$\_diminished / B\_major, C\_diminished / C$\sharp$\_minor, and E\_diminished / E\_major, as analyzed in Table \ref{tab4_5}, rather than a broad systemic failure across all classes.
+
+In contrast, the SVM collapses catastrophically on the evaluation dataset, alongside accuracy drops from $1.00$ to $0.29$, recall falls to $0.29$, and F1-score reaches only $0.36$. The increased precision of $0.64$ relative to the very low recall of $0.29$ is a characteristic of bad single-class prediction behavior. When the SVM predicts mostly C\_diminished\_4 for the vast majority of samples, the precision for that single class remains high, while recall collapses for all other classes. The average precision is inflated by the few classes the SVM does classify correctly, notably B\_diminished\_4, B\_major\_4, B\_minor\_4, G$\sharp$\_diminished\_4, and G$\sharp$\_major\_4 that masks the near-total failure across the remaining $31$ classes.
+
+This precision-recall asymmetry of $0.64$ vs. $0.29$ is a sign of model collapse. In a $36$-class problem, a classifier predicting a single class for all samples yields a recall of $1/36 \approx 0.028$, which is consistent with the SVM's $0.29$ recall being driven by the small subset of classes it happens to classify correctly. The F1-score of $0.36$ provides the most balanced and informative summary of the SVM's failure, placing it well below the CNN's $0.87$ and confirming that the CNN is the substantially superior model for deployment across diverse instruments and recording environments.
+
+CNN's partial but meaningful generalization is consistent with the model having learned relative spectral interval patterns along the frequency ratios between root, third, and fifth across the CQT bins that are largely preserved regardless of the difference in instruments or recording environments. Compared to the SVM's RBF kernel that measures absolute Euclidean distances in the full $40,608$-dimensional flattened feature space, making it inherently sensitive to any global shift in the spectral envelope between the training and evaluation instruments. This distinction aligns with broader findings in the machine learning literature on covariate shift : kernel classifiers with fixed bandwidths are brittle under distribution shift because the kernel distances between test samples and training support vectors change in unpredictable and uncontrolled ways when the marginal feature distribution shifts.
+
+\section{Conclusion}\label{sec5}
+
+This paper presented the design, training, and cross-dataset evaluation of a CNN model for 36-class piano chord classification using CQT spectrograms, compared against a hyperparameter-tuned RBF-SVM on identical features.
+
+Both models achieve perfect performance on the training dataset with 1.00 accuracy and F1-score across all five cross-validation folds, confirming that CQT spectrograms provide sufficient discriminative information for the task under consistent recording conditions. The decisive finding emerges in cross-dataset evaluation: when tested on a Yamaha PSR-S910 recorded in a different environment from the training data, the CNN retains strong generalization at 89\% accuracy and 87\% macro F1-score, while the SVM collapses to 29\% accuracy and 36\% macro F1-score where it predominantly predicts a single class (C\_diminished\_4) regardless of the true label. This difference directly reflects the structural difference between CNN's spatially local, hierarchical feature learning and SVM's global kernel boundary, which is brittle under different instrument spectral distribution shifts.
+
+The CNN's remaining misclassifications are concentrated in a small number of harmonically related chord pairs of A$\sharp$\_diminished / B\_major, C\_diminished / C$\sharp$\_minor, and E\_diminished / E\_major that share pitch-class content, suggesting that targeted data augmentation across diverse instruments and acoustic environments would be sufficient to close the remaining performance gap. Future work should extend the chord vocabulary beyond fourth-octave triads and integrate this classifier into a low-latency online recognition pipeline for real-time music education applications.
+
+% \section{Equations}\label{sec4}
+
+% Equations in \LaTeX\ can either be inline or on-a-line by itself (``display equations''). For
+% inline equations use the \verb+$...$+ commands. E.g.: The equation
+% $H\psi = E \psi$ is written via the command \verb+$H \psi = E \psi$+.
+
+% For display equations (with auto generated equation numbers)
+% one can use the equation or align environments:
+% \begin{equation}
+% \|\tilde{X}(k)\|^2 \leq\frac{\sum\limits_{i=1}^{p}\left\|\tilde{Y}_i(k)\right\|^2+\sum\limits_{j=1}^{q}\left\|\tilde{Z}_j(k)\right\|^2 }{p+q}.\label{eq99}
+% \end{equation}
+% where,
+% \begin{align}
+% D_\mu &=  \partial_\mu - ig \frac{\lambda^a}{2} A^a_\mu \nonumber \\
+% F^a_{\mu\nu} &= \partial_\mu A^a_\nu - \partial_\nu A^a_\mu + g f^{abc} A^b_\mu A^a_\nu \label{eq99}
+% \end{align}
+% Notice the use of \verb+\nonumber+ in the align environment at the end
+% of each line, except the last, so as not to produce equation numbers on
+% lines where no equation numbers are required. The \verb+\label{}+ command
+% should only be used at the last line of an align environment where
+% \verb+\nonumber+ is not used.
+% \begin{equation}
+% Y_\infty = \left( \frac{m}{\textrm{GeV}} \right)^{-3}
+%     \left[ 1 + \frac{3 \ln(m/\textrm{GeV})}{15}
+%     + \frac{\ln(c_2/5)}{15} \right]
+% \end{equation}
+% The class file also supports the use of \verb+\mathbb{}+, \verb+\mathscr{}+ and
+% \verb+\mathcal{}+ commands. As such \verb+\mathbb{R}+, \verb+\mathscr{R}+
+% and \verb+\mathcal{R}+ produces $\mathbb{R}$, $\mathscr{R}$ and $\mathcal{R}$
+% respectively (refer Subsubsection~\ref{subsubsec2}).
+
+% \section{Tables}\label{sec5}
+
+% Tables can be inserted via the normal table and tabular environment. To put
+% footnotes inside tables you should use \verb+\footnotetext[]{...}+ tag.
+% % The footnote appears just below the table itself (refer Tables~\ref{tab1} and \ref{tab99}).
+% For the corresponding footnotemark use \verb+\footnotemark[...]+
+
+% % \begin{table}[h]
+% % \caption{Caption text}\label{tab99}%
+% % \begin{tabular}{@{}llll@{}}
+% % \toprule
+% % Column 1 & Column 2  & Column 3 & Column 4\\
+% % \midrule
+% % row 1    & data 1   & data 2  & data 3  \\
+% % row 2    & data 4   & data 5\footnotemark[1]  & data 6  \\
+% % row 3    & data 7   & data 8  & data 9\footnotemark[2]  \\
+% % \botrule
+% % \end{tabular}
+% % \footnotetext{Source: This is an example of table footnote. This is an example of table footnote.}
+% % \footnotetext[1]{Example for a first table footnote. This is an example of table footnote.}
+% % \footnotetext[2]{Example for a second table footnote. This is an example of table footnote.}
+% % \end{table}
+
+% \noindent
+% The input format for the above table is as follows:
+
+% %%=============================================%%
+% %% For presentation purpose, we have included  %%
+% %% \bigskip command. Please ignore this.       %%
+% %%=============================================%%
+% \bigskip
+% \begin{verbatim}
+% \begin{table}[<placement-specifier>]
+% \caption{<table-caption>}\label{<table-label>}%
+% \begin{tabular}{@{}llll@{}}
+% \toprule
+% Column 1 & Column 2 & Column 3 & Column 4\\
+% \midrule
+% row 1 & data 1 & data 2	 & data 3 \\
+% row 2 & data 4 & data 5\footnotemark[1] & data 6 \\
+% row 3 & data 7 & data 8	 & data 9\footnotemark[2]\\
+% \botrule
+% \end{tabular}
+% \footnotetext{Source: This is an example of table footnote.
+% This is an example of table footnote.}
+% \footnotetext[1]{Example for a first table footnote.
+% This is an example of table footnote.}
+% \footnotetext[2]{Example for a second table footnote.
+% This is an example of table footnote.}
+% \end{table}
+% \end{verbatim}
+% \bigskip
+% %%=============================================%%
+% %% For presentation purpose, we have included  %%
+% %% \bigskip command. Please ignore this.       %%
+% %%=============================================%%
+
+% % \begin{table}[h]
+% % \caption{Example of a lengthy table which is set to full textwidth}\label{tab2}
+% % \begin{tabular*}{\textwidth}{@{\extracolsep\fill}lcccccc}
+% % \toprule%
+% % & \multicolumn{3}{@{}c@{}}{Element 1\footnotemark[1]} & \multicolumn{3}{@{}c@{}}{Element 2\footnotemark[2]} \\\cmidrule{2-4}\cmidrule{5-7}%
+% % Project & Energy & $\sigma_{calc}$ & $\sigma_{expt}$ & Energy & $\sigma_{calc}$ & $\sigma_{expt}$ \\
+% % \midrule
+% % Element 3  & 990 A & 1168 & $1547\pm12$ & 780 A & 1166 & $1239\pm100$\\
+% % Element 4  & 500 A & 961  & $922\pm10$  & 900 A & 1268 & $1092\pm40$\\
+% % \botrule
+% % \end{tabular*}
+% % \footnotetext{Note: This is an example of table footnote. This is an example of table footnote this is an example of table footnote this is an example of~table footnote this is an example of table footnote.}
+% % \footnotetext[1]{Example for a first table footnote.}
+% % \footnotetext[2]{Example for a second table footnote.}
+% % \end{table}
+
+% % In case of double column layout, tables which do not fit in single column width should be set to full text width. For this, you need to use \verb+\begin{table*}+ \verb+...+ \verb+\end{table*}+ instead of \verb+\begin{table}+ \verb+...+ \verb+\end{table}+ environment. Lengthy tables which do not fit in textwidth should be set as rotated table. For this, you need to use \verb+\begin{sidewaystable}+ \verb+...+ \verb+\end{sidewaystable}+ instead of \verb+\begin{table*}+ \verb+...+ \verb+\end{table*}+ environment. This environment puts tables rotated to single column width. For tables rotated to double column width, use \verb+\begin{sidewaystable*}+ \verb+...+ \verb+\end{sidewaystable*}+.
+
+% % \begin{sidewaystable}
+% % \caption{Tables which are too long to fit, should be written using the ``sidewaystable'' environment as shown here}\label{tab3}
+% % \begin{tabular*}{\textheight}{@{\extracolsep\fill}lcccccc}
+% % \toprule%
+% % & \multicolumn{3}{@{}c@{}}{Element 1\footnotemark[1]}& \multicolumn{3}{@{}c@{}}{Element\footnotemark[2]} \\\cmidrule{2-4}\cmidrule{5-7}%
+% % Projectile & Energy	& $\sigma_{calc}$ & $\sigma_{expt}$ & Energy & $\sigma_{calc}$ & $\sigma_{expt}$ \\
+% % \midrule
+% % Element 3 & 990 A & 1168 & $1547\pm12$ & 780 A & 1166 & $1239\pm100$ \\
+% % Element 4 & 500 A & 961  & $922\pm10$  & 900 A & 1268 & $1092\pm40$ \\
+% % Element 5 & 990 A & 1168 & $1547\pm12$ & 780 A & 1166 & $1239\pm100$ \\
+% % Element 6 & 500 A & 961  & $922\pm10$  & 900 A & 1268 & $1092\pm40$ \\
+% % \botrule
+% % \end{tabular*}
+% % \footnotetext{Note: This is an example of table footnote this is an example of table footnote this is an example of table footnote this is an example of~table footnote this is an example of table footnote.}
+% % \footnotetext[1]{This is an example of table footnote.}
+% % \end{sidewaystable}
+
+% \section{Figures}\label{sec6}
+
+% As per the \LaTeX\ standards you need to use eps images for \LaTeX\ compilation and \verb+pdf/jpg/png+ images for \verb+PDFLaTeX+ compilation. This is one of the major difference between \LaTeX\ and \verb+PDFLaTeX+. Each image should be from a single input .eps/vector image file. Avoid using subfigures. The command for inserting images for \LaTeX\ and \verb+PDFLaTeX+ can be generalized. The package used to insert images in \verb+LaTeX/PDFLaTeX+ is the graphicx package. Figures can be inserted via the normal figure environment as shown in the below example:
+
+% %%=============================================%%
+% %% For presentation purpose, we have included  %%
+% %% \bigskip command. Please ignore this.       %%
+% %%=============================================%%
+% \bigskip
+% \begin{verbatim}
+% \begin{figure}[<placement-specifier>]
+% \centering
+% \includegraphics{<eps-file>}
+% \caption{<figure-caption>}\label{<figure-label>}
+% \end{figure}
+% \end{verbatim}
+% \bigskip
+% %%=============================================%%
+% %% For presentation purpose, we have included  %%
+% %% \bigskip command. Please ignore this.       %%
+% %%=============================================%%
+
+% % \begin{figure}[h]
+% % \centering
+% % \includegraphics[width=0.9\textwidth]{fig.eps}
+% % \caption{This is a widefig. This is an example of long caption this is an example of long caption  this is an example of long caption this is an example of long caption}\label{fig1}
+% % \end{figure}
+
+% In case of double column layout, the above format puts figure captions/images to single column width. To get spanned images, we need to provide \verb+\begin{figure*}+ \verb+...+ \verb+\end{figure*}+.
+
+% For sample purpose, we have included the width of images in the optional argument of \verb+\includegraphics+ tag. Please ignore this.
+
+% \section{Algorithms, Program codes and Listings}\label{sec7}
+
+% Packages \verb+algorithm+, \verb+algorithmicx+ and \verb+algpseudocode+ are used for setting algorithms in \LaTeX\ using the format:
+
+% %%=============================================%%
+% %% For presentation purpose, we have included  %%
+% %% \bigskip command. Please ignore this.       %%
+% %%=============================================%%
+% \bigskip
+% \begin{verbatim}
+% \begin{algorithm}
+% \caption{<alg-caption>}\label{<alg-label>}
+% \begin{algorithmic}[1]
+% . . .
+% \end{algorithmic}
+% \end{algorithm}
+% \end{verbatim}
+% \bigskip
+% %%=============================================%%
+% %% For presentation purpose, we have included  %%
+% %% \bigskip command. Please ignore this.       %%
+% %%=============================================%%
+
+% You may refer above listed package documentations for more details before setting \verb+algorithm+ environment. For program codes, the ``verbatim'' package is required and the command to be used is \verb+\begin{verbatim}+ \verb+...+ \verb+\end{verbatim}+.
+
+% Similarly, for \verb+listings+, use the \verb+listings+ package. \verb+\begin{lstlisting}+ \verb+...+ \verb+\end{lstlisting}+ is used to set environments similar to \verb+verbatim+ environment. Refer to the \verb+lstlisting+ package documentation for more details.
+
+% A fast exponentiation procedure:
+
+% \lstset{texcl=true,basicstyle=\small\sf,commentstyle=\small\rm,mathescape=true,escapeinside={(*}{*)}}
+% \begin{lstlisting}
+% begin
+%   for $i:=1$ to $10$ step $1$ do
+%       expt($2,i$);
+%       newline() od                (*\textrm{Comments will be set flush to the right margin}*)
+% where
+% proc expt($x,n$) $\equiv$
+%   $z:=1$;
+%   do if $n=0$ then exit fi;
+%      do if odd($n$) then exit fi;
+%         comment: (*\textrm{This is a comment statement;}*)
+%         $n:=n/2$; $x:=x*x$ od;
+%      { $n>0$ };
+%      $n:=n-1$; $z:=z*x$ od;
+%   print($z$).
+% end
+% \end{lstlisting}
+
+% \begin{algorithm}
+% \caption{Calculate $y = x^n$}\label{algo1}
+% \begin{algorithmic}[1]
+% \Require $n \geq 0 \vee x \neq 0$
+% \Ensure $y = x^n$
+% \State $y \Leftarrow 1$
+% \If{$n < 0$}\label{algln2}
+%         \State $X \Leftarrow 1 / x$
+%         \State $N \Leftarrow -n$
+% \Else
+%         \State $X \Leftarrow x$
+%         \State $N \Leftarrow n$
+% \EndIf
+% \While{$N \neq 0$}
+%         \If{$N$ is even}
+%             \State $X \Leftarrow X \times X$
+%             \State $N \Leftarrow N / 2$
+%         \Else[$N$ is odd]
+%             \State $y \Leftarrow y \times X$
+%             \State $N \Leftarrow N - 1$
+%         \EndIf
+% \EndWhile
+% \end{algorithmic}
+% \end{algorithm}
+
+% %%=============================================%%
+% %% For presentation purpose, we have included  %%
+% %% \bigskip command. Please ignore this.       %%
+% %%=============================================%%
+% \bigskip
+% \begin{minipage}{\hsize}%
+% \lstset{frame=single,framexleftmargin=-1pt,framexrightmargin=-17pt,framesep=12pt,linewidth=0.98\textwidth,language=pascal}% Set your language (you can change the language for each code-block optionally)
+% %%% Start your code-block
+% \begin{lstlisting}
+% for i:=maxint to 0 do
+% begin
+% { do nothing }
+% end;
+% Write('Case insensitive ');
+% Write('Pascal keywords.');
+% \end{lstlisting}
+% \end{minipage}
+
+% \section{Cross referencing}\label{sec8}
+
+% Environments such as figure, table, equation and align can have a label
+% declared via the \verb+\label{#label}+ command. For figures and table
+% environments use the \verb+\label{}+ command inside or just
+% below the \verb+\caption{}+ command. You can then use the
+% \verb+\ref{#label}+ command to cross-reference them. As an example, consider
+% the label declared for Figure~\ref{fig1} which is
+% \verb+\label{fig1}+. To cross-reference it, use the command
+% \verb+Figure \ref{fig1}+, for which it comes up as
+% ``Figure~\ref{fig1}''.
+
+% To reference line numbers in an algorithm, consider the label declared for the line number 2 of Algorithm~\ref{algo1} is \verb+\label{algln2}+. To cross-reference it, use the command \verb+\ref{algln2}+ for which it comes up as line~\ref{algln2} of Algorithm~\ref{algo1}.
+
+% \subsection{Details on reference citations}\label{subsec7}
+
+% Standard \LaTeX\ permits only numerical citations. To support both numerical and author-year citations this template uses \verb+natbib+ \LaTeX\ package. For style guidance please refer to the template user manual.
+
+% Here is an example for \verb+\cite{...}+: \cite{Saputra2021}. Another example for \verb+\citep{...}+: \citep{Saputra2021}. For author-year citation mode, \verb+\cite{...}+ prints Jones et al. (1990) and \verb+\citep{...}+ prints (Jones et al., 1990).
+
+% All cited bib entries are printed at the end of this article: \cite{Saputra2021}, \cite{Saputra2021}, \cite{Saputra2021}, \cite{Saputra2021}, \cite{Saputra2021}, \cite{Saputra2021}, \cite{Saputra2021}, \cite{Saputra2021}, \cite{Saputra2021}, \cite{Saputra2021} and \cite{Saputra2021}.
+
+% \section{Examples for theorem like environments}\label{sec10}
+
+% For theorem like environments, we require \verb+amsthm+ package. There are three types of predefined theorem styles exists---\verb+thmstyleone+, \verb+thmstyletwo+ and \verb+thmstylethree+
+
+% %%=============================================%%
+% %% For presentation purpose, we have included  %%
+% %% \bigskip command. Please ignore this.       %%
+% %%=============================================%%
+% \bigskip
+% \begin{tabular}{|l|p{19pc}|}
+% \hline
+% \verb+thmstyleone+ & Numbered, theorem head in bold font and theorem text in italic style \\\hline
+% \verb+thmstyletwo+ & Numbered, theorem head in roman font and theorem text in italic style \\\hline
+% \verb+thmstylethree+ & Numbered, theorem head in bold font and theorem text in roman style \\\hline
+% \end{tabular}
+% \bigskip
+% %%=============================================%%
+% %% For presentation purpose, we have included  %%
+% %% \bigskip command. Please ignore this.       %%
+% %%=============================================%%
+
+% For mathematics journals, theorem styles can be included as shown in the following examples:
+
+% \begin{theorem}[Theorem subhead]\label{thm1}
+% Example theorem text. Example theorem text. Example theorem text. Example theorem text. Example theorem text.
+% Example theorem text. Example theorem text. Example theorem text. Example theorem text. Example theorem text.
+% Example theorem text.
+% \end{theorem}
+
+% Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text.
+
+% \begin{proposition}
+% Example proposition text. Example proposition text. Example proposition text. Example proposition text. Example proposition text.
+% Example proposition text. Example proposition text. Example proposition text. Example proposition text. Example proposition text.
+% \end{proposition}
+
+% Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text.
+
+% \begin{example}
+% Phasellus adipiscing semper elit. Proin fermentum massa
+% ac quam. Sed diam turpis, molestie vitae, placerat a, molestie nec, leo. Maecenas lacinia. Nam ipsum ligula, eleifend
+% at, accumsan nec, suscipit a, ipsum. Morbi blandit ligula feugiat magna. Nunc eleifend consequat lorem.
+% \end{example}
+
+% Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text.
+
+% \begin{remark}
+% Phasellus adipiscing semper elit. Proin fermentum massa
+% ac quam. Sed diam turpis, molestie vitae, placerat a, molestie nec, leo. Maecenas lacinia. Nam ipsum ligula, eleifend
+% at, accumsan nec, suscipit a, ipsum. Morbi blandit ligula feugiat magna. Nunc eleifend consequat lorem.
+% \end{remark}
+
+% Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text.
+
+% \begin{definition}[Definition sub head]
+% Example definition text. Example definition text. Example definition text. Example definition text. Example definition text. Example definition text. Example definition text. Example definition text.
+% \end{definition}
+
+% Additionally a predefined ``proof'' environment is available: \verb+\begin{proof}+ \verb+...+ \verb+\end{proof}+. This prints a ``Proof'' head in italic font style and the ``body text'' in roman font style with an open square at the end of each proof environment.
+
+% \begin{proof}
+% Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text.
+% \end{proof}
+
+% Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text.
+
+% \begin{proof}[Proof of Theorem~{\upshape\ref{thm1}}]
+% Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text.
+% \end{proof}
+
+% \noindent
+% For a quote environment, use \verb+\begin{quote}...\end{quote}+
+% \begin{quote}
+% Quoted text example. Aliquam porttitor quam a lacus. Praesent vel arcu ut tortor cursus volutpat. In vitae pede quis diam bibendum placerat. Fusce elementum
+% convallis neque. Sed dolor orci, scelerisque ac, dapibus nec, ultricies ut, mi. Duis nec dui quis leo sagittis commodo.
+% \end{quote}
+
+% Sample body text. Sample body text. Sample body text. Sample body text. Sample body text (refer Figure~\ref{fig1}). Sample body text. Sample body text. Sample body text (refer Table~\ref{tab3}).
+
+% \section{Methods}\label{sec11}
+
+% Topical subheadings are allowed. Authors must ensure that their Methods section includes adequate experimental and characterization data necessary for others in the field to reproduce their work. Authors are encouraged to include RIIDs where appropriate.
+
+% \textbf{Ethical approval declarations} (only required where applicable) Any article reporting experiment/s carried out on (i)~live vertebrate (or higher invertebrates), (ii)~humans or (iii)~human samples must include an unambiguous statement within the methods section that meets the following requirements:
+
+% \begin{enumerate}[1.]
+% \item Approval: a statement which confirms that all experimental protocols were approved by a named institutional and/or licensing committee. Please identify the approving body in the methods section
+
+% \item Accordance: a statement explicitly saying that the methods were carried out in accordance with the relevant guidelines and regulations
+
+% \item Informed consent (for experiments involving humans or human tissue samples): include a statement confirming that informed consent was obtained from all participants and/or their legal guardian/s
+% \end{enumerate}
+
+% If your manuscript includes potentially identifying patient/participant information, or if it describes human transplantation research, or if it reports results of a clinical trial then  additional information will be required. Please visit (\url{https://www.nature.com/nature-research/editorial-policies}) for Nature Portfolio journals, (\url{https://www.springer.com/gp/authors-editors/journal-author/journal-author-helpdesk/publishing-ethics/14214}) for Springer Nature journals, or (\url{https://www.biomedcentral.com/getpublished/editorial-policies\#ethics+and+consent}) for BMC.
+
+% \section{Discussion}\label{sec12}
+
+% Discussions should be brief and focused. In some disciplines use of Discussion or `Conclusion' is interchangeable. It is not mandatory to use both. Some journals prefer a section `Results and Discussion' followed by a section `Conclusion'. Please refer to Journal-level guidance for any specific requirements.
+
+% \section{Conclusion}\label{sec13}
+
+% Conclusions may be used to restate your hypothesis or research question, restate your major findings, explain the relevance and the added value of your work, highlight any limitations of your study, describe future directions for research and recommendations.
+
+% In some disciplines use of Discussion or 'Conclusion' is interchangeable. It is not mandatory to use both. Please refer to Journal-level guidance for any specific requirements.
+
+% \backmatter
+
+% \bmhead{Supplementary information}
+
+% If your article has accompanying supplementary file/s please state so here.
+
+% Authors reporting data from electrophoretic gels and blots should supply the full unprocessed scans for key as part of their Supplementary information. This may be requested by the editorial team/s if it is missing.
+
+% Please refer to Journal-level guidance for any specific requirements.
+
+% \bmhead{Acknowledgements}
+
+% Acknowledgements are not compulsory. Where included they should be brief. Grant or contribution numbers may be acknowledged.
+
+% Please refer to Journal-level guidance for any specific requirements.
+
+% \section*{Declarations}
+
+% Some journals require declarations to be submitted in a standardised format. Please check the Instructions for Authors of the journal to which you are submitting to see if you need to complete this section. If yes, your manuscript must contain the following sections under the heading `Declarations':
+
+% \begin{itemize}
+% \item Funding
+% \item Conflict of interest/Competing interests (check journal-specific guidelines for which heading to use)
+% \item Ethics approval and consent to participate
+% \item Consent for publication
+% \item Data availability
+% \item Materials availability
+% \item Code availability
+% \item Author contribution
+% \end{itemize}
+
+% \noindent
+% If any of the sections are not relevant to your manuscript, please include the heading and write `Not applicable' for that section.
+
+% %%===================================================%%
+% %% For presentation purpose, we have included        %%
+% %% \bigskip command. Please ignore this.             %%
+% %%===================================================%%
+% \bigskip
+% \begin{flushleft}%
+% Editorial Policies for:
+
+% \bigskip\noindent
+% Springer journals and proceedings: \url{https://www.springer.com/gp/editorial-policies}
+
+% \bigskip\noindent
+% Nature Portfolio journals: \url{https://www.nature.com/nature-research/editorial-policies}
+
+% \bigskip\noindent
+% \textit{Scientific Reports}: \url{https://www.nature.com/srep/journal-policies/editorial-policies}
+
+% \bigskip\noindent
+% BMC journals: \url{https://www.biomedcentral.com/getpublished/editorial-policies}
+% \end{flushleft}
+
+% \begin{appendices}
+
+% \section{Section title of first appendix}\label{secA1}
+
+% An appendix contains supplementary information that is not an essential part of the text itself but which may be helpful in providing a more comprehensive understanding of the research problem or it is information that is too cumbersome to be included in the body of the paper.
 
 %%=============================================%%
 %% For submissions to Nature Portfolio Journals %%
@@ -603,11 +1091,11 @@ An appendix contains supplementary information that is not an essential part of 
 %%=============================================================%%
 
 %% \section{Example of another appendix section}\label{secA2}%
-%% Appendices may be used for helpful, supporting or essential material that would otherwise 
-%% clutter, break up or be distracting to the text. Appendices can consist of sections, figures, 
+%% Appendices may be used for helpful, supporting or essential material that would otherwise
+%% clutter, break up or be distracting to the text. Appendices can consist of sections, figures,
 %% tables and equations etc.
 
-\end{appendices}
+% \end{appendices}
 
 %%===========================================================================================%%
 %% If you are submitting to one of the Nature Portfolio journals, using the eJP submission   %%
@@ -616,7 +1104,7 @@ An appendix contains supplementary information that is not an essential part of 
 %% file, and delete the associated \verb+\bibliography+ commands.                            %%
 %%===========================================================================================%%
 
-\bibliography{sn-bibliography}% common bib file
+\bibliography{mendeley}% common bib file
 %% if required, the content of .bbl file can be included here once bbl is generated
 %%\input sn-article.bbl
 
