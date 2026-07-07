@@ -1,47 +1,14 @@
 %Version 3.1 December 2024
 % See section 11 of the User Manual for version history
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%                                                                 %%
-%% Please do not use \input{...} to include other tex files.       %%
-%% Submit your LaTeX manuscript as one .tex document.              %%
-%%                                                                 %%
-%% All additional figures and files should be attached             %%
-%% separately and not embedded in the \TeX\ document itself.       %%
-%%                                                                 %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%\documentclass[referee,sn-basic]{sn-jnl}% referee option is meant for double line spacing
-
-%%=======================================================%%
-%% to print line numbers in the margin use lineno option %%
-%%=======================================================%%
-
-%%\documentclass[lineno,pdflatex,sn-basic]{sn-jnl}% Basic Springer Nature Reference Style/Chemistry Reference Style
-
-%%=========================================================================================%%
-%% the documentclass is set to pdflatex as default. You can delete it if not appropriate.  %%
-%%=========================================================================================%%
-
-%%\documentclass[sn-basic]{sn-jnl}% Basic Springer Nature Reference Style/Chemistry Reference Style
-
-%%Note: the following reference styles support Namedate and Numbered referencing. By default the style follows the most common style. To switch between the options you can add or remove �Numbered� in the optional parenthesis.
-%%The option is available for: sn-basic.bst, sn-chicago.bst%
-
-%%\documentclass[pdflatex,sn-nature]{sn-jnl}% Style for submissions to Nature Portfolio journals
-%%\documentclass[pdflatex,sn-basic]{sn-jnl}% Basic Springer Nature Reference Style/Chemistry Reference Style
-% \documentclass[pdflatex,sn-mathphys-num]{sn-jnl}% Math and Physical Sciences Numbered Reference Style
-%%\documentclass[pdflatex,sn-mathphys-ay]{sn-jnl}% Math and Physical Sciences Author Year Reference Style
-%%\documentclass[pdflatex,sn-aps]{sn-jnl}% American Physical Society (APS) Reference Style
-%%\documentclass[pdflatex,sn-vancouver-num]{sn-jnl}% Vancouver Numbered Reference Style
-%%\documentclass[pdflatex,sn-vancouver-ay]{sn-jnl}% Vancouver Author Year Reference Style
-%%\documentclass[pdflatex,sn-apa]{sn-jnl}% APA Reference Style
-%%\documentclass[pdflatex,sn-chicago]{sn-jnl}% Chicago-based Humanities Reference Style
-
-\documentclass[pdflatex,sn-basic,iicol]{sn-jnl}
+\documentclass[pdflatex,sn-mathphys-num,iicol]{sn-jnl}
 
 %%%% Standard Packages
-%%<additional latex packages if required can be included here>
+\usepackage{bookmark}
+\usepackage{tabularx}
+\usepackage{diagbox}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, fit, backgrounds}
 
 \usepackage{graphicx}%
 \usepackage{multirow}%
@@ -58,20 +25,6 @@
 \usepackage{algpseudocode}%
 \usepackage{listings}%
 %%%%
-\usepackage{tabularx}
-
-%%%%%=============================================================================%%%%
-%%%%  Remarks: This template is provided to aid authors with the preparation
-%%%%  of original research articles intended for submission to journals published
-%%%%  by Springer Nature. The guidance has been prepared in partnership with
-%%%%  production teams to conform to Springer Nature technical requirements.
-%%%%  Editorial and presentation requirements differ among journal portfolios and
-%%%%  research disciplines. You may find sections in this template are irrelevant
-%%%%  to your work and are empowered to omit any such section if allowed by the
-%%%%  journal you intend to submit to. The submission guidelines and policies
-%%%%  of the journal take precedence. A detailed User Manual is available in the
-%%%%  template package for technical guidance.
-%%%%%=============================================================================%%%%
 
 %% as per the requirement new theorem styles can be included as shown below
 \theoremstyle{thmstyleone}%
@@ -93,47 +46,17 @@
 
 \begin{document}
 
-\title[Constant-Q Transform ]{Article Title}
-
-%%=============================================================%%
-%% GivenName	-> \fnm{Joergen W.}
-%% Particle	-> \spfx{van der} -> surname prefix
-%% FamilyName	-> \sur{Ploeg}
-%% Suffix	-> \sfx{IV}
-%% \author*[1,2]{\fnm{Joergen W.} \spfx{van der} \sur{Ploeg}
-%%  \sfx{IV}}\email{iauthor@gmail.com}
-%%=============================================================%%
+\title[Title]{Constant-Q Transform}
 
 \author*[1]{\fnm{Cikal} \sur{Gemintang Seya}}\email{cikal.gemintang@mhs.itenas.ac.id}
 
 \author[1]{\fnm{Jasman} \sur{Pardede}}\email{jasman@itenas.ac.id}
-% \equalcont{These authors contributed equally to this work.}
 
 \affil*[1]{\orgdiv{Informatics}, \orgname{Institut Teknologi Nasional Bandung}, \orgaddress{\street{Neglasari}, \city{Bandung}, \postcode{40124}, \state{West Java}, \country{Indonesia}}}
 
-%%==================================%%
-%% Sample for unstructured abstract %%
-%%==================================%%
-
 \abstract{Automatic chord recognition (ACR) is a fundamental task in Music Information Retrieval (MIR) with broad applications in music education, interactive performance feedback, and real-time transcription systems. This paper presents the design, training, cross-validation, and evaluation of a Convolutional Neural Network (CNN) model for 36-class piano chord classification using Constant-Q Transform (CQT) spectrograms as input features, and compares it against a hyperparameter-tuned Support Vector Machine (SVM) with a Radial Basis Function (RBF) kernel. The training dataset consists of 7,200 audio samples of 36 piano chord classes, spanning major, minor, and diminished triads across 12 chromatic roots in the fourth octave, recorded at 48 kHz from a Techno T-9890i keyboard. Generalization performance is evaluated on a separate 1,440-sample evaluation dataset recorded from a different instrument (Yamaha PSR-S910 keyboard) in a different environment, with no overlap with training data. The CNN architecture comprises four sequential Conv2D and MaxPooling2D blocks with filter sizes escalating from 64 to 256, followed by a fully connected dense layer with dropout regularization, trained using the Adam optimizer with early stopping. Both models achieve near-perfect accuracy on cross-validation (CNN: 1.0000, SVM: 1.0000 across five folds). However, cross-dataset evaluation reveals a decisive performance gap: the CNN retains high per-class accuracy across the majority of chord classes, with misclassifications concentrated in harmonically related pairs, while the SVM collapses entirely, misclassifying the overwhelming majority of samples from all classes as C\_diminished\_4, resulting in worse accuracy. These results demonstrate that CNN's hierarchical spectral feature learning generalizes substantially better than the RBF SVM's when acoustic conditions shift between training and evaluation environments, confirming CNN as the superior architecture for practical deployment in piano chord recognition systems.}
 
-%%================================%%
-%% Sample for structured abstract %%
-%%================================%%
-
-% \abstract{\textbf{Purpose:} The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.
-%
-% \textbf{Methods:} The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.
-%
-% \textbf{Results:} The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.
-%
-% \textbf{Conclusion:} The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.}
-
 \keywords{Music Information Retrieval, Automatic Chord Recognition, Constant-Q Transform, Convolutional Neural Network, Support Vector Machine}
-
-%%\pacs[JEL Classification]{D8, H51}
-
-%%\pacs[MSC Classification]{35A01, 65L10, 65L12, 65L20, 65L70}
 
 \maketitle
 
@@ -165,7 +88,7 @@ The specific contributions of this paper are:
 \item A detailed analysis of the CNN's cross-dataset misclassification patterns, identifying the harmonically related chord pairs that constitute the principal sources of error and providing interpretable guidance for future data augmentation and fine-tuning strategies.
 \end{enumerate}
 
-\section{Related Works}\label{sec2}
+\section{Related work}\label{sec2}
 
 The problem of automatic chord recognition has been approached with an evolving range of machine learning methodologies, with the dominant trend shifting progressively from hand-crafted chroma features towards end-to-end deep learning systems.
 
@@ -185,31 +108,163 @@ The literature review reveals that while CNN-CQT systems have been widely valida
 
 Springer Nature does not impose a strict layout as standard however authors are advised to check the individual requirements for the journal they are planning to submit to as there may be journal-level preferences. When preparing your text please also be aware that some stylistic choices are not supported in full text XML (publication version), including coloured font. These will not be replicated in the typeset article if it is accepted.
 
-\section{Methods}\label{sec3}
+\section{Methodology}\label{sec3}
 
-% TODO: methodology diagram
-
-This study uses a quantitative experimental methodology structured around five sequential phases, also seen in Figure 1, which are as follows: (1) dataset acquisition, (2) feature extraction, (3) model training, (4) cross-validation, and (5) comparative evaluation. The experimental pipeline is implemented in Python 3.10 using TensorFlow 2.15, scikit-learn 1.7.2, Librosa 0.11.0, NumPy 1.26.4, Optuna 4.8.0, and Matplotlib 3.10.8. Training is conducted on an ASUS ROG Flow X13 (AMD Ryzen 7 6800HS, NVIDIA GeForce RTX 3050 Ti, 16 GB RAM) with supplementary use of Google Colaboratory (GPU T4/A100, up to 52 GB RAM).
-
-\subsection{Dataset Acquisition}\label{subsec3_1}
-
-\subsubsection{Acquisition Method}\label{subsubsec3_1_1}
-
-A primary dataset of 8,640 labeled piano chord audio samples was collected using a web-based MIDI recording application made specifically for this research, the interface is as shown in Fig. \ref{fig3_1}.
+The overall experimental methodology is illustrated in Figure~\ref{fig:methodology}. This study uses a quantitative experimental methodology structured around five sequential phases: (1) dataset acquisition, (2) feature extraction, (3) model training, (4) cross-validation, and (5) comparative evaluation. The experimental pipeline is implemented in Python 3.10 using TensorFlow 2.15, scikit-learn 1.7.2, Librosa 0.11.0, NumPy 1.26.4, Optuna 4.8.0, and Matplotlib 3.10.8. Training is conducted on an ASUS ROG Flow X13 (AMD Ryzen 7 6800HS, NVIDIA GeForce RTX 3050 Ti, 16 GB RAM) with supplementary use of Google Colaboratory (GPU T4/A100, up to 52 GB RAM).
 
 \begin{figure}[h]
 \centering
-\includegraphics[scale=0.5]{example-image-a}
+\begin{tikzpicture}[
+  node distance=0.3cm and 0.2cm,
+  >={Stealth},
+  base/.style={
+    rectangle, draw, align=center,
+    minimum height=0.6cm,
+    font=\small,
+    rounded corners=3pt,
+    line width=0.5pt
+  },
+  main/.style={
+    base,
+    draw=blue!60!black,
+    fill=blue!5,
+    text width=6.0cm
+  },
+  cnn/.style={
+    base,
+    draw=teal!70!black,
+    fill=teal!5,
+    text width=2.85cm
+  },
+  svm/.style={
+    base,
+    draw=purple!70!black,
+    fill=purple!5,
+    text width=2.85cm
+  },
+  clear/.style={
+    base,
+    draw=green!60!black,
+    fill=green!5,
+    text width=6.0cm,
+    font=\small
+  },
+  arrow/.style={->, line width=0.5pt, black!70}
+]
+
+%% Header
+\node[draw, rounded corners=3pt, fill=black!7,
+      text width=6.0cm, align=center,
+      font=\small\bfseries, minimum height=0.45cm]
+  (header) {CQT Chord Recognition Pipeline};
+
+%% Phase 1
+\node[main, below=0.3cm of header] (p1) {%
+  \textbf{1. Dataset Acquisition}\\[2pt]
+  36 Classes (12 Roots $\times$ 3 Qualities)\\
+  Train: 7{,}200 samples \quad Eval: 1{,}440 samples
+};
+
+%% Phase 2
+\node[main, below=0.3cm of p1] (p2) {%
+  \textbf{2. CQT Feature Extraction}\\[2pt]
+  48\,kHz, 512 Hop Size, 6 Octaves, 36 bins/oct\\
+  Shape: $216 \times 188 \times 1$ (dB Spectrogram)
+};
+
+%% --- Parallel columns ---
+%% CNN column (left)
+\node[cnn, below left=0.4cm and 0.15cm of p2.south,
+      anchor=north east] (cnn1) {%
+  \textbf{3a. CNN Path}\\[2pt]
+  4 Conv2D + MaxPool\\
+  Filters: 64 $\to$ 256\\
+  Adam \& Dropout (0.5)
+};
+
+\node[cnn, below=0.25cm of cnn1] (cnn2) {%
+  \textbf{4a. 5-Fold Cross-Val.}\\[2pt]
+  Within-Distribution\\
+  Full Retrain / Fold
+};
+
+%% SVM column (right)
+\node[svm, below right=0.4cm and 0.15cm of p2.south,
+      anchor=north west] (svm1) {%
+  \textbf{3b. SVM Path}\\[2pt]
+  Flattened Vectors\\
+  (40{,}608-dimensional)\\
+  Optuna RBF Tuning
+};
+
+\node[svm, below=0.25cm of svm1] (svm2) {%
+  \textbf{4b. 5-Fold Cross-Val.}\\[2pt]
+  Within-Distribution\\
+  Stratified Splits
+};
+
+%% Phase 5 — merge point
+\node[main,
+      below=0.4cm of $(cnn2.south)!0.5!(svm2.south)$,
+      anchor=north] (p5) {%
+  \textbf{5. Evaluation \& Comparison}\\[2pt]
+  Held-out Test vs.\ Independent Evaluation Set\\
+  Performance Under Acoustic Domain Shift
+};
+
+%% Final output
+\node[clear, below=0.3cm of p5] (res) {%
+  \textbf{Comparative Results \& Summary}\\[2pt]
+  Generalization capacity \& error patterns
+};
+
+%% --- Arrows ---
+\draw[arrow] (header) -- (p1);
+\draw[arrow] (p1)     -- (p2);
+
+% Symmetric branch to CNN and SVM
+\draw[arrow] (p2.south) -- ++(0,-0.2) -| (cnn1.north);
+\draw[arrow] (p2.south) -- ++(0,-0.2) -| (svm1.north);
+
+\draw[arrow] (cnn1) -- (cnn2);
+\draw[arrow] (svm1) -- (svm2);
+
+% Symmetric merge from CNN and SVM
+\draw[arrow] (cnn2.south) -- ++(0,-0.2) |- (p5.north);
+\draw[arrow] (svm2.south) -- ++(0,-0.2) |- (p5.north);
+
+\draw[arrow] (p5) -- (res);
+
+\end{tikzpicture}
+\caption{Methodology flowchart for the piano chord recognition study.
+The pipeline processes a custom-recorded 36-class dataset through CQT
+feature extraction, followed by parallel CNN and SVM paths with
+cross-validation, and final comparative evaluation on both internal
+test data and a separate evaluation set.}
+\label{fig:methodology}
+\end{figure}
+
+\subsection{Dataset acquisition}\label{subsec3_1}
+
+% TODO: intro paragraph
+
+\subsubsection{Acquisition method}\label{subsubsec3_1_1}
+
+A primary dataset of 8,640 labeled piano chord audio samples was collected using a web-based MIDI recording application made specifically for this research, the interface is as shown in Fig. \ref{fig3_1}. % TODO: DOI web dataset generator application
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{Fig1.png}
 \caption{The web application used to generate and record the dataset}\label{fig3_1}
 \end{figure}
 
 The application connects to a keyboard via USB MIDI, programmatically triggers chords by sending MIDI note events of each chord, and captures the resulting audio through a microphone. This approach ensures deterministic chord triggering and minimizes occurrences of human error. without manual playing errors and produces recordings with organic acoustic properties arising from the instrument's physical resonance.
 
-\subsubsection{Dataset Specification}\label{subsubsec3_1_2}
+\subsubsection{Dataset specification}\label{subsubsec3_1_2}
 
 The chord vocabulary covers 36 classes organized as the combination of 12 chromatic root notes (C, C$\sharp$, D, D$\sharp$, E, F, F$\sharp$, G, G$\sharp$, A, A$\sharp$, B) and 3 chord quality types (major, minor, diminished). All chords are in the fourth octave, which provides the clearest harmonic separability and optimal spectral overlap with the CQT frequency range \cite{Telila2023} \cite{Harte2010}. The diminished chord type was included to test the classifier's sensitivity to a harmonically dense and less commonly occurring chord type \cite{Aidinis2024}.
 
-\subsubsection{Dataset Categories}\label{subsubsec3_1_3}
+\subsubsection{Dataset categories}\label{subsubsec3_1_3}
 
 The dataset is divided into two categories, each for their own respective uses:
 
@@ -226,7 +281,7 @@ Variation in note attack timing simulates natural playing conditions and reduces
 
 \begin{figure}[h]
 \centering
-\includegraphics[scale=0.5]{example-image-a}
+\includegraphics[width=\columnwidth]{Fig2.eps}
 \caption{Training dataset audio duration distribution across classes}\label{fig3_2}
 \end{figure}
 
@@ -240,7 +295,7 @@ Q = \frac{f_k}{f_{k+1} - f_k} = \frac{1}{2^{1/B} - 1}
 
 where $B$ is the number of bins per octave \cite{Li2021} \cite{Lacoste2007}. This logarithmic frequency spacing directly aligns each bin with a musical note, making the resulting 2D spectrogram matrix invariant to chord transposition and ideal for CNN-based pattern recognition \cite{Li2021} \cite{Telila2023}.
 
-\subsection{Feature Extraction Parameters}\label{subsec3_4}
+\subsection{Feature extraction parameters}\label{subsec3_4}
 
 The extraction parameters are given in Table \ref{tab1}.
 
@@ -263,7 +318,7 @@ Frame Size         & $188$ frames \\
 \end{tabular}
 \end{table}
 
-The choice of $36$ bins per octave ($3$ bins per semitone) provides high frequency resolution sufficient to resolve the harmonic interval differences between major ($4 + 3$ semitones), minor ($3 + 4$ semitones), and diminished ($3 + 3$ semitones) triads, consistent with the configurations used by Akram et al. \cite{Akram2025}, O'Hanlon and Sandler \cite{OHanlon2021}, and Rowe and Tzanetakis \cite{Akram2025}.
+The choice of $36$ bins per octave ($3$ bins per semitone) provides high frequency resolution sufficient to resolve the harmonic interval differences between major ($4 + 3$ semitones), minor ($3 + 4$ semitones), and diminished ($3 + 3$ semitones) triads, consistent with the configurations used by Akram et al. \cite{Akram2025}, O'Hanlon and Sandler \cite{OHanlon2021}, and Rowe and Tzanetakis \cite{Rowe2021}.
 
 Each audio sample is analyzed to determine the minimum recording duration across the dataset, as shown in Fig. X. Since broken chords with random note delays may be up to $2.7$ seconds long while simultaneous chords are approximately $2.0$ seconds. The frame size is calculated using the following formula:
 
@@ -275,7 +330,7 @@ Corresponding to the minimum audio duration of $2.0$ seconds, the fixed frame le
 
 The output of the CQT extraction is a 2D matrix for each audio sample where rows represent frequency bins ($0$--$215$, corresponding to C1--C7) and columns represent time frames ($0$--$187$, spanning $0$--$2$ seconds). Values in each cell represent the magnitude of the CQT coefficient in decibels (dB), capturing the energy distribution across the musical pitch and time dimensions simultaneously.
 
-\subsection{CNN Architecture}\label{subsec3_5}
+\subsection{CNN architecture}\label{subsec3_5}
 
 The CNN architecture is adopted and adapted from \cite{Wolf-Monheim2024} \cite{Wolf-Monheim2025}, originally designed for environmental sound classification using spectral and rhythmic features on the ESC-50 dataset \cite{Purwono2022}. The architecture was selected for its relatively compact form consisting of four convolutional blocks without recurrent layers, attention mechanisms, or secondary models, which aligns with the fixed-window classification approach of this study. This contrasts with architectures such as ChordFormer \cite{Akram2025} or FifthNet-online \cite{Ito2023} that are designed for continuous temporal modeling. The complete layer-by-layer architecture is specified in Table \ref{tab2}.
 
@@ -358,14 +413,14 @@ Model performance is evaluated using the standard classification metrics derived
 
 \begin{table}[h]
 \caption{Confusion matrix calculation for evaluation metrics}\label{tab4}
-\begin{tabular}{@{}lll@{}}
+\begin{tabularx}{\columnwidth}{@{}lll@{}}
 \toprule
-                    & Actual Positive       & Actual Negative \\
+\diagbox{Predicted}{Actual} & Positive              & Negative \\
 \midrule
-Predicted Positive  & True Positive (TP)    & False Negative (FN) \\
-Predicted Negative  & False Positive (FP)   & True Negative (TN) \\
+Positive                    & True Positive (TP)    & False Negative (FN) \\
+Negative                    & False Positive (FP)   & True Negative (TN) \\
 \botrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 The formula for each metrics are as follows:
@@ -400,7 +455,7 @@ The formula for each metrics are as follows:
 
 For multi-class classification with 36 classes, macro-averaged precision, recall, and F1-score are reported, giving equal weight to each class regardless of sample count. All metrics are computed from the confusion matrix over the test sets.
 
-\section{Result and Discussion}\label{sec4}
+\section{Results and discussion}\label{sec4}
 
 % TODO: intro paragraph
 
@@ -410,7 +465,7 @@ Feature extraction successfully transforms all $8,640$ ($7,200$ training dataset
 
 \begin{figure}[h]
 \centering
-\includegraphics[scale=0.5]{example-image-a}
+\includegraphics[width=\columnwidth]{Fig3.eps}
 \caption{Extracted CQT spectrogram samples}\label{fig4_1}
 \end{figure}
 
@@ -422,7 +477,7 @@ Feature extraction successfully transforms all $8,640$ ($7,200$ training dataset
 
 \begin{figure}[h]
 \centering
-\includegraphics[scale=0.5]{example-image-a}
+\includegraphics[width=\columnwidth]{Fig4.eps}
 \caption{CNN training epoch graph}\label{fig4_2}
 \end{figure}
 
@@ -434,7 +489,7 @@ After training, the model is evaluated on the 10\% test set split, containing 1,
 
 \begin{figure}[h]
 \centering
-\includegraphics[scale=0.5]{example-image-a}
+\includegraphics[width=\columnwidth]{Fig5.eps}
 \caption{CNN training evaluation confusion matrix}\label{fig4_3}
 \end{figure}
 
@@ -467,7 +522,7 @@ Across all five folds with respective epochs mean and standard deviation of $16 
 
 \begin{figure}[h]
 \centering
-\includegraphics[scale=0.5]{example-image-a}
+\includegraphics[width=\columnwidth]{Fig6.eps}
 \caption{CNN 5-fold cross-validation training graph}\label{fig4_4}
 \end{figure}
 
@@ -483,15 +538,16 @@ Hyperparameter tuning using Optuna's RandomSampler, as shown in the tuning proce
 
 \begin{figure}[h]
 \centering
-\includegraphics[scale=0.5]{example-image-a}
-\caption{SVM hyperparameter tuning process}\label{fig4_5}
+\includegraphics[width=\columnwidth]{Fig7.eps}
+\caption{SVM training confusion matrix}\label{fig4_5}
 \end{figure}
+
 
 The search terminates early due to early convergence, confirming that the chosen hyperparameter space includes the globally optimal configuration for this dataset. The final SVM model trained with these parameters achieves perfect accuracy ($1.000$) on the $10\%$ test set, with the confusion matrix showing zero misclassifications across all $36$ chord classes as illustrated in Fig. \ref{fig4_6}.
 
 \begin{figure}[h]
 \centering
-\includegraphics[scale=0.5]{example-image-a}
+\includegraphics[width=\columnwidth]{Fig8.eps}
 \caption{SVM training confusion matrix}\label{fig4_6}
 \end{figure}
 
@@ -553,7 +609,7 @@ To assess the generalization of the trained CNN model beyond its training distri
 
 \begin{figure}[h]
 \centering
-\includegraphics[scale=0.5]{example-image-a}
+\includegraphics[width=\columnwidth]{Fig9.eps}
 \caption{Confusion matrix of CNN test on evaluation dataset}\label{fig4_7}
 \end{figure}
 
@@ -593,7 +649,7 @@ The evaluation dataset is also used to evaluate the trained RBF-SVM model under 
 
 \begin{figure}[h]
 \centering
-\includegraphics[scale=0.5]{example-image-a}
+\includegraphics[width=\columnwidth]{Fig10.eps}
 \caption{Confusion matrix of SVM test on evaluation dataset}\label{fig4_8}
 \end{figure}
 
@@ -607,7 +663,7 @@ Fig. \ref{fig4_9} visualizes the difference between CNN and SVM metrics on test 
 
 \begin{figure}[h]
 \centering
-\includegraphics[scale=0.5]{example-image-a}
+\includegraphics[width=\columnwidth]{Fig11.eps}
 \caption{Comparison between CNN and SVM metrics on evaluation dataset}\label{fig4_9}
 \end{figure}
 
@@ -647,465 +703,38 @@ Both models achieve perfect performance on the training dataset with 1.00 accura
 
 The CNN's remaining misclassifications are concentrated in a small number of harmonically related chord pairs of A$\sharp$\_diminished / B\_major, C\_diminished / C$\sharp$\_minor, and E\_diminished / E\_major that share pitch-class content, suggesting that targeted data augmentation across diverse instruments and acoustic environments would be sufficient to close the remaining performance gap. Future work should extend the chord vocabulary beyond fourth-octave triads and integrate this classifier into a low-latency online recognition pipeline for real-time music education applications.
 
-% \section{Equations}\label{sec4}
-
-% Equations in \LaTeX\ can either be inline or on-a-line by itself (``display equations''). For
-% inline equations use the \verb+$...$+ commands. E.g.: The equation
-% $H\psi = E \psi$ is written via the command \verb+$H \psi = E \psi$+.
-
-% For display equations (with auto generated equation numbers)
-% one can use the equation or align environments:
-% \begin{equation}
-% \|\tilde{X}(k)\|^2 \leq\frac{\sum\limits_{i=1}^{p}\left\|\tilde{Y}_i(k)\right\|^2+\sum\limits_{j=1}^{q}\left\|\tilde{Z}_j(k)\right\|^2 }{p+q}.\label{eq99}
-% \end{equation}
-% where,
-% \begin{align}
-% D_\mu &=  \partial_\mu - ig \frac{\lambda^a}{2} A^a_\mu \nonumber \\
-% F^a_{\mu\nu} &= \partial_\mu A^a_\nu - \partial_\nu A^a_\mu + g f^{abc} A^b_\mu A^a_\nu \label{eq99}
-% \end{align}
-% Notice the use of \verb+\nonumber+ in the align environment at the end
-% of each line, except the last, so as not to produce equation numbers on
-% lines where no equation numbers are required. The \verb+\label{}+ command
-% should only be used at the last line of an align environment where
-% \verb+\nonumber+ is not used.
-% \begin{equation}
-% Y_\infty = \left( \frac{m}{\textrm{GeV}} \right)^{-3}
-%     \left[ 1 + \frac{3 \ln(m/\textrm{GeV})}{15}
-%     + \frac{\ln(c_2/5)}{15} \right]
-% \end{equation}
-% The class file also supports the use of \verb+\mathbb{}+, \verb+\mathscr{}+ and
-% \verb+\mathcal{}+ commands. As such \verb+\mathbb{R}+, \verb+\mathscr{R}+
-% and \verb+\mathcal{R}+ produces $\mathbb{R}$, $\mathscr{R}$ and $\mathcal{R}$
-% respectively (refer Subsubsection~\ref{subsubsec2}).
-
-% \section{Tables}\label{sec5}
-
-% Tables can be inserted via the normal table and tabular environment. To put
-% footnotes inside tables you should use \verb+\footnotetext[]{...}+ tag.
-% % The footnote appears just below the table itself (refer Tables~\ref{tab1} and \ref{tab99}).
-% For the corresponding footnotemark use \verb+\footnotemark[...]+
-
-% % \begin{table}[h]
-% % \caption{Caption text}\label{tab99}%
-% % \begin{tabular}{@{}llll@{}}
-% % \toprule
-% % Column 1 & Column 2  & Column 3 & Column 4\\
-% % \midrule
-% % row 1    & data 1   & data 2  & data 3  \\
-% % row 2    & data 4   & data 5\footnotemark[1]  & data 6  \\
-% % row 3    & data 7   & data 8  & data 9\footnotemark[2]  \\
-% % \botrule
-% % \end{tabular}
-% % \footnotetext{Source: This is an example of table footnote. This is an example of table footnote.}
-% % \footnotetext[1]{Example for a first table footnote. This is an example of table footnote.}
-% % \footnotetext[2]{Example for a second table footnote. This is an example of table footnote.}
-% % \end{table}
-
-% \noindent
-% The input format for the above table is as follows:
-
-% %%=============================================%%
-% %% For presentation purpose, we have included  %%
-% %% \bigskip command. Please ignore this.       %%
-% %%=============================================%%
-% \bigskip
-% \begin{verbatim}
-% \begin{table}[<placement-specifier>]
-% \caption{<table-caption>}\label{<table-label>}%
-% \begin{tabular}{@{}llll@{}}
-% \toprule
-% Column 1 & Column 2 & Column 3 & Column 4\\
-% \midrule
-% row 1 & data 1 & data 2	 & data 3 \\
-% row 2 & data 4 & data 5\footnotemark[1] & data 6 \\
-% row 3 & data 7 & data 8	 & data 9\footnotemark[2]\\
-% \botrule
-% \end{tabular}
-% \footnotetext{Source: This is an example of table footnote.
-% This is an example of table footnote.}
-% \footnotetext[1]{Example for a first table footnote.
-% This is an example of table footnote.}
-% \footnotetext[2]{Example for a second table footnote.
-% This is an example of table footnote.}
-% \end{table}
-% \end{verbatim}
-% \bigskip
-% %%=============================================%%
-% %% For presentation purpose, we have included  %%
-% %% \bigskip command. Please ignore this.       %%
-% %%=============================================%%
-
-% % \begin{table}[h]
-% % \caption{Example of a lengthy table which is set to full textwidth}\label{tab2}
-% % \begin{tabular*}{\textwidth}{@{\extracolsep\fill}lcccccc}
-% % \toprule%
-% % & \multicolumn{3}{@{}c@{}}{Element 1\footnotemark[1]} & \multicolumn{3}{@{}c@{}}{Element 2\footnotemark[2]} \\\cmidrule{2-4}\cmidrule{5-7}%
-% % Project & Energy & $\sigma_{calc}$ & $\sigma_{expt}$ & Energy & $\sigma_{calc}$ & $\sigma_{expt}$ \\
-% % \midrule
-% % Element 3  & 990 A & 1168 & $1547\pm12$ & 780 A & 1166 & $1239\pm100$\\
-% % Element 4  & 500 A & 961  & $922\pm10$  & 900 A & 1268 & $1092\pm40$\\
-% % \botrule
-% % \end{tabular*}
-% % \footnotetext{Note: This is an example of table footnote. This is an example of table footnote this is an example of table footnote this is an example of~table footnote this is an example of table footnote.}
-% % \footnotetext[1]{Example for a first table footnote.}
-% % \footnotetext[2]{Example for a second table footnote.}
-% % \end{table}
-
-% % In case of double column layout, tables which do not fit in single column width should be set to full text width. For this, you need to use \verb+\begin{table*}+ \verb+...+ \verb+\end{table*}+ instead of \verb+\begin{table}+ \verb+...+ \verb+\end{table}+ environment. Lengthy tables which do not fit in textwidth should be set as rotated table. For this, you need to use \verb+\begin{sidewaystable}+ \verb+...+ \verb+\end{sidewaystable}+ instead of \verb+\begin{table*}+ \verb+...+ \verb+\end{table*}+ environment. This environment puts tables rotated to single column width. For tables rotated to double column width, use \verb+\begin{sidewaystable*}+ \verb+...+ \verb+\end{sidewaystable*}+.
-
-% % \begin{sidewaystable}
-% % \caption{Tables which are too long to fit, should be written using the ``sidewaystable'' environment as shown here}\label{tab3}
-% % \begin{tabular*}{\textheight}{@{\extracolsep\fill}lcccccc}
-% % \toprule%
-% % & \multicolumn{3}{@{}c@{}}{Element 1\footnotemark[1]}& \multicolumn{3}{@{}c@{}}{Element\footnotemark[2]} \\\cmidrule{2-4}\cmidrule{5-7}%
-% % Projectile & Energy	& $\sigma_{calc}$ & $\sigma_{expt}$ & Energy & $\sigma_{calc}$ & $\sigma_{expt}$ \\
-% % \midrule
-% % Element 3 & 990 A & 1168 & $1547\pm12$ & 780 A & 1166 & $1239\pm100$ \\
-% % Element 4 & 500 A & 961  & $922\pm10$  & 900 A & 1268 & $1092\pm40$ \\
-% % Element 5 & 990 A & 1168 & $1547\pm12$ & 780 A & 1166 & $1239\pm100$ \\
-% % Element 6 & 500 A & 961  & $922\pm10$  & 900 A & 1268 & $1092\pm40$ \\
-% % \botrule
-% % \end{tabular*}
-% % \footnotetext{Note: This is an example of table footnote this is an example of table footnote this is an example of table footnote this is an example of~table footnote this is an example of table footnote.}
-% % \footnotetext[1]{This is an example of table footnote.}
-% % \end{sidewaystable}
-
-% \section{Figures}\label{sec6}
-
-% As per the \LaTeX\ standards you need to use eps images for \LaTeX\ compilation and \verb+pdf/jpg/png+ images for \verb+PDFLaTeX+ compilation. This is one of the major difference between \LaTeX\ and \verb+PDFLaTeX+. Each image should be from a single input .eps/vector image file. Avoid using subfigures. The command for inserting images for \LaTeX\ and \verb+PDFLaTeX+ can be generalized. The package used to insert images in \verb+LaTeX/PDFLaTeX+ is the graphicx package. Figures can be inserted via the normal figure environment as shown in the below example:
-
-% %%=============================================%%
-% %% For presentation purpose, we have included  %%
-% %% \bigskip command. Please ignore this.       %%
-% %%=============================================%%
-% \bigskip
-% \begin{verbatim}
-% \begin{figure}[<placement-specifier>]
-% \centering
-% \includegraphics{<eps-file>}
-% \caption{<figure-caption>}\label{<figure-label>}
-% \end{figure}
-% \end{verbatim}
-% \bigskip
-% %%=============================================%%
-% %% For presentation purpose, we have included  %%
-% %% \bigskip command. Please ignore this.       %%
-% %%=============================================%%
-
-% % \begin{figure}[h]
-% % \centering
-% % \includegraphics[width=0.9\textwidth]{fig.eps}
-% % \caption{This is a widefig. This is an example of long caption this is an example of long caption  this is an example of long caption this is an example of long caption}\label{fig1}
-% % \end{figure}
-
-% In case of double column layout, the above format puts figure captions/images to single column width. To get spanned images, we need to provide \verb+\begin{figure*}+ \verb+...+ \verb+\end{figure*}+.
-
-% For sample purpose, we have included the width of images in the optional argument of \verb+\includegraphics+ tag. Please ignore this.
-
-% \section{Algorithms, Program codes and Listings}\label{sec7}
-
-% Packages \verb+algorithm+, \verb+algorithmicx+ and \verb+algpseudocode+ are used for setting algorithms in \LaTeX\ using the format:
-
-% %%=============================================%%
-% %% For presentation purpose, we have included  %%
-% %% \bigskip command. Please ignore this.       %%
-% %%=============================================%%
-% \bigskip
-% \begin{verbatim}
-% \begin{algorithm}
-% \caption{<alg-caption>}\label{<alg-label>}
-% \begin{algorithmic}[1]
-% . . .
-% \end{algorithmic}
-% \end{algorithm}
-% \end{verbatim}
-% \bigskip
-% %%=============================================%%
-% %% For presentation purpose, we have included  %%
-% %% \bigskip command. Please ignore this.       %%
-% %%=============================================%%
-
-% You may refer above listed package documentations for more details before setting \verb+algorithm+ environment. For program codes, the ``verbatim'' package is required and the command to be used is \verb+\begin{verbatim}+ \verb+...+ \verb+\end{verbatim}+.
-
-% Similarly, for \verb+listings+, use the \verb+listings+ package. \verb+\begin{lstlisting}+ \verb+...+ \verb+\end{lstlisting}+ is used to set environments similar to \verb+verbatim+ environment. Refer to the \verb+lstlisting+ package documentation for more details.
-
-% A fast exponentiation procedure:
-
-% \lstset{texcl=true,basicstyle=\small\sf,commentstyle=\small\rm,mathescape=true,escapeinside={(*}{*)}}
-% \begin{lstlisting}
-% begin
-%   for $i:=1$ to $10$ step $1$ do
-%       expt($2,i$);
-%       newline() od                (*\textrm{Comments will be set flush to the right margin}*)
-% where
-% proc expt($x,n$) $\equiv$
-%   $z:=1$;
-%   do if $n=0$ then exit fi;
-%      do if odd($n$) then exit fi;
-%         comment: (*\textrm{This is a comment statement;}*)
-%         $n:=n/2$; $x:=x*x$ od;
-%      { $n>0$ };
-%      $n:=n-1$; $z:=z*x$ od;
-%   print($z$).
-% end
-% \end{lstlisting}
-
-% \begin{algorithm}
-% \caption{Calculate $y = x^n$}\label{algo1}
-% \begin{algorithmic}[1]
-% \Require $n \geq 0 \vee x \neq 0$
-% \Ensure $y = x^n$
-% \State $y \Leftarrow 1$
-% \If{$n < 0$}\label{algln2}
-%         \State $X \Leftarrow 1 / x$
-%         \State $N \Leftarrow -n$
-% \Else
-%         \State $X \Leftarrow x$
-%         \State $N \Leftarrow n$
-% \EndIf
-% \While{$N \neq 0$}
-%         \If{$N$ is even}
-%             \State $X \Leftarrow X \times X$
-%             \State $N \Leftarrow N / 2$
-%         \Else[$N$ is odd]
-%             \State $y \Leftarrow y \times X$
-%             \State $N \Leftarrow N - 1$
-%         \EndIf
-% \EndWhile
-% \end{algorithmic}
-% \end{algorithm}
-
-% %%=============================================%%
-% %% For presentation purpose, we have included  %%
-% %% \bigskip command. Please ignore this.       %%
-% %%=============================================%%
-% \bigskip
-% \begin{minipage}{\hsize}%
-% \lstset{frame=single,framexleftmargin=-1pt,framexrightmargin=-17pt,framesep=12pt,linewidth=0.98\textwidth,language=pascal}% Set your language (you can change the language for each code-block optionally)
-% %%% Start your code-block
-% \begin{lstlisting}
-% for i:=maxint to 0 do
-% begin
-% { do nothing }
-% end;
-% Write('Case insensitive ');
-% Write('Pascal keywords.');
-% \end{lstlisting}
-% \end{minipage}
-
-% \section{Cross referencing}\label{sec8}
-
-% Environments such as figure, table, equation and align can have a label
-% declared via the \verb+\label{#label}+ command. For figures and table
-% environments use the \verb+\label{}+ command inside or just
-% below the \verb+\caption{}+ command. You can then use the
-% \verb+\ref{#label}+ command to cross-reference them. As an example, consider
-% the label declared for Figure~\ref{fig1} which is
-% \verb+\label{fig1}+. To cross-reference it, use the command
-% \verb+Figure \ref{fig1}+, for which it comes up as
-% ``Figure~\ref{fig1}''.
-
-% To reference line numbers in an algorithm, consider the label declared for the line number 2 of Algorithm~\ref{algo1} is \verb+\label{algln2}+. To cross-reference it, use the command \verb+\ref{algln2}+ for which it comes up as line~\ref{algln2} of Algorithm~\ref{algo1}.
-
-% \subsection{Details on reference citations}\label{subsec7}
-
-% Standard \LaTeX\ permits only numerical citations. To support both numerical and author-year citations this template uses \verb+natbib+ \LaTeX\ package. For style guidance please refer to the template user manual.
-
-% Here is an example for \verb+\cite{...}+: \cite{Saputra2021}. Another example for \verb+\citep{...}+: \citep{Saputra2021}. For author-year citation mode, \verb+\cite{...}+ prints Jones et al. (1990) and \verb+\citep{...}+ prints (Jones et al., 1990).
-
-% All cited bib entries are printed at the end of this article: \cite{Saputra2021}, \cite{Saputra2021}, \cite{Saputra2021}, \cite{Saputra2021}, \cite{Saputra2021}, \cite{Saputra2021}, \cite{Saputra2021}, \cite{Saputra2021}, \cite{Saputra2021}, \cite{Saputra2021} and \cite{Saputra2021}.
-
-% \section{Examples for theorem like environments}\label{sec10}
-
-% For theorem like environments, we require \verb+amsthm+ package. There are three types of predefined theorem styles exists---\verb+thmstyleone+, \verb+thmstyletwo+ and \verb+thmstylethree+
-
-% %%=============================================%%
-% %% For presentation purpose, we have included  %%
-% %% \bigskip command. Please ignore this.       %%
-% %%=============================================%%
-% \bigskip
-% \begin{tabular}{|l|p{19pc}|}
-% \hline
-% \verb+thmstyleone+ & Numbered, theorem head in bold font and theorem text in italic style \\\hline
-% \verb+thmstyletwo+ & Numbered, theorem head in roman font and theorem text in italic style \\\hline
-% \verb+thmstylethree+ & Numbered, theorem head in bold font and theorem text in roman style \\\hline
-% \end{tabular}
-% \bigskip
-% %%=============================================%%
-% %% For presentation purpose, we have included  %%
-% %% \bigskip command. Please ignore this.       %%
-% %%=============================================%%
-
-% For mathematics journals, theorem styles can be included as shown in the following examples:
-
-% \begin{theorem}[Theorem subhead]\label{thm1}
-% Example theorem text. Example theorem text. Example theorem text. Example theorem text. Example theorem text.
-% Example theorem text. Example theorem text. Example theorem text. Example theorem text. Example theorem text.
-% Example theorem text.
-% \end{theorem}
-
-% Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text.
-
-% \begin{proposition}
-% Example proposition text. Example proposition text. Example proposition text. Example proposition text. Example proposition text.
-% Example proposition text. Example proposition text. Example proposition text. Example proposition text. Example proposition text.
-% \end{proposition}
-
-% Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text.
-
-% \begin{example}
-% Phasellus adipiscing semper elit. Proin fermentum massa
-% ac quam. Sed diam turpis, molestie vitae, placerat a, molestie nec, leo. Maecenas lacinia. Nam ipsum ligula, eleifend
-% at, accumsan nec, suscipit a, ipsum. Morbi blandit ligula feugiat magna. Nunc eleifend consequat lorem.
-% \end{example}
-
-% Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text.
-
-% \begin{remark}
-% Phasellus adipiscing semper elit. Proin fermentum massa
-% ac quam. Sed diam turpis, molestie vitae, placerat a, molestie nec, leo. Maecenas lacinia. Nam ipsum ligula, eleifend
-% at, accumsan nec, suscipit a, ipsum. Morbi blandit ligula feugiat magna. Nunc eleifend consequat lorem.
-% \end{remark}
-
-% Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text.
-
-% \begin{definition}[Definition sub head]
-% Example definition text. Example definition text. Example definition text. Example definition text. Example definition text. Example definition text. Example definition text. Example definition text.
-% \end{definition}
-
-% Additionally a predefined ``proof'' environment is available: \verb+\begin{proof}+ \verb+...+ \verb+\end{proof}+. This prints a ``Proof'' head in italic font style and the ``body text'' in roman font style with an open square at the end of each proof environment.
-
-% \begin{proof}
-% Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text.
-% \end{proof}
-
-% Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text. Sample body text.
-
-% \begin{proof}[Proof of Theorem~{\upshape\ref{thm1}}]
-% Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text. Example for proof text.
-% \end{proof}
-
-% \noindent
-% For a quote environment, use \verb+\begin{quote}...\end{quote}+
-% \begin{quote}
-% Quoted text example. Aliquam porttitor quam a lacus. Praesent vel arcu ut tortor cursus volutpat. In vitae pede quis diam bibendum placerat. Fusce elementum
-% convallis neque. Sed dolor orci, scelerisque ac, dapibus nec, ultricies ut, mi. Duis nec dui quis leo sagittis commodo.
-% \end{quote}
-
-% Sample body text. Sample body text. Sample body text. Sample body text. Sample body text (refer Figure~\ref{fig1}). Sample body text. Sample body text. Sample body text (refer Table~\ref{tab3}).
-
-% \section{Methods}\label{sec11}
-
-% Topical subheadings are allowed. Authors must ensure that their Methods section includes adequate experimental and characterization data necessary for others in the field to reproduce their work. Authors are encouraged to include RIIDs where appropriate.
-
-% \textbf{Ethical approval declarations} (only required where applicable) Any article reporting experiment/s carried out on (i)~live vertebrate (or higher invertebrates), (ii)~humans or (iii)~human samples must include an unambiguous statement within the methods section that meets the following requirements:
-
-% \begin{enumerate}[1.]
-% \item Approval: a statement which confirms that all experimental protocols were approved by a named institutional and/or licensing committee. Please identify the approving body in the methods section
-
-% \item Accordance: a statement explicitly saying that the methods were carried out in accordance with the relevant guidelines and regulations
-
-% \item Informed consent (for experiments involving humans or human tissue samples): include a statement confirming that informed consent was obtained from all participants and/or their legal guardian/s
-% \end{enumerate}
-
-% If your manuscript includes potentially identifying patient/participant information, or if it describes human transplantation research, or if it reports results of a clinical trial then  additional information will be required. Please visit (\url{https://www.nature.com/nature-research/editorial-policies}) for Nature Portfolio journals, (\url{https://www.springer.com/gp/authors-editors/journal-author/journal-author-helpdesk/publishing-ethics/14214}) for Springer Nature journals, or (\url{https://www.biomedcentral.com/getpublished/editorial-policies\#ethics+and+consent}) for BMC.
-
-% \section{Discussion}\label{sec12}
-
-% Discussions should be brief and focused. In some disciplines use of Discussion or `Conclusion' is interchangeable. It is not mandatory to use both. Some journals prefer a section `Results and Discussion' followed by a section `Conclusion'. Please refer to Journal-level guidance for any specific requirements.
-
-% \section{Conclusion}\label{sec13}
-
-% Conclusions may be used to restate your hypothesis or research question, restate your major findings, explain the relevance and the added value of your work, highlight any limitations of your study, describe future directions for research and recommendations.
-
-% In some disciplines use of Discussion or 'Conclusion' is interchangeable. It is not mandatory to use both. Please refer to Journal-level guidance for any specific requirements.
-
-% \backmatter
-
-% \bmhead{Supplementary information}
-
-% If your article has accompanying supplementary file/s please state so here.
-
-% Authors reporting data from electrophoretic gels and blots should supply the full unprocessed scans for key as part of their Supplementary information. This may be requested by the editorial team/s if it is missing.
-
-% Please refer to Journal-level guidance for any specific requirements.
-
-% \bmhead{Acknowledgements}
-
-% Acknowledgements are not compulsory. Where included they should be brief. Grant or contribution numbers may be acknowledged.
-
-% Please refer to Journal-level guidance for any specific requirements.
-
-% \section*{Declarations}
-
-% Some journals require declarations to be submitted in a standardised format. Please check the Instructions for Authors of the journal to which you are submitting to see if you need to complete this section. If yes, your manuscript must contain the following sections under the heading `Declarations':
-
-% \begin{itemize}
-% \item Funding
-% \item Conflict of interest/Competing interests (check journal-specific guidelines for which heading to use)
-% \item Ethics approval and consent to participate
-% \item Consent for publication
-% \item Data availability
-% \item Materials availability
-% \item Code availability
-% \item Author contribution
-% \end{itemize}
-
-% \noindent
-% If any of the sections are not relevant to your manuscript, please include the heading and write `Not applicable' for that section.
-
-% %%===================================================%%
-% %% For presentation purpose, we have included        %%
-% %% \bigskip command. Please ignore this.             %%
-% %%===================================================%%
-% \bigskip
-% \begin{flushleft}%
-% Editorial Policies for:
-
-% \bigskip\noindent
-% Springer journals and proceedings: \url{https://www.springer.com/gp/editorial-policies}
-
-% \bigskip\noindent
-% Nature Portfolio journals: \url{https://www.nature.com/nature-research/editorial-policies}
-
-% \bigskip\noindent
-% \textit{Scientific Reports}: \url{https://www.nature.com/srep/journal-policies/editorial-policies}
-
-% \bigskip\noindent
-% BMC journals: \url{https://www.biomedcentral.com/getpublished/editorial-policies}
-% \end{flushleft}
-
-% \begin{appendices}
-
-% \section{Section title of first appendix}\label{secA1}
-
-% An appendix contains supplementary information that is not an essential part of the text itself but which may be helpful in providing a more comprehensive understanding of the research problem or it is information that is too cumbersome to be included in the body of the paper.
-
-%%=============================================%%
-%% For submissions to Nature Portfolio Journals %%
-%% please use the heading ``Extended Data''.   %%
-%%=============================================%%
-
-%%=============================================================%%
-%% Sample for another appendix section			       %%
-%%=============================================================%%
-
-%% \section{Example of another appendix section}\label{secA2}%
-%% Appendices may be used for helpful, supporting or essential material that would otherwise
-%% clutter, break up or be distracting to the text. Appendices can consist of sections, figures,
-%% tables and equations etc.
-
-% \end{appendices}
-
-%%===========================================================================================%%
-%% If you are submitting to one of the Nature Portfolio journals, using the eJP submission   %%
-%% system, please include the references within the manuscript file itself. You may do this  %%
-%% by copying the reference list from your .bbl file, paste it into the main manuscript .tex %%
-%% file, and delete the associated \verb+\bibliography+ commands.                            %%
-%%===========================================================================================%%
-
-\bibliography{mendeley}% common bib file
-%% if required, the content of .bbl file can be included here once bbl is generated
-%%\input sn-article.bbl
+\backmatter
+
+\bmhead{Author contributions}
+
+All authors contributed to the study conceptual design. Material preparation, data acquisition, experiment, and analysis were performed by Cikal Gemintang Seya. The first draft of the manuscript was written by Cikal Gemintang Seya and all authors commented on previous versions of the manuscript. All authors read and approved the final manuscript.
+
+\bmhead{Funding}
+
+No funding was received for this work.
+
+\bmhead{Data availability}
+
+The piano chords dataset used in this study is publicly available at: \url{https://zenodo.org/records/21077144} \cite{Seya2026}.
+
+\bmhead{Code availability}
+
+The software tool to generate and record the dataset used in this study is publicly available at: \url{https://github.com/sglkc/chords-dataset-generator/}.
+
+\section*{Declarations}
+
+\bmhead{Conflict of interest}
+
+The authors declare no competing interest.
+
+\bmhead{Ethics approval}
+
+This declaration is not applicable.
+
+\bmhead{Consent for publication}
+
+All authors approved the final manuscript.
+
+\bibliography{mendeley}
 
 \end{document}
