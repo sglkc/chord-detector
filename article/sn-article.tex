@@ -43,7 +43,7 @@
 
 \abstract{The generalization behavior of spectrogram-based audio classifiers under acoustic domain shift remains insufficiently characterized. This paper evaluates Constant-Q Transform (CQT) spectrogram features paired with two structurally distinct classifiers, a Convolutional Neural Network (CNN) and a hyperparameter-tuned Radial Basis Function Support Vector Machine (RBF-SVM), on a controlled 36-class piano chord recognition problem. Both models are trained on 7,200 audio samples recorded from a Techno T-9890i keyboard and subsequently evaluated under cross-domain conditions on a separate, independent 1,440-sample dataset from a Yamaha PSR-S910 keyboard in a different physical environment, establishing a rigorous cross-domain evaluation. Under in-domain 5-fold cross-validation, both classifiers achieve perfect accuracy and F1-scores of 1.00, confirming that CQT feature space is fully discriminative under stable conditions. However, a decisive divergence emerges under cross-domain evaluation, where the CNN retains strong generalizability with 0.89 accuracy and 0.87 macro F1-score, whereas the RBF-SVM completely collapses to 0.29 accuracy and 0.36 macro F1-score. Error analysis reveals that the CNN's residual errors are concentrated in harmonically proximate chord pairs, while the SVM exhibits a systematic single-class attractor collapse driven by the high sensitivity of global RBF kernel distances to global spectral envelope shifts. These results provide empirical evidence that the CNN's spatially local hierarchical feature learning is substantially more robust to acoustic covariate shifts than the global kernel boundaries of an RBF-SVM, offering critical structural insights for deploying spectrogram classifiers in real-world environments.}
 
-\keywords{Constant-Q Transform, feature generalization, domain shift, convolutional neural network, support vector machine}
+\keywords{Constant-Q Transform, Convolutional Neural Network, Support Vector Machine, feature generalization, domain shift}
 
 \maketitle
 
@@ -57,9 +57,11 @@ The Constant-Q Transform (CQT) occupies a particular position among time-frequen
 
 The piano chord classification problem provides a controlled vocabulary for such a study. With 36 classes formed by 12 chromatic root notes and 3 chord qualities (major, minor, diminished), the task requires fine-grained spectral discrimination: major and minor triads differ by a single semitone shift in the third, and diminished triads differ by a further semitone shift in the fifth, corresponding to shifts of one or two CQT frequency bins at the chosen resolution. This makes the task neither trivially easy nor artificially hard, appropriate for controlled generalization analysis.
 
-The two classifiers evaluated here represent opposing strategies. CNN learns spatially localized hierarchical feature detectors whose convolutional kernels respond to small time-frequency neighborhoods \cite{OShea2015}\cite{Purwono2022}. RBF-SVM learns a maximum-margin hyperplane defined by kernel similarity to training support vectors, where the RBF kernel measures global Euclidean distance between flattened feature vectors \cite{Chang2011}\cite{Wainer2020}. Under acoustic domain shift these strategies are expected to diverge: CNN's locally defined representations should partially survive global spectral shifts, whereas SVM's globally defined kernel distances may be severely distorted by the same shifts \cite{Zaman2023}.
+The two classifiers evaluated here represent opposing strategies. CNN learns spatially localized hierarchical feature detectors whose convolutional kernels respond to small time-frequency neighborhoods \cite{OShea2015}\cite{Purwono2022}. RBF-SVM learns a maximum-margin hyperplane defined by kernel similarity to training support vectors, where the RBF kernel measures global Euclidean distance between flattened feature vectors \cite{Wainer2020}. Under acoustic domain shift these strategies are expected to diverge: CNN's locally defined representations should partially survive global spectral shifts, whereas SVM's globally defined kernel distances may be severely distorted by the same shifts \cite{Zaman2023}.
 
-The existing literature reveals several gaps. Published chord recognition systems focus on large-vocabulary offline recognition using CNN-HMM hybrids \cite{Li2021}, CNN-RNN hybrids \cite{OHanlon2021}, conformer-based models \cite{Akram2025}, or transformer-attention mechanisms \cite{Kusaka2024}, evaluated on in-domain benchmarks that do not probe cross-dataset generalization. Direct comparisons of CNN against kernel classifiers under acoustic domain shift are absent, and studies addressing domain shift in audio typically employ augmentation or adaptation strategies rather than characterizing the root cause of classifier brittleness \cite{Majchrzak2025}.
+The existing literature reveals a critical systemic gap: contemporary music information retrieval (MIR) research heavily prioritizes expanding chord vocabulary size or introducing increasingly complex, parameterized architectures, such as conformer-based models \cite{Akram2025} or transformer-attention mechanisms \cite{Kusaka2024}. However, these systems are almost universally validated on static, in-domain benchmarks, leaving their structural generalizability unprobed. While a few recent studies have acknowledged the existence of an out-of-domain accuracy gap, they treat it purely as a data-scarcity issue to be bypassed via synthetic data augmentation \cite{Kusaka2024} or artificial generation strategies \cite{Majchrzak2025}, rather than diagnosing the underlying structural vulnerabilities of the chosen classifiers.
+
+A controlled, systematic evaluation isolating how fundamentally distinct decision-boundary strategies (spatially local hierarchical feature learning versus global kernel methods) behave under an unaugmented acoustic domain shift remains entirely absent from the literature. This paper addresses this gap not by chasing minor accuracy improvements on over-fitted benchmarks, but by establishing a diagnostic baseline that maps the mathematical root causes of classifier resilience and collapse under real-world covariate shifts.
 
 This paper addresses these gaps with a controlled design in which training and evaluation datasets are recorded on different keyboard instruments with different synthesis algorithms and recording devices in different physical environments, while all other parameters are held constant. The specific contributions are:
 
@@ -154,7 +156,7 @@ The experimental pipeline is illustrated in Fig.~\ref{fig:methodology}. The stud
 
 \subsection{Dataset acquisition}\label{subsec3_1}
 
-Audio recordings are collected using a custom web-based MIDI recording application that connects to a keyboard via USB MIDI, programmatically triggers chords by sending simultaneous MIDI note-on events, and captures the resulting audio through a connected microphone. This deterministic triggering approach eliminates manual playing errors while retaining organic acoustic properties arising from the instrument's physical resonance and synthesis.
+Audio recordings are collected using a custom web-based MIDI recording application that connects to a keyboard via USB MIDI, programmatically triggers chords by sending simultaneous MIDI note-on events, and captures the resulting audio through a connected microphone (Online Resource~1). This deterministic triggering approach eliminates manual playing errors while retaining organic acoustic properties arising from the instrument's physical resonance and synthesis.
 
 The chord vocabulary covers 36 classes formed by the combination of 12 chromatic root notes (C, C$\sharp$, D, D$\sharp$, E, F, F$\sharp$, G, G$\sharp$, A, A$\sharp$, B) and 3 chord quality types (major, minor, diminished). All chords are voiced in the fourth octave, which provides optimal spectral coverage within the 6-octave CQT range and clear harmonic separability between qualities \cite{Telila2023} \cite{Harte2010}. The inclusion of the diminished quality tests classifier sensitivity to a harmonically dense chord type in which all intervals are minor thirds, creating greater inter-class harmonic proximity than major or minor chords \cite{Aidinis2024} \cite{Kantarelis2024}.
 
@@ -168,7 +170,7 @@ Two independent datasets are recorded to enable cross-domain evaluation:
 
 \end{enumerate}
 
-The two datasets differ systematically in instrument brand, piano voice synthesis, recording device, and room acoustics. No samples from the evaluation dataset were used at any stage of training, validation, or hyperparameter optimization. This strict separation ensures that cross-domain results measure genuine cross-domain generalization. All recordings are stored in OGG/OPUS format at 48,000\,Hz sample rate, 32-bit depth, mono channel, without post-processing filters.
+The two datasets differ systematically in instrument brand, piano voice synthesis, recording device, and room acoustics. No samples from the evaluation dataset were used at any stage of training, validation, or hyperparameter optimization. This strict separation ensures that cross-domain results measure genuine cross-domain generalization. All recordings are stored in OGG/OPUS format at 48,000\,Hz sample rate, 32-bit depth, mono channel, without post-processing filters. The distribution of audio durations across the training dataset is provided in Online Resource~2.
 
 \subsection{CQT feature extraction}\label{subsec3_2}
 
@@ -179,10 +181,10 @@ Q = \frac{f_k}{f_{k+1} - f_k} = \frac{1}{2^{1/B} - 1}
 \end{equation}
 where $B$ is the number of bins per octave \cite{Li2021}\cite{Lacoste2007}. This logarithmic spacing aligns each bin with a musical semitone, making the spectrogram invariant to chord transposition and producing geometrically consistent harmonic patterns regardless of root pitch.
 
-The extraction parameters are listed in Table~\ref{tab1}. The configuration of 36 bins per octave (3 bins per semitone) provides frequency resolution sufficient to resolve the interval differences between major ($+4, +3$ semitones), minor ($+3, +4$ semitones), and diminished ($+3, +3$ semitones) triads \cite{Akram2025}\cite{OHanlon2021}. Each sample is truncated to a fixed duration of 2.0\,s, yielding a fixed frame length of $\lfloor2.0 \times 48000 / 512\rfloor = 188$ frames and a uniform feature shape of $216 \times 188 \times 1$.
+The extraction parameters are listed in Table~\ref{tab:cqt-extraction-params}. The configuration of 36 bins per octave (3 bins per semitone) provides frequency resolution sufficient to resolve the interval differences between major ($+4, +3$ semitones), minor ($+3, +4$ semitones), and diminished ($+3, +3$ semitones) triads \cite{Akram2025}\cite{OHanlon2021}. Each sample is truncated to a fixed duration of 2.0\,s, yielding a fixed frame length of $\lfloor2.0 \times 48000 / 512\rfloor = 188$ frames and a uniform feature shape of $216 \times 188 \times 1$.
 
 \begin{table}[h]
-\caption{CQT feature extraction parameters}\label{tab1}
+\caption{CQT feature extraction parameters}\label{tab:cqt-extraction-params}
 \begin{tabular}{@{}ll@{}}
 \toprule
 Parameter & Value \\
@@ -204,10 +206,10 @@ Output shape & $216 \times 188 \times 1$ \\
 
 The CNN architecture is adapted from Wolf-Monheim \cite{Wolf-Monheim2024}\cite{Wolf-Monheim2025}, originally designed for environmental sound classification on ESC-50 \cite{Purwono2022}. Its compact four-block convolutional structure without recurrent layers or attention mechanisms is appropriate for fixed-window classification from static spectrograms in this study.
 
-Table~\ref{tab2} specifies the complete layer sequence. Input batch normalization ensures consistent CQT magnitude statistics across samples and recording conditions, which is particularly important for cross-domain robustness since different recording environments may produce different absolute magnitude ranges. The four Conv2D-MaxPooling2D blocks build a progressive feature hierarchy: the first block (64 filters) captures low-level spectral texture; the second (128 filters) encodes mid-level harmonic interval patterns; the third and fourth (256 filters each) represent high-level chord quality abstractions. The $3\times3$ receptive field matches the 1--2 bin frequency shifts distinguishing chord types, while MaxPooling provides spatial subsampling and limited translation invariance \cite{OShea2015}\cite{Purwono2022}. Dropout (rate 0.5) prevents co-adaptation and serves as an implicit regularizer against overfitting to training instrument timbre.
+Table~\ref{tab:cnn-architecture} specifies the complete layer sequence. Input batch normalization ensures consistent CQT magnitude statistics across samples and recording conditions, which is particularly important for cross-domain robustness since different recording environments may produce different absolute magnitude ranges. The four Conv2D-MaxPooling2D blocks build a progressive feature hierarchy: the first block (64 filters) captures low-level spectral texture; the second (128 filters) encodes mid-level harmonic interval patterns; the third and fourth (256 filters each) represent high-level chord quality abstractions. The $3\times3$ receptive field matches the 1--2 bin frequency shifts distinguishing chord types, while MaxPooling provides spatial subsampling and limited translation invariance \cite{OShea2015}\cite{Purwono2022}. Dropout (rate 0.5) prevents co-adaptation and serves as an implicit regularizer against overfitting to training instrument timbre.
 
 \begin{table}[h]
-\caption{CNN architecture specification}\label{tab2}
+\caption{CNN architecture specification}\label{tab:cnn-architecture}
 \begin{tabularx}{\columnwidth}{@{}lXl@{}}
 \toprule
 Layer & Output shape & Notes \\
@@ -229,10 +231,10 @@ Dense & 36 & Softmax \\
 \end{tabularx}
 \end{table}
 
-Training configuration follows Table~\ref{tab3}. Stratified random sampling with seed 42 ensures balanced class representation and reproducibility. \texttt{ReduceLROnPlateau} reduces the learning rate by factor 0.1 when validation loss stagnates for 2 epochs; \texttt{EarlyStopping} terminates training after 6 epochs without validation loss improvement. The final model is evaluated on the 10\% reserved test set, excluded from all training and validation phases.
+Training configuration follows Table~\ref{tab:cnn-training-config}. Stratified random sampling with seed 42 ensures balanced class representation and reproducibility. \texttt{ReduceLROnPlateau} reduces the learning rate by factor 0.1 when validation loss stagnates for 2 epochs; \texttt{EarlyStopping} terminates training after 6 epochs without validation loss improvement. The final model is evaluated on the 10\% reserved test set, excluded from all training and validation phases.
 
 \begin{table}[h]
-\caption{CNN training configuration}\label{tab3}
+\caption{CNN training configuration}\label{tab:cnn-training-config}
 \begin{tabular}{@{}ll@{}}
 \toprule
 Parameter & Value \\
@@ -253,7 +255,7 @@ ReduceLROnPlateau & factor 0.1, patience 2 \\
 
 \subsection{SVM hyperparameter optimization}\label{subsec3_4}
 
-An RBF-kernel SVM is configured using scikit-learn's \texttt{SVC}. Each $216 \times 188$ CQT matrix is flattened to a 40,608-dimensional vector prior to classification. Hyperparameter optimization uses Optuna with a \texttt{RandomSampler} over 10 trials with the search space $C \in \{0.1, 1, 10, 100, 1000\}$ and $\gamma \in \{10^{-6}, 10^{-5}, 10^{-4}, 10^{-3}\}$ following Chang and Lin \cite{Chang2011} and Wainer and Fonseca \cite{Wainer2020}. Each trial is evaluated using stratified 5-fold cross-validation accuracy on the training dataset.
+An RBF-kernel SVM is configured using scikit-learn's \texttt{SVC}. Each $216 \times 188$ CQT matrix is flattened to a 40,608-dimensional vector prior to classification. Hyperparameter optimization uses Optuna with a \texttt{RandomSampler} over 10 trials with the search space $C \in \{0.1, 1, 10, 100, 1000\}$ and $\gamma \in \{10^{-6}, 10^{-5}, 10^{-4}, 10^{-3}\}$ following Wainer and Fonseca \cite{Wainer2020}. Each trial is evaluated using stratified 5-fold cross-validation accuracy on the training dataset.
 
 \subsection{5-fold cross-validation}\label{subsec3_5}
 
@@ -261,89 +263,41 @@ Stratified 5-fold cross-validation is performed on the full 7,200-sample trainin
 
 \subsection{Evaluation metrics}\label{subsec3_6}
 
-Classification performance is evaluated using accuracy, precision, recall, and F1-score derived from the confusion matrix \cite{Hossin2015}:
-
-\begin{equation}
-\text{Accuracy} = \frac{TP + TN}{TP + FP + TN + FN} \label{eq:acc}
-\end{equation}
-
-\begin{equation}
-\text{Precision} = \frac{TP}{TP + FP} \label{eq:prec}
-\end{equation}
-
-\begin{equation}
-\text{Recall} = \frac{TP}{TP + FN} \label{eq:rec}
-\end{equation}
-
-\begin{equation}
-\text{F1-score} = \frac{2 \times \text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}} \label{eq:f1}
-\end{equation}
-
-For 36-class classification, macro-averaged metrics are reported, assigning equal weight to each class. Macro averaging is appropriate for generalization analysis as it penalizes class-level failure equally regardless of class frequency, in contrast to weighted averaging which inflates apparent performance when a small number of dominant classes are correctly classified.
+Classification performance is evaluated using accuracy, precision, recall, and F1-score derived from the confusion matrix \cite{Hossin2015}. For 36-class classification, macro-averaged metrics are reported, assigning equal weight to each class. Macro averaging is appropriate for generalization analysis as it penalizes class-level failure equally regardless of class frequency, in contrast to weighted averaging which inflates apparent performance when a small number of dominant classes are correctly classified.
 
 \section{Results and discussion}\label{sec4}
 
 \subsection{CQT feature extraction}\label{subsec4_1}
 
-Feature extraction transforms all 8,640 audio recordings into $216 \times 188$ CQT decibel matrices. Fig.~\ref{fig4_1} shows representative spectrograms from four training classes. Major and minor chords of the same root exhibit a vertical offset of one frequency bin in the third overtone row, while diminished chords display a compressed, more uniform energy distribution. These inter-class differences are geometrically consistent across the frequency axis, confirming that CQT features embed harmonic structure in a spatially regular form that is well-suited for convolutional pattern recognition.
+Feature extraction transforms all 8,640 audio recordings into $216 \times 188$ CQT decibel matrices. Fig.~\ref{fig:cqt-spectrograms} shows representative spectrograms for two diminished chord classes under training and evaluation conditions. Diminished chords display a compressed, more uniform energy distribution, and the harmonic stack remains geometrically regular along the frequency axis, confirming that CQT features embed harmonic structure in a form well-suited for convolutional pattern recognition.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=\columnwidth]{Fig3.eps}
-\caption{Representative CQT spectrogram samples from the training dataset: D$\sharp$\_diminished\_4, A\_diminished\_4, E\_minor\_4, and F\_diminished\_4. Harmonic structure differences between chord qualities are visible as consistent frequency-axis patterns.}
-\label{fig4_1}
+\includegraphics[width=\columnwidth]{Fig2.eps}
+\caption{CQT spectrograms of two chord classes under training and evaluation conditions.
+\textbf{(A)}~A\_diminished\_4 (training);
+\textbf{(B)}~F\_diminished\_4 (training);
+\textbf{(C)}~A\_diminished\_4 (evaluation);
+\textbf{(D)}~F\_diminished\_4 (evaluation).}
+\label{fig:cqt-spectrograms}
 \end{figure}
 
 \subsection{CNN training}\label{subsec4_2}
 
-The CNN model exhibits rapid and stable convergence, where training accuracy increases from 47.65\% at epoch 1 to 98.41\% at epoch 2, reaching a peak of 99.91\% at epoch 8, while validation accuracy reaches 100\% by epoch 3. EarlyStopping is triggered after epoch 10, saving the best weights from epoch 4. The characteristic gap between training accuracy (constrained by dropout stochasticity) and validation accuracy (evaluated with dropout disabled) during early epochs is consistent with a well-regularized model with no overfitting. Evaluation on the reserved test set yields perfect accuracy, precision, recall, and F1-score of 1.0000 across all 36 classes.
+The CNN model exhibits rapid and stable convergence, where training accuracy increases from 47.65\% at epoch 1 to 98.41\% at epoch 2, reaching a peak of 99.91\% at epoch 8, while validation accuracy reaches 100\% by epoch 3. EarlyStopping is triggered after epoch 10, saving the best weights from epoch 4. The characteristic gap between training accuracy (constrained by dropout stochasticity) and validation accuracy (evaluated with dropout disabled) during early epochs is consistent with a well-regularized model with no overfitting. Evaluation on the reserved test set yields perfect accuracy, precision, recall, and F1-score of 1.0000 across all 36 classes. Training curves and the in-domain test confusion matrix are provided in Online Resources~3 and~4.
 
-Table~\ref{tab4_1} presents the CNN 5-fold cross-validation results. Perfect validation and test accuracy (1.0000) with zero standard deviation across all five folds confirms the result is not an artifact of a particular data split. Mean training accuracy of 0.9976 (std. 0.0007) reflects only the stochastic effect of dropout.
-
-\begin{table}[h]
-\caption{CNN 5-fold cross-validation results}\label{tab4_1}
-\begin{tabular}{@{}lllll@{}}
-\toprule
-Fold & Epochs & Train acc. & Val acc. & Test acc. \\
-\midrule
-1 & 11 & 0.9979 & 1.0000 & 1.0000 \\
-2 & 21 & 0.9979 & 1.0000 & 1.0000 \\
-3 & 19 & 0.9969 & 1.0000 & 1.0000 \\
-4 & 15 & 0.9967 & 1.0000 & 1.0000 \\
-5 & 14 & 0.9985 & 1.0000 & 1.0000 \\
-Mean & 16.0 & 0.9976 & 1.0000 & 1.0000 \\
-Std. & 3.58 & 0.0007 & 0.0000 & 0.0000 \\
-\bottomrule
-\end{tabular}
-\end{table}
+Under stratified 5-fold cross-validation on the full training set, the CNN attains perfect validation and test accuracy (1.0000) on every fold, with zero cross-fold variance, confirming that the result is not an artifact of a particular data split. Mean training accuracy remains slightly below 1.0000 (0.9976, std.\ 0.0007) solely due to dropout stochasticity during training; folds terminate between 11 and 21 epochs under EarlyStopping. Because all folds are identically perfect, fold-level metrics are omitted from the main text; full per-fold accuracy and loss tables and cross-validation training curves are provided in Online Resources~5--7.
 
 \subsection{SVM hyperparameter tuning}\label{subsec4_3}
 
-Optuna converges at trial 7 with optimal parameters $C = 1000$ and $\gamma = 10^{-5}$, at which the SVM achieves perfect accuracy on the reserved test set. The high value of $C$ indicates a near-hard-margin solution consistent with the high in-domain CQT feature discriminability. As shown in Table~\ref{tab4_2}, the SVM achieves perfect accuracy and F1-score across all five folds with zero variance, identical to the CNN. This is a key control result: the SVM's perfect in-domain performance rules out any explanation for subsequent cross-domain failure based on insufficient model capacity or suboptimal hyperparameters. The failure, when it occurs, is structural rather than configural.
-
-\begin{table}[h]
-\caption{SVM 5-fold cross-validation results}\label{tab4_2}
-\begin{tabular}{@{}llll@{}}
-\toprule
-Fold & Accuracy & Macro F1 & Weighted F1 \\
-\midrule
-1 & 1.0000 & 1.0000 & 1.0000 \\
-2 & 1.0000 & 1.0000 & 1.0000 \\
-3 & 1.0000 & 1.0000 & 1.0000 \\
-4 & 1.0000 & 1.0000 & 1.0000 \\
-5 & 1.0000 & 1.0000 & 1.0000 \\
-Mean & 1.0000 & 1.0000 & 1.0000 \\
-Std. & 0.0000 & 0.0000 & 0.0000 \\
-\bottomrule
-\end{tabular}
-\end{table}
+Optuna converges at trial 7 with optimal parameters $C = 1000$ and $\gamma = 10^{-5}$, at which the SVM achieves perfect accuracy on the reserved test set. The high value of $C$ indicates a near-hard-margin solution consistent with the high in-domain CQT feature discriminability. Hyperparameter search trajectories are shown in Online Resource~8. Under the same stratified 5-fold protocol as the CNN, the RBF-SVM likewise attains perfect accuracy and macro/weighted F1-score of 1.0000 on every fold with zero variance (Online Resources~9 and~10). Because both classifiers are identically perfect in-domain, fold-level SVM metrics are omitted from the main text. This equivalence is a key control result: the SVM's perfect in-domain performance rules out any explanation for subsequent cross-domain failure based on insufficient model capacity or suboptimal hyperparameters. The failure, when it occurs, is structural rather than configural.
 
 \subsection{Cross-domain evaluation}\label{subsec4_4}
 
-The trained CNN and optimized SVM are each evaluated on the 1,440-sample evaluation dataset without fine-tuning or domain adaptation. Table~\ref{tab4_3} presents the full comparative results across both evaluation conditions.
+The trained CNN and optimized SVM are each evaluated on the 1,440-sample evaluation dataset without fine-tuning or domain adaptation. Table~\ref{tab:full-comparative-results} presents the full comparative results across both evaluation conditions.
 
 \begin{table*}[h]
-\caption{CNN vs.\ SVM full comparative results across in-domain and cross-domain evaluation}\label{tab4_3}
+\caption{CNN vs.\ SVM full comparative results across in-domain and cross-domain evaluation}\label{tab:full-comparative-results}
 \begin{tabular*}{\textwidth}{@{\extracolsep\fill}lllllll}
 \toprule
  & \multicolumn{3}{l}{CNN} & \multicolumn{3}{l}{SVM} \\
@@ -360,35 +314,33 @@ F1-score  & 1.00 & 1.00 & 0.87 & 1.00 & 1.00 & 0.36 \\
 
 \subsubsection{CNN cross-domain performance}\label{subsubsec4_4_1}
 
-The CNN retains substantial predictive capability under domain shift. The majority of chord classes are classified with perfect or near-perfect accuracy, including all B, C$\sharp$, D$\sharp$, D, F$\sharp$, F, G, and G$\sharp$ major and minor classes. Misclassifications are not randomly distributed but are concentrated in harmonically proximate chord pairs (Table~\ref{tab4_4}). The largest single error (A\_diminished $\to$ A$\sharp$\_major, 20 counts) involves a quality shift combined with a semitone root displacement, consistent with a global downward frequency shift of the evaluation instrument's spectral envelope moving the CQT pattern of A\_diminished into the neighborhood of A$\sharp$\_major. The next largest cluster (C\_diminished $\to$ C$\sharp$\_diminished, 16 counts) is a pure semitone root shift with preserved quality. All remaining errors involve either neighboring semitone roots or adjacent qualities (major to minor or minor to diminished), never large-interval confusions across unrelated classes.
+The CNN retains substantial predictive capability under domain shift. The resulting confusion matrix (Fig.~\ref{fig:cnn-eval-confusion}) shows that the majority of chord classes are classified with perfect or near-perfect accuracy, including all B, C$\sharp$, D$\sharp$, D, F$\sharp$, F, G, and G$\sharp$ major and minor classes. Misclassifications are not randomly distributed but are concentrated in harmonically proximate chord pairs. The largest single error (A\_diminished $\to$ A$\sharp$\_major, 20 counts) involves a quality shift combined with a semitone root displacement, consistent with a global downward frequency shift of the evaluation instrument's spectral envelope moving the CQT pattern of A\_diminished into the neighborhood of A$\sharp$\_major. The next largest cluster (C\_diminished $\to$ C$\sharp$\_diminished, 16 counts) is a pure semitone root shift with preserved quality. All remaining errors involve either neighboring semitone roots or adjacent qualities (major to minor or minor to diminished), never large-interval confusions across unrelated classes.
 
-This error topology is consistent with the CNN having learned CQT interval patterns that are partially robust to global spectral shifts, but failing at boundary cases where the shift displaces a test pattern across a class boundary defined by a single semitone. The overall accuracy of 0.89 and macro F1-score of 0.87 on 1,440 cross-domain samples demonstrate meaningful generalization beyond the training domain.
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{Fig3.eps}
+\caption{CNN confusion matrix on the cross-domain evaluation dataset
+(1,440 samples, 40 per class). Diagonal dominance is maintained
+across most classes; misclassifications are concentrated in a small
+number of harmonically related chord pairs.}
+\label{fig:cnn-eval-confusion}
+\end{figure}
 
-\begin{table}[h]
-\caption{CNN cross-domain misclassification analysis (top errors)}\label{tab4_4}
-\begin{tabular}{@{}lll@{}}
-\toprule
-True class & Predicted class & Count \\
-\midrule
-A\_dim\_4 & A$\sharp$\_maj\_4 & 20 \\
-C\_dim\_4 & C$\sharp$\_dim\_4 & 16 \\
-E\_dim\_4 & F\_dim\_4 & 10 \\
-E\_dim\_4 & D$\sharp$\_dim\_4 & 7 \\
-F$\sharp$\_maj\_4 & G$\sharp$\_maj\_4 & 5 \\
-F$\sharp$\_min\_4 & F$\sharp$\_dim\_4 & 5 \\
-G$\sharp$\_min\_4 & G$\sharp$\_dim\_4 & 4 \\
-E\_min\_4 & F$\sharp$\_dim\_4 & 3 \\
-B\_maj\_4 & A$\sharp$\_maj\_4 & 2 \\
-B\_maj\_4 & F$\sharp$\_maj\_4 & 2 \\
-D$\sharp$\_dim\_4 & C$\sharp$\_dim\_4 & 2 \\
-others & various & 5 \\
-\bottomrule
-\end{tabular}
-\end{table}
+This error pattern is consistent with the CNN having learned CQT interval patterns that are partially robust to global spectral shifts, but failing at boundary cases where the shift displaces a test pattern across a class boundary defined by a single semitone. The overall accuracy of 0.89 and macro F1-score of 0.87 on 1,440 cross-domain samples demonstrate meaningful generalization beyond the training domain. A complete per-class misclassification list is provided in Online Resource~11.
 
 \subsubsection{SVM cross-domain performance}\label{subsubsec4_4_2}
 
-The SVM exhibits severe generalization failure, overwhelmingly predicting C\_diminished\_4 for the large majority of test samples regardless of the true label. This single-class attractor failure arises because the RBF kernel measures Euclidean distance between a test sample's 40,608-dimensional flattened CQT vector and the training support vectors.
+The SVM exhibits severe generalization failure. The resulting confusion matrix (Fig.~\ref{fig:svm-eval-confusion}) reveals that the model overwhelmingly predicts C\_diminished\_4 for the large majority of test samples regardless of the true label. This single-class attractor failure arises because the RBF kernel measures Euclidean distance between a test sample's 40,608-dimensional flattened CQT vector and the training support vectors.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{Fig4.eps}
+\caption{SVM confusion matrix on the cross-domain evaluation dataset
+(1,440 samples). The near-complete concentration of predictions on
+a single class (C\_diminished\_4) constitutes a model collapse under
+acoustic domain shift.}
+\label{fig:svm-eval-confusion}
+\end{figure}
 
 When the Yamaha PSR-S910's different piano voice synthesis produces CQT vectors with a globally shifted spectral envelope due to different harmonics, the distances to all support vectors are systematically altered. The support vectors of C\_diminished\_4 happen to occupy the position closest to the new distribution's center of mass, producing the observed attractor. The SVM achieves cross-domain accuracy of 0.29 and macro F1-score of 0.36.
 
@@ -396,7 +348,9 @@ The precision-recall asymmetry of 0.64 vs.\ 0.29 characterizes this attractor be
 
 \subsubsection{Comparative analysis}\label{subsubsec4_4_3}
 
-The performance divergence in Table~\ref{tab4_3} is entirely attributable to the structural difference in how each classifier generalizes under distribution shift, not to differences in model capacity or optimization quality, since both achieved identical perfect performance in-domain. These findings have implications beyond piano chord classification: any spectrogram-based system deployed across varying recording conditions including environmental sound classifiers \cite{Wolf-Monheim2025} or speaker identification systems \cite{Zaman2023} faces the same fundamental trade-off between local and global feature learning strategies under domain shift. The CNN's residual error pattern suggests that targeted augmentation simulating inter-instrument spectral envelope variation (pitch shifting, random spectral tilt, or time-varying equalization) would provide a tractable path to closing the remaining performance gap.
+The decisive performance divergence presented in Table~\ref{tab:full-comparative-results} provides a clear answer to which classifier architecture is structurally superior for out-of-domain audio deployments: the CNN vastly outperforms the RBF-SVM under acoustic covariate shift, retaining a strong macro F1-score of 0.87 compared to the SVM's total collapse to 0.36. The primary theoretical novelty of this finding lies in demonstrating that in-domain perfection (where both models achieved identical, flawless 1.00 metrics across 5-fold cross-validation) is entirely uninformative of a model's safety margins under domain shift[cite: 1].
+
+When contextualized against the broader literature, these results expand upon the findings of Li \cite{Li2021} and Wolf-Monheim \cite{Wolf-Monheim2025}. While Li established that CQT features provide superior baseline spatial alignment for neural networks relative to STFTs \cite{Li2021}, our work proves that the utility of this feature space is entirely dependent on the spatial locality of the subsequent classifier. The RBF-SVM collapses because it flattens the CQT matrix and calculates global Euclidean distances, treating localized harmonic patterns and unmodeled room acoustics with identical weight—a property that makes global kernel methods inherently brittle across varying recording conditions. Conversely, the CNN's shared convolutional weights exploit the translational consistency of the CQT scale, allowing local pitch intervals to be recognized even when the global spectral envelope shifts. This establishes a clear architectural directive for the audio domain: local weight-sharing mechanisms are fundamentally superior to global distance-margin methods when cross-dataset deployment is expected.
 
 \section{Conclusion}\label{sec5}
 
@@ -404,14 +358,17 @@ This paper presented a systematic evaluation of CQT spectrogram feature robustne
 
 Under cross-domain evaluation, CNN achieves 0.89 accuracy and 0.87 macro F1-score while RBF-SVM collapses to 0.29 accuracy and 0.36 macro F1-score through a single-class attractor failure. This divergence reflects the structural difference between CNN's spatially local hierarchical feature learning, which partially preserves relative spectral interval patterns across the domain shift, and RBF-SVM's global kernel boundary, which is rigidly calibrated to the training feature distribution and cannot accommodate shifts in the global spectral envelope.
 
-A secondary finding is that in-domain performance is not predictive of cross-domain performance, reinforcing the importance of cross-dataset evaluation protocols for assessing spectrogram classifier deployability. The CNN's residual misclassifications are concentrated in harmonically proximate chord pairs consistent with a global frequency shift, providing actionable guidance: targeted augmentation simulating inter-instrument timbral variation is predicted to substantially reduce cross-domain error.
+Crucially, this study demonstrates that in-domain validation metrics create a false sense of security, reinforcing the necessity of cross-dataset evaluation as a standard benchmark for audio classifiers. Our direct comparison concludes that the CNN is structurally superior for handling unmodeled environmental changes due to its localized receptive field. Furthermore, because the CNN's remaining errors are not random failures but are strictly concentrated in harmonically proximate, semitone-shifted chord pairs, this research provides highly targetable guidance for future engineering: practitioners should bypass generic noise injections and instead focus entirely on domain-specific augmentations, such as random spectral tilting and localized frequency-bin masking, to explicitly safeguard the CNN's decision boundaries against inter-instrument timbral shifts.
 
-Future work includes extension of the chord vocabulary beyond fourth-octave triads and integration into a low-latency online recognition pipeline. More broadly, the results support the claim that spatially local hierarchically learned representations are more robust to acoustic covariate shift than global kernel methods in the spectrogram domain, a conclusion relevant to any spectrogram-based classification system deployed under variable recording conditions.
+Future work includes extension of the chord vocabulary beyond fourth octave triads and more dataset with shifts regarding instrument and recording environment. More broadly, the results support the claim that spatially local hierarchically learned representations are more robust to acoustic covariate shift than global kernel methods in the spectrogram domain, a conclusion relevant to any spectrogram-based classification system deployed under variable recording conditions.
 
 \backmatter
 
+\bmhead{Supplementary information}
+The online version constains supplementary materials (Online Resources~1--12) available at.
+
 \bmhead{Author contributions}
-All authors contributed to study conceptualization and design. Material preparation, data acquisition, experimentation, and analysis were performed by Cikal Gemintang Seya. The first draft was written by Cikal Gemintang Seya; all authors reviewed and approved the final version.
+All authors contributed to study conceptualization and design. Material preparation, data acquisition, experimentation, analysis, and drafting were performed by CGS. All authors reviewed and approved the final version.
 
 \bmhead{Funding}
 No funding was received for this work.

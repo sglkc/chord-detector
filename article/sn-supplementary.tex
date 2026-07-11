@@ -1,0 +1,180 @@
+\documentclass[pdflatex,sn-mathphys-num]{sn-jnl}
+
+\usepackage{bookmark}
+\usepackage{tabularx}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, fit, backgrounds}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage[title]{appendix}
+\usepackage{xcolor}
+\usepackage{textcomp}
+\usepackage{manyfoot}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\usepackage{listings}
+
+\raggedbottom
+
+\begin{document}
+
+\title[Supplementary material: Evaluating CNN vs.\ SVM for Piano Chord Recognition]{Supplementary material: Evaluating CNN vs.\ SVM for Piano Chord Recognition Under Acoustic Domain Shift}
+
+\author*[1]{\fnm{Cikal} \sur{Gemintang Seya}}\email{cikalgemintangseya1@gmail.com}
+
+\author[1]{\fnm{Jasman} \sur{Pardede}}\email{jasman@itenas.ac.id}
+
+\affil*[1]{\orgdiv{Informatics}, \orgname{National Institute of Technology}, \orgaddress{\street{Neglasari}, \city{Bandung}, \postcode{40124}, \state{West Java}, \country{Indonesia}}}
+
+\abstract{This supplementary material provides additional figures and tables for the main article on Constant-Q Transform (CQT) spectrogram features with CNN and RBF-SVM classifiers under acoustic domain shift. Included are dataset acquisition and duration diagnostics, CNN training curves and in-domain confusion matrices, full 5-fold cross-validation metrics for both classifiers, SVM hyperparameter search results, and a comparative performance summary plot.}
+
+\maketitle
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{ESM_1.png}
+\caption{Web application used to generate and record the dataset via USB MIDI.
+(Online Resource~1)}
+\label{fig:esm-recording-web-app}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{ESM_2.eps}
+\caption{Audio duration distribution across classes in the training dataset.
+\textbf{(A)}~major;
+\textbf{(B)}~minor;
+\textbf{(C)}~diminished.
+Variation arises from randomized note attack delays of 0--150\,ms.
+(Online Resource~2)}
+\label{fig:esm-audio-duration-dist}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{ESM_3.eps}
+\caption{CNN training and validation curves.
+\textbf{(A)}~accuracy;
+\textbf{(B)}~loss.
+Rapid convergence by epoch 2--3 is consistent with high in-domain CQT discriminability.
+(Online Resource~3)}
+\label{fig:esm-cnn-training-curves}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{ESM_4.eps}
+\caption{CNN in-domain test confusion matrix (720 samples, 20 per class).
+Perfect diagonal dominance confirms zero misclassifications across all 36 classes.
+(Online Resource~4)}
+\label{fig:esm-cnn-test-confusion}
+\end{figure}
+
+\begin{table}[h]
+\caption{CNN 5-fold cross-validation results (Online Resource~5)}\label{tab:esm-cnn-kfold-results}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+Fold & Epochs & Train acc. & Val acc. & Test acc. \\
+\midrule
+1 & 11 & 0.9979 & 1.0000 & 1.0000 \\
+2 & 21 & 0.9979 & 1.0000 & 1.0000 \\
+3 & 19 & 0.9969 & 1.0000 & 1.0000 \\
+4 & 15 & 0.9967 & 1.0000 & 1.0000 \\
+5 & 14 & 0.9985 & 1.0000 & 1.0000 \\
+Mean & 16.0 & 0.9976 & 1.0000 & 1.0000 \\
+Std. & 3.58 & 0.0007 & 0.0000 & 0.0000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table*}[h]
+\caption{CNN 5-fold cross-validation results with loss (in-domain; Online Resource~6)}
+\label{tab:esm-cnn-kfold-full}
+\begin{tabular*}{\textwidth}{@{\extracolsep\fill}llllllll}
+\toprule
+ & & \multicolumn{3}{l}{Accuracy} & \multicolumn{3}{l}{Loss} \\
+\cmidrule(lr){3-5} \cmidrule(lr){6-8}
+Fold & Epochs & Train & Validation & Test & Train & Validation & Test \\
+\midrule
+Fold 1 & 11 & 0.9979 & 1.0000 & 1.0000 & 0.0051 & 0.0000 & 0.0003 \\
+Fold 2 & 21 & 0.9979 & 1.0000 & 1.0000 & 0.0051 & 0.0000 & 0.0000 \\
+Fold 3 & 19 & 0.9969 & 1.0000 & 1.0000 & 0.0063 & 0.0000 & 0.0000 \\
+Fold 4 & 15 & 0.9967 & 1.0000 & 1.0000 & 0.0091 & 0.0000 & 0.0000 \\
+Fold 5 & 14 & 0.9985 & 1.0000 & 1.0000 & 0.0058 & 0.0000 & 0.0001 \\
+Mean   & 16.0 & 0.9976 & 1.0000 & 1.0000 & 0.0074 & 0.0000 & 0.0001 \\
+Std.   & 3.58 & 0.0007 & 0.0000 & 0.0000 & 0.0020 & 0.0000 & 0.0001 \\
+\bottomrule
+\end{tabular*}
+\end{table*}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{ESM_5.eps}
+\caption{CNN 5-fold cross-validation training curves.
+\textbf{(A)}~accuracy per fold (solid: train, dashed: validation);
+\textbf{(B)}~loss per fold.
+(Online Resource~7)}
+\label{fig:esm-cnn-kfold-curves}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{ESM_6.eps}
+\caption{SVM Optuna hyperparameter search: cross-validation accuracy per fold across trials.
+Convergence at trial~7 ($C = 1000$, $\gamma = 10^{-5}$).
+(Online Resource~8)}
+\label{fig:esm-svm-optuna-search}
+\end{figure}
+
+\begin{table}[h]
+\caption{SVM 5-fold cross-validation results (Online Resource~9)}\label{tab:esm-svm-kfold-results}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Fold & Accuracy & Macro F1 & Weighted F1 \\
+\midrule
+1 & 1.0000 & 1.0000 & 1.0000 \\
+2 & 1.0000 & 1.0000 & 1.0000 \\
+3 & 1.0000 & 1.0000 & 1.0000 \\
+4 & 1.0000 & 1.0000 & 1.0000 \\
+5 & 1.0000 & 1.0000 & 1.0000 \\
+Mean & 1.0000 & 1.0000 & 1.0000 \\
+Std. & 0.0000 & 0.0000 & 0.0000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\caption{CNN vs.\ SVM in-domain comparison (5-fold cross-validation; Online Resource~10)}
+\label{tab:esm-indomain-comparison}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+ & \multicolumn{2}{l}{CNN} & \multicolumn{2}{l}{SVM} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+Fold   & Accuracy & F1-Score & Accuracy & F1-Score \\
+\midrule
+Fold 1 & 1.0000 & 1.0000 & 1.0000 & 1.0000 \\
+Fold 2 & 1.0000 & 1.0000 & 1.0000 & 1.0000 \\
+Fold 3 & 1.0000 & 1.0000 & 1.0000 & 1.0000 \\
+Fold 4 & 1.0000 & 1.0000 & 1.0000 & 1.0000 \\
+Fold 5 & 1.0000 & 1.0000 & 1.0000 & 1.0000 \\
+Mean   & 1.0000 & 1.0000 & 1.0000 & 1.0000 \\
+Std.   & 0.0000 & 0.0000 & 0.0000 & 0.0000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{ESM_7.eps}
+\caption{CNN vs.\ SVM cross-domain evaluation metrics
+(Accuracy, Precision, Recall, F1-score).
+(Online Resource~12)}
+\label{fig:esm-cnn-svm-comparison}
+\end{figure}
+
+\end{document}
