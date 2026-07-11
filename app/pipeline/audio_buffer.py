@@ -5,9 +5,11 @@ backend concatenates them, drops anything older than
 ``MAX_AUDIO_SECONDS`` and exposes a small read API used by the rest of
 the pipeline.
 
-The class is deliberately tiny: pure NumPy, no asyncio, no locks. The
-WebSocket handler runs in a single asyncio task, so there is no
-concurrent mutation to worry about.
+The class is deliberately tiny: pure NumPy, no asyncio, no locks. It
+is a **single-writer** structure: only one thread/task may call
+``append`` / read helpers at a time. The WebSocket layer serializes
+``PipelineRunner.ingest_pcm`` (which mutates this buffer) so it never
+overlaps ``reset`` or other control mutations on the same runner.
 """
 
 from __future__ import annotations

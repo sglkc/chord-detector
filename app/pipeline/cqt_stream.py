@@ -7,8 +7,11 @@ over micro-optimization: we recompute the CQT on the last
 previous result. On a typical CPU this is well below 30 ms for a 2 s
 window @ 48 kHz, 216 bins, 36 bins/octave.
 
-The output is the dB-scaled magnitude, exactly as the CNN expects
-(``librosa.amplitude_to_db(..., ref=np.max)``).
+The output is the dB-scaled magnitude using a **fixed** reference
+(``librosa.amplitude_to_db(..., ref=1.0)``) so stitched streaming
+columns stay comparable across ticks. Per-tick ``ref=np.max`` would
+re-normalize each analysis window independently and make the trail
+inconsistent.
 """
 
 from __future__ import annotations
@@ -19,6 +22,12 @@ import librosa
 import numpy as np
 
 from .. import config
+
+# Fixed amplitude reference for dB conversion. Using 1.0 (full-scale
+# float audio) keeps streaming columns consistent across analysis
+# windows; training-style per-segment max-ref is not applicable when
+# windows are continuously re-stitched.
+_CQT_DB_REF: float = 1.0
 
 
 class CQTStream:
@@ -95,6 +104,11 @@ class CQTStream:
         # worth of columns on every update (one column per hop).
         self.columns: np.ndarray = np.zeros((self.n_bins, 0), dtype=np.float32)
         self.last_analyzed_sample: int = 0  # monotonic
+        # Monotonic count of columns ever produced (does not decrease when
+        # the ring-style ``columns`` buffer is truncated). The browser uses
+        # this as ``end_column`` to know how many *new* trail columns to
+        # append without re-painting the whole trail every tick.
+        self.total_columns: int = 0
 
     # ------------------------------------------------------------------ #
     # Update
@@ -152,7 +166,8 @@ class CQTStream:
             sparsity=0.01,
         )
         cqt_mag = np.abs(cqt_complex)
-        cqt_db = librosa.amplitude_to_db(cqt_mag, ref=np.max).astype(np.float32, copy=False)
+        # Fixed ref so stitched streaming columns are comparable.
+        cqt_db = librosa.amplitude_to_db(cqt_mag, ref=_CQT_DB_REF).astype(np.float32, copy=False)
 
         # ``start_sample`` of the *whole* recomputed CQT = the sample
         # index of the first sample in ``window``. The CQT's column k
@@ -198,6 +213,8 @@ class CQTStream:
             )
         else:
             self.columns = np.concatenate([self.columns, new_cols], axis=1)
+
+        self.total_columns += int(new_cols.shape[1])
 
         # Track the absolute sample index of the *last* CQT column we
         # just produced. This is the watermark for the next call.

@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environment (shared repo-root env)
+.venv
+
+# App model symlink(s); canonical weights live under training/models/
+app/models/
+
+# Jupyter
+.ipynb_checkpoints
+.jupyter_ystore.db

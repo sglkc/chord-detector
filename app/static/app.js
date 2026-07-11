@@ -31,23 +31,20 @@
 
   let audioCtx = null;
   let workletNode = null;
+  let silentGain = null;
   let source = null;
   let mediaStream = null;
   let socket = null;
   let running = false;
 
-  // CQT canvas state. We hold a rolling buffer of "trail" columns.
+  // CQT canvas state. We hold a rolling buffer of canvas-width columns.
   // n_bins is learned from the first server message; default 216.
   let nBins = 216;
-  // Trailing N CQT columns drawn on the canvas. Matches the server's
-  // CQT_TRAIL_COLUMNS but is a pure client-side choice for the
-  // scrolling window width.
-  const TRAIL_COLS = 80;
   // Pixel dimensions of the canvas.
   const CANVAS_W = cqtEl.width;
   const CANVAS_H = cqtEl.height;
-  // Pre-allocated column buffer (nBins x CANVAS_W); we copy incoming
-  // columns into the rightmost slot and shift the rest left.
+  // Pre-allocated column buffer (nBins x CANVAS_W); laid out
+  // COLUMN-MAJOR: column x occupies [x*nBins, (x+1)*nBins).
   let colBuffer = null;
   // ImageData of size CANVAS_W * CANVAS_H * 4.
   let imageData = null;
@@ -56,6 +53,12 @@
   // dB range for mapping CQT values to color indices.
   const DB_MIN = -80.0;
   const DB_MAX = 0.0;
+  // Last server ``end_column`` we painted. The server sends a short trail
+  // snapshot each tick; we only scroll by (end_column - lastEndColumn)
+  // new columns so history fills the full canvas width over time.
+  let lastEndColumn = -1;
+
+  const REQUIRED_SAMPLE_RATE = 48000;
 
   // ----------------------------------------------------------------- //
   // Colormap (viridis approximation baked into JS)
@@ -104,32 +107,81 @@
     }
   }
 
-  // Shift the column buffer one column to the left and write the new
-  // column at the right edge. colBuffer is laid out as a flat
-  // CANVAS_W * nBins array in COLUMN-MAJOR order: column x occupies
-  // indices [x*nBins, (x+1)*nBins). Shifting one column = advancing
-  // the source pointer by nBins elements.
-  function appendColumn(newCol) {
-    // newCol: Float32Array of length nBins.
-    if (newCol.length !== nBins) {
-      // Server told us a different bin count; rebuild buffer.
-      nBins = newCol.length;
-      colBuffer = new Float32Array(nBins * CANVAS_W);
-      colBuffer.fill(DB_MIN);
-    }
-
-    // Shift left by exactly ONE column (nBins elements).
-    colBuffer.copyWithin(0, nBins);
-
-    // Write the new column into the rightmost slot. The frequency
-    // axis is BINS (rows). We want bin 0 (lowest frequency) at the
-    // BOTTOM of the canvas and bin (nBins-1) at the TOP. The
-    // browser's y axis grows downward, so we flip the bin index
-    // when writing.
-    const slotStart = (CANVAS_W - 1) * nBins;
+  // Write one CQT column (length nBins, low-frequency first) into
+  // colBuffer at canvas column x. Frequency axis is flipped so bin 0
+  // (lowest) sits at the BOTTOM of the canvas.
+  function writeColumnAt(x, newCol) {
+    const slotStart = x * nBins;
     for (let i = 0; i < nBins; i++) {
       colBuffer[slotStart + (nBins - 1 - i)] = newCol[i];
     }
+  }
+
+  // Shift the rolling canvas buffer left by ``n`` columns and write
+  // ``n`` new columns (length nBins each) into the rightmost slots.
+  function appendColumns(newCols) {
+    // newCols: Array of Float32Array, each length nBins, oldest first.
+    const n = newCols.length;
+    if (n <= 0) return;
+    if (n >= CANVAS_W) {
+      // Only the newest CANVAS_W columns fit; replace the whole buffer.
+      const start = n - CANVAS_W;
+      for (let i = 0; i < CANVAS_W; i++) {
+        writeColumnAt(i, newCols[start + i]);
+      }
+      return;
+    }
+    // Shift existing content left by n columns (nBins elements each).
+    colBuffer.copyWithin(0, n * nBins);
+    for (let i = 0; i < n; i++) {
+      writeColumnAt(CANVAS_W - n + i, newCols[i]);
+    }
+  }
+
+  // Apply a server trail snapshot. The payload is always the latest
+  // CQT_TRAIL_COLUMNS (full snapshot, not a delta). We use end_column
+  // to advance the scrolling history by only the newly produced columns
+  // so the canvas fills left-to-right over time instead of showing a
+  // thin strip on the right edge forever.
+  function applyTrailSnapshot(flat, nCols, nBinsServer, endColumn) {
+    if (nBinsServer !== nBins) {
+      nBins = nBinsServer;
+      colBuffer = new Float32Array(nBins * CANVAS_W);
+      colBuffer.fill(DB_MIN);
+      lastEndColumn = -1;
+    }
+    ensureBuffers();
+
+    if (nCols <= 0 || flat == null || flat.length === 0) return;
+
+    // How many columns are new since the last paint?
+    let nNew;
+    if (lastEndColumn < 0 || endColumn < lastEndColumn) {
+      // First paint after connect/reset, or stream rewound: seed with
+      // the entire trail (fills the right edge; further ticks scroll).
+      nNew = nCols;
+    } else if (endColumn === lastEndColumn) {
+      return; // nothing new
+    } else {
+      nNew = endColumn - lastEndColumn;
+    }
+    // We only have ``nCols`` values in the payload.
+    nNew = Math.min(nNew, nCols, CANVAS_W);
+    if (nNew <= 0) return;
+
+    // Server flattens C-order (n_bins, n_cols): index = b * n_cols + c.
+    // Take the rightmost nNew columns of the trail (the newest ones).
+    const cols = new Array(nNew);
+    for (let i = 0; i < nNew; i++) {
+      const c = nCols - nNew + i;
+      const newCol = new Float32Array(nBins);
+      for (let b = 0; b < nBins; b++) {
+        newCol[b] = flat[b * nCols + c];
+      }
+      cols[i] = newCol;
+    }
+    appendColumns(cols);
+    lastEndColumn = endColumn;
   }
 
   function drawCanvas() {
@@ -141,7 +193,7 @@
     // and map each bin -> a row in the image. Bin 0 (lowest
     // frequency) lives at the BOTTOM of the canvas (y = CANVAS_H-1)
     // and bin (nBins-1) (highest) at the TOP (y = 0). The buffer
-    // is already stored in that flipped order by appendColumn, so
+    // is already stored in that flipped order by writeColumnAt, so
     // we map canvas-y to the raw bin index directly.
     for (let x = 0; x < CANVAS_W; x++) {
       const colStart = x * nBins;
@@ -182,33 +234,27 @@
         `[data-param-key="${msg.key}"]`
       );
       if (slider && document.activeElement !== slider) {
-        slider.value = msg.value == null ? "" : String(msg.value);
+        if (msg.value == null) {
+          // Cleared override — show as default (0 on the delta slider).
+          slider.value = slider.dataset.skipInitial === "true" ? "0" : "";
+        } else {
+          slider.value = String(msg.value);
+        }
         updateSliderLabel(slider);
       }
     } else if (msg.type === "cqt_columns") {
-      ensureBuffers();
-      // Re-shape the flat 1-D array into (n_cols, n_bins) and push
-      // each column through appendColumn so the canvas scrolls.
-      const nBinsServer = msg.n_bins;
-      const nCols = msg.n_cols;
-      if (nBinsServer !== nBins) {
-        nBins = nBinsServer;
-        colBuffer = new Float32Array(nBins * CANVAS_W);
-        colBuffer.fill(DB_MIN);
-      }
-      const flat = msg.columns;
-      // For each new column, copy its bins into a temporary array
-      // and append. (nBins * nCols could be ~17k floats - well under
-      // the WS message size limit.)
-      const newCol = new Float32Array(nBins);
-      for (let c = 0; c < nCols; c++) {
-        for (let b = 0; b < nBins; b++) {
-          newCol[b] = flat[c * nBins + b];
-        }
-        appendColumn(newCol);
-      }
+      // Trail is a short snapshot; end_column drives how far to scroll.
+      applyTrailSnapshot(
+        msg.columns,
+        msg.n_cols,
+        msg.n_bins,
+        typeof msg.end_column === "number" ? msg.end_column : -1
+      );
       drawCanvas();
-      cqtMetaEl.textContent = `${nCols} new cols | time ${msg.time_s.toFixed(1)}s`;
+      const endLabel =
+        typeof msg.end_column === "number" ? ` | col ${msg.end_column}` : "";
+      cqtMetaEl.textContent =
+        `${msg.n_cols} trail | canvas ${CANVAS_W}px${endLabel} | time ${msg.time_s.toFixed(1)}s`;
     } else if (msg.type === "chord") {
       chordEl.textContent = msg.display_label;
       chordMetaEl.textContent =
@@ -256,11 +302,38 @@
       modelStatusEl.classList.remove("loading", "ready");
       modelStatusEl.classList.add("error");
     } else {
+      // Not loaded and no error yet — only true during server startup.
       modelStatusEl.textContent = "model: loading…";
       modelStatusEl.classList.remove("ready", "error");
       modelStatusEl.classList.add("loading");
     }
   }
+
+  // Model is loaded once at server startup (FastAPI lifespan), not when
+  // the user clicks Start. Fetch /healthz on page load so the pill
+  // reflects real status without requiring a WebSocket / mic session.
+  // The WS still re-sends model_status on connect as a confirmation.
+  async function refreshModelStatusFromHealthz() {
+    try {
+      const res = await fetch("/healthz", { cache: "no-store" });
+      if (!res.ok) {
+        setModelStatus({ loaded: false, error: `HTTP ${res.status}` });
+        return;
+      }
+      const h = await res.json();
+      setModelStatus({
+        loaded: !!h.model_loaded,
+        load_time_s: h.model_load_time_s,
+        error: h.model_error || null,
+      });
+    } catch (err) {
+      setModelStatus({
+        loaded: false,
+        error: err && err.message ? err.message : "unreachable",
+      });
+    }
+  }
+  refreshModelStatusFromHealthz();
 
   function setStartButtonState(isRunning) {
     if (!startBtn) return;
@@ -277,16 +350,24 @@
     const out = document.querySelector(
       `[data-param-label-for="${slider.dataset.paramKey}"]`
     );
-    if (out) {
+    if (!out) return;
+    // Sliders marked skip-initial treat value 0 as "unset / default"
+    // (peak_pick_delta starts at 0 without forcing delta=0 on the server).
+    if (slider.dataset.skipInitial === "true" && (slider.value === "0" || slider.value === "")) {
+      out.textContent = "default";
+    } else {
       out.textContent = slider.value === "" ? "default" : slider.value;
     }
   }
 
   // Push the current value of every .param-slider to the server.
   // Used on connect so reload-during-session doesn't lose tweaks.
+  // Sliders with data-skip-initial="true" are omitted until the user
+  // moves them (so peak_pick_delta does not force delta=0 on connect).
   function sendAllParams() {
     if (!socket || socket.readyState !== WebSocket.OPEN) return;
     document.querySelectorAll(".param-slider").forEach((slider) => {
+      if (slider.dataset.skipInitial === "true") return;
       const v = slider.value;
       if (v === "" || v == null) return;
       socket.send(`set ${slider.dataset.paramKey}=${v}`);
@@ -297,53 +378,9 @@
   // Audio capture
   // ----------------------------------------------------------------- //
 
-  const WORKLET_SOURCE = `
-class MicProcessor extends AudioWorkletProcessor {
-  constructor(options) {
-    super();
-    const opt = (options && options.processorOptions) || {};
-    this.chunkSize = opt.chunkSize || 4096;
-    this.buffer = new Float32Array(this.chunkSize);
-    this.bufferFill = 0;
-    this.port.onmessage = (event) => { if (event.data === "stop") this.stopped = true; };
-    this.stopped = false;
-  }
-  process(inputs) {
-    if (this.stopped) return false;
-    const input = inputs[0];
-    if (!input || input.length === 0) return true;
-    const channel = input[0];
-    if (!channel || channel.length === 0) return true;
-    let read = 0;
-    while (read < channel.length) {
-      const space = this.chunkSize - this.bufferFill;
-      const toCopy = Math.min(space, channel.length - read);
-      this.buffer.set(channel.subarray(read, read + toCopy), this.bufferFill);
-      this.bufferFill += toCopy;
-      read += toCopy;
-      if (this.bufferFill === this.chunkSize) {
-        const out = this.buffer;
-        this.port.postMessage(out, [out.buffer]);
-        this.buffer = new Float32Array(this.chunkSize);
-        this.bufferFill = 0;
-      }
-    }
-    return true;
-  }
-}
-registerProcessor("mic-processor", MicProcessor);
-`;
-
   async function ensureWorklet(audioContext) {
-    // Register the worklet from an inline Blob URL so the server
-    // doesn't need to serve worklet.js as a separate fetch.
-    const blob = new Blob([WORKLET_SOURCE], { type: "application/javascript" });
-    const url = URL.createObjectURL(blob);
-    try {
-      await audioContext.audioWorklet.addModule(url);
-    } finally {
-      URL.revokeObjectURL(url);
-    }
+    // Single source of truth: static/worklet.js (served by FastAPI).
+    await audioContext.audioWorklet.addModule("/static/worklet.js");
   }
 
   async function start() {
@@ -363,7 +400,7 @@ registerProcessor("mic-processor", MicProcessor);
         setStatus("socket open, requesting mic...", null);
         // Replay current slider values so a server-side reset
         // (e.g. "reset" command) doesn't silently drop the
-        // user's tweaks.
+        // user's tweaks. peak_pick_delta is skipped until touched.
         sendAllParams();
       };
       socket.onclose = () => {
@@ -379,16 +416,25 @@ registerProcessor("mic-processor", MicProcessor);
         }
       };
 
-      // 2. Audio context at 48 kHz. Some browsers refuse and silently
-      //    fall back; we trust the spec.
-      audioCtx = new AudioContext({ sampleRate: 48000 });
+      // 2. Audio context at 48 kHz. Refuse to stream if the browser
+      //    silently fell back to a different rate (training mismatch).
+      audioCtx = new AudioContext({ sampleRate: REQUIRED_SAMPLE_RATE });
+      if (audioCtx.sampleRate !== REQUIRED_SAMPLE_RATE) {
+        const got = audioCtx.sampleRate;
+        setStatus(
+          `error: AudioContext sample rate is ${got} Hz; need ${REQUIRED_SAMPLE_RATE} Hz`,
+          "error"
+        );
+        await stop();
+        return;
+      }
       await ensureWorklet(audioCtx);
 
       // 3. Microphone. Request mono + no processing.
       mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           channelCount: 1,
-          sampleRate: 48000,
+          sampleRate: REQUIRED_SAMPLE_RATE,
           echoCancellation: false,
           noiseSuppression: false,
           autoGainControl: false,
@@ -412,10 +458,12 @@ registerProcessor("mic-processor", MicProcessor);
         socket.send(f32.buffer);
       };
       src.connect(workletNode);
-      // Connect to a zero-gain destination so the worklet has a
-      // valid graph node to process. We don't actually want audio
-      // output.
-      workletNode.connect(audioCtx.destination);
+      // Connect through a zero-gain node so the worklet has a valid
+      // graph path to the destination without audible output.
+      silentGain = audioCtx.createGain();
+      silentGain.gain.value = 0;
+      workletNode.connect(silentGain);
+      silentGain.connect(audioCtx.destination);
 
       setStatus("streaming", "connected");
     } catch (err) {
@@ -431,10 +479,17 @@ registerProcessor("mic-processor", MicProcessor);
     startBtn.disabled = false;
     if (workletNode) {
       try { workletNode.port.postMessage("stop"); } catch (_) { /* noop */ }
-      workletNode.disconnect();
+      try { workletNode.disconnect(); } catch (_) { /* noop */ }
       workletNode = null;
     }
-    if (source) source.disconnect();
+    if (silentGain) {
+      try { silentGain.disconnect(); } catch (_) { /* noop */ }
+      silentGain = null;
+    }
+    if (source) {
+      try { source.disconnect(); } catch (_) { /* noop */ }
+      source = null;
+    }
     if (mediaStream) {
       mediaStream.getTracks().forEach((t) => t.stop());
       mediaStream = null;
@@ -453,7 +508,9 @@ registerProcessor("mic-processor", MicProcessor);
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send("reset");
     }
-    // Clear local canvas.
+    // Clear local canvas and scroll watermark so the next trail seeds
+    // a fresh history (server total_columns also resets on reset).
+    lastEndColumn = -1;
     if (colBuffer) colBuffer.fill(DB_MIN);
     if (imageData) {
       const ctx = cqtEl.getContext("2d");
@@ -494,7 +551,12 @@ registerProcessor("mic-processor", MicProcessor);
       updateSliderLabel(slider);
       if (socket && socket.readyState === WebSocket.OPEN) {
         const v = slider.value;
-        socket.send(v === "" ? `set ${slider.dataset.paramKey}=none` : `set ${slider.dataset.paramKey}=${v}`);
+        // For skip-initial sliders, value 0 means "clear override".
+        if (slider.dataset.skipInitial === "true" && v === "0") {
+          socket.send(`set ${slider.dataset.paramKey}=none`);
+        } else {
+          socket.send(v === "" ? `set ${slider.dataset.paramKey}=none` : `set ${slider.dataset.paramKey}=${v}`);
+        }
       }
     });
   });

@@ -7,11 +7,13 @@ the parent project's preference of "don't force TF onto CPU").
 The classifier also performs the linear-interpolation stretch that the
 offline pipeline uses to bring short (truncated) windows up to
 ``CQT_FEATURE_FRAMES`` columns.
+
+When shared across WebSocket connections, pass a ``threading.Lock`` as
+``predict_lock`` so concurrent ``model.predict`` calls are serialized.
 """
 
 from __future__ import annotations
 
-import gc
 from typing import List
 
 import numpy as np
@@ -59,9 +61,17 @@ class ChordClassifier:
     labels:
         List of class labels, indexed by ``argmax`` of the model
         output. Defaults to ``config.MODEL_LABELS``.
+    predict_lock:
+        Optional lock held around ``model.predict``. Required when the
+        same instance is shared across concurrent connections.
     """
 
-    def __init__(self, model_path=config.MODEL_PATH, labels: List[str] = None) -> None:
+    def __init__(
+        self,
+        model_path=config.MODEL_PATH,
+        labels: List[str] = None,
+        predict_lock=None,
+    ) -> None:
         # Imported lazily so the rest of the package can be imported
         # even on machines where TensorFlow is not installed.
         import tensorflow as tf  # noqa: WPS433 (intentional local import)
@@ -70,6 +80,7 @@ class ChordClassifier:
             labels = list(config.MODEL_LABELS)
 
         self.labels: List[str] = list(labels)
+        self._predict_lock = predict_lock
         self.model = tf.keras.models.load_model(str(model_path))
 
         if self.model.output_shape[-1] != len(self.labels):
@@ -98,15 +109,15 @@ class ChordClassifier:
         stretched = stretch_features_to_frames(cqt_window, config.CQT_FEATURE_FRAMES)
         # The CNN expects ``(batch, bins, frames, 1)``.
         x = stretched[np.newaxis, ..., np.newaxis].astype(np.float32, copy=False)
-        probabilities = self.model.predict(x, verbose=0)[0]
+        if self._predict_lock is not None:
+            with self._predict_lock:
+                probabilities = self.model.predict(x, verbose=0)[0]
+        else:
+            probabilities = self.model.predict(x, verbose=0)[0]
         predicted_index = int(np.argmax(probabilities))
         raw_label = self.labels[predicted_index]
         display_label = config.LABEL_DISPLAY_MAP.get(raw_label, raw_label)
         confidence = float(probabilities[predicted_index])
-
-        # Release intermediate buffers eagerly to keep peak RAM low.
-        del stretched, x
-        gc.collect()
 
         return {
             "raw_label": raw_label,

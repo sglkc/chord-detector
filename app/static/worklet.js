@@ -1,10 +1,10 @@
-// mic-processor.js
+// worklet.js -- single source of truth for the mic AudioWorklet.
 //
 // AudioWorkletProcessor that forwards mono Float32 chunks from the
 // browser's input to the main thread via transferable ArrayBuffers.
 //
-// Registered from app.js via a Blob URL so the worklet does not need
-// to be served as a separate file (one less 404 surface area).
+// Loaded from app.js via:
+//   audioContext.audioWorklet.addModule("/static/worklet.js")
 //
 // Why an AudioWorklet (not a ScriptProcessor)?
 //   * Lower latency (runs on a dedicated audio render thread).

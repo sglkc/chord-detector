@@ -4,16 +4,33 @@ We compute a Superflux onset envelope (Boeck & Widmer 2013) on the
 dB-scaled CQT and peak-pick with the same parameters as the offline
 training pipeline. The detector keeps a "high water mark" of the last
 emitted frame so each call returns only onsets that are *new*.
+
+Superflux is always run on a trailing *context* window of stored CQT
+columns (not on tiny per-tick slices alone), so lag / max_size have
+enough history. Only the envelope samples that correspond to truly
+new columns are appended. Both the CQT context and the envelope are
+capped so memory stays bounded; ``last_emitted_frame`` is adjusted
+when the envelope is trimmed.
 """
 
 from __future__ import annotations
 
-from typing import Tuple
+from typing import Optional, Tuple
 
 import librosa
 import numpy as np
 
 from .. import config
+
+# Trailing CQT frames kept for Superflux context. Must cover lag /
+# max_size plus a generous pad so edge effects of re-analysis stay
+# far from the "new" tail we actually keep.
+_CQT_CONTEXT_MAX: int = 512
+
+# Envelope history cap: enough for peak-pick pre_avg / pre_max / wait
+# windows plus headroom. Onset frame indices are mapped back to the
+# global column coordinate via ``_envelope_start_frame``.
+_ENVELOPE_MAX: int = 512
 
 
 class OnsetDetector:
@@ -33,11 +50,11 @@ class OnsetDetector:
     Attributes
     ----------
     envelope: np.ndarray
-        The full running onset-strength envelope. New envelope values
-        are appended on every ``update`` call.
+        The running onset-strength envelope (capped). New envelope
+        values are appended on every ``update`` call.
     last_emitted_frame: int
-        Index of the last frame already returned to the caller. Used
-        to compute the "new onsets only" diff.
+        Global column index of the last frame already returned to the
+        caller. Used to compute the "new onsets only" diff.
     """
 
     def __init__(
@@ -54,6 +71,13 @@ class OnsetDetector:
 
         self.envelope: np.ndarray = np.zeros(0, dtype=np.float32)
         self.last_emitted_frame: int = 0
+        # Global column index corresponding to ``envelope[0]``.
+        self._envelope_start_frame: int = 0
+        # Global column index of the next CQT column we expect
+        # (equals total columns ever received).
+        self._next_global_column: int = 0
+        # Trailing CQT history for Superflux context.
+        self._cqt_history: Optional[np.ndarray] = None  # (n_bins, T) or None
         # Back-reference to the SegmentBuffer so ``set_param`` can
         # propagate debounce changes. Wired up by PipelineRunner.
         self.segments = None
@@ -69,52 +93,89 @@ class OnsetDetector:
         ----------
         cqt_db:
             The latest CQT columns from ``CQTStream.update``, shape
-            ``(n_bins, n_new_cols)``.
+            ``(n_bins, n_new_cols)``. These are appended to an internal
+            trailing context; Superflux is run on that context so
+            lag / max_size always see enough history.
 
         Returns
         -------
         new_onset_frames:
-            1-D array of frame indices (in the CQT column coordinate
-            system) for onsets that arrived since the last call.
+            1-D array of frame indices (in the *global* CQT column
+            coordinate system) for onsets that arrived since the last
+            call.
         new_envelope_tail:
-            The freshly-computed envelope values (same length as
-            ``cqt_db.shape[1]``). Useful for visualization.
+            The freshly-computed envelope values for the new columns
+            only (length ``n_new_cols``). Useful for visualization.
         """
-        if cqt_db.size == 0 or cqt_db.shape[1] < 2:
+        if cqt_db.size == 0 or cqt_db.ndim != 2 or cqt_db.shape[1] == 0:
             return np.zeros(0, dtype=np.int64), np.zeros(0, dtype=np.float32)
 
-        # Onset strength on the CQT magnitude. librosa expects a
+        n_new = int(cqt_db.shape[1])
+        new_cols = cqt_db.astype(np.float32, copy=False)
+
+        # ---- maintain trailing CQT context --------------------------------
+        if self._cqt_history is None or self._cqt_history.size == 0:
+            self._cqt_history = new_cols.copy()
+        else:
+            self._cqt_history = np.concatenate([self._cqt_history, new_cols], axis=1)
+        if self._cqt_history.shape[1] > _CQT_CONTEXT_MAX:
+            self._cqt_history = self._cqt_history[:, -_CQT_CONTEXT_MAX:].copy()
+
+        # Superflux needs at least 2 frames to produce a meaningful flux.
+        if self._cqt_history.shape[1] < 2:
+            # Still advance the global column counter so indices stay
+            # aligned once we have enough context.
+            zeros = np.zeros(n_new, dtype=np.float32)
+            self.envelope = np.concatenate([self.envelope, zeros])
+            self._next_global_column += n_new
+            self._trim_envelope()
+            return np.zeros(0, dtype=np.int64), zeros
+
+        # Onset strength on the trailing context. librosa expects a
         # power / magnitude spectrogram; we pass dB values and let it
-        # convert internally. The Superflux-specific kwargs (lag,
-        # max_size) are applied automatically.
-        new_envelope = librosa.onset.onset_strength(
-            S=cqt_db,
+        # convert internally. Superflux kwargs (lag, max_size) apply.
+        context_envelope = librosa.onset.onset_strength(
+            S=self._cqt_history,
             sr=self.sample_rate,
             hop_length=self.hop_length,
             **self.superflux_params,
         ).astype(np.float32, copy=False)
 
-        # ``onset_detect`` is run on the *running* envelope so it
-        # maintains the ``wait`` cooldown correctly. We then filter to
-        # only the onsets that arrived after ``last_emitted_frame``.
+        # Keep only the envelope samples that correspond to the truly
+        # new columns (the tail of the context re-analysis).
+        take = min(n_new, int(context_envelope.shape[0]))
+        new_envelope = context_envelope[-take:]
+        if take < n_new:
+            # Extremely short context edge case: pad the leading new
+            # frames with zeros so lengths stay consistent.
+            pad = np.zeros(n_new - take, dtype=np.float32)
+            new_envelope = np.concatenate([pad, new_envelope])
+
         self.envelope = np.concatenate([self.envelope, new_envelope])
+        self._next_global_column += n_new
+        self._trim_envelope()
 
         if self.envelope.size < 2:
             return np.zeros(0, dtype=np.int64), new_envelope
 
-        onset_frames = librosa.onset.onset_detect(
+        # ``onset_detect`` on the running (capped) envelope so ``wait``
+        # cooldowns stay correct. Map local indices back to global
+        # column coordinates via ``_envelope_start_frame``.
+        onset_frames_local = librosa.onset.onset_detect(
             onset_envelope=self.envelope,
             sr=self.sample_rate,
             hop_length=self.hop_length,
             backtrack=False,
             **self.peak_pick_params,
         )
+        onset_frames = (
+            np.asarray(onset_frames_local, dtype=np.int64) + int(self._envelope_start_frame)
+        )
 
-        # The first ``ONSET_WARMUP_FRAMES`` of envelope correspond to
-        # the warmup window (no real audio is being listened to yet).
-        # Superflux often spuriously fires on the transition from the
-        # zero-padded region at the very start of the envelope, so we
-        # drop any onsets that fall in the warmup zone.
+        # The first ``ONSET_WARMUP_FRAMES`` of *global* history are the
+        # warmup window. Superflux often spuriously fires on the
+        # transition from the zero-padded region at the very start, so
+        # we drop any onsets that fall in the warmup zone.
         warmup_threshold = config.ONSET_WARMUP_FRAMES - 1
         new_onsets = onset_frames[
             (onset_frames > self.last_emitted_frame)
@@ -126,9 +187,30 @@ class OnsetDetector:
         return new_onsets.astype(np.int64, copy=False), new_envelope
 
     def reset(self) -> None:
-        """Drop the envelope and watermark. Used on disconnect."""
+        """Drop the envelope, CQT context, and watermarks. Used on disconnect."""
         self.envelope = np.zeros(0, dtype=np.float32)
         self.last_emitted_frame = 0
+        self._envelope_start_frame = 0
+        self._next_global_column = 0
+        self._cqt_history = None
+
+    # ------------------------------------------------------------------ #
+    # Internal
+    # ------------------------------------------------------------------ #
+
+    def _trim_envelope(self) -> None:
+        """Cap envelope length; keep global frame indices consistent."""
+        if self.envelope.size <= _ENVELOPE_MAX:
+            return
+        trim = int(self.envelope.size - _ENVELOPE_MAX)
+        self.envelope = self.envelope[trim:].copy()
+        self._envelope_start_frame += trim
+        # last_emitted_frame is in global coordinates and must not go
+        # below the new start (onsets before the window are gone).
+        if self.last_emitted_frame < self._envelope_start_frame:
+            # Keep a watermark just before the retained window so we
+            # do not re-emit peaks that may reappear at the left edge.
+            self.last_emitted_frame = self._envelope_start_frame - 1
 
     # ------------------------------------------------------------------ #
     # Live tuning

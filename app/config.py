@@ -95,10 +95,11 @@ ONSET_WARMUP_FRAMES: int = CQT_FEATURE_FRAMES
 # Model
 # ---------------------------------------------------------------------------
 
-#: Filesystem path to the trained Keras CNN. Resolved relative to the
-#: project root (``training/``).
+#: Filesystem path to the trained Keras CNN.
+#: ``app/models/*.keras`` is a gitignored symlink into ``training/models/``
+#: so the canonical weights stay next to the research artifacts.
 MODEL_PATH: Path = (
-    Path(__file__).resolve().parent.parent / "models" / "model-bn-c64-c128-c256-c256-d256.keras"
+    Path(__file__).resolve().parent / "models" / "model-bn-c64-c128-c256-c256-d256.keras"
 )
 
 #: Class label order, indexed by ``argmax`` of the CNN output.
@@ -181,6 +182,7 @@ __all__ = [
     "SUPERFLUX_PARAMETERS",
     "PEAK_PICK_PARAMETERS",
     "MIN_ONSET_GAP_MS",
+    "ONSET_WARMUP_FRAMES",
     "MODEL_PATH",
     "MODEL_LABELS",
     "LABEL_DISPLAY_MAP",

@@ -1,9 +1,10 @@
 """Top-level pipeline orchestrator.
 
 One :class:`PipelineRunner` is created per WebSocket connection. It
-owns the audio buffer, CQT stream, onset detector, segment buffer and
-classifier, and exposes a single :py:meth:`ingest_pcm` method that the
-WebSocket handler calls whenever a new audio chunk arrives.
+owns the audio buffer, CQT stream, onset detector and segment buffer
+(per-connection DSP state). The CNN classifier may be injected as a
+shared instance loaded once at app startup, or loaded privately (e.g.
+in unit tests).
 
 The runner returns a list of *messages* to ship back to the browser.
 The two message types are:
@@ -21,13 +22,15 @@ The two message types are:
     The result of a CNN inference on a completed segment.
 
 The runner is intentionally synchronous (no asyncio) - the WebSocket
-handler is expected to call it inside ``asyncio.to_thread``.
+handler is expected to call it inside ``asyncio.to_thread``. Callers
+must not overlap ``ingest_pcm`` with ``reset`` / ``set_param`` on the
+same instance (the server serializes these onto one lane).
 """
 
 from __future__ import annotations
 
 import time
-from typing import List
+from typing import List, Optional, Union
 
 import numpy as np
 
@@ -38,6 +41,10 @@ from .cqt_stream import CQTStream
 from .onset_detector import OnsetDetector
 from .segment_buffer import SegmentBuffer
 
+# Sentinel: distinguish "caller did not pass classifier" from
+# "caller explicitly injected None" (e.g. shared load failed).
+_CLASSIFIER_UNSET = object()
+
 
 class PipelineRunner:
     """Stateful, per-connection audio -> chord pipeline.
@@ -47,24 +54,57 @@ class PipelineRunner:
     with_classifier:
         If ``False``, the runner emits CQT / onset messages but skips
         the CNN. Useful for development when you want to inspect the
-        spectrogram without paying for inference.
+        spectrogram without paying for inference. Ignored when the
+        caller passes ``classifier=...`` (including ``classifier=None``).
+    classifier:
+        Pre-loaded :class:`ChordClassifier`, or ``None`` to mean
+        "shared injection with no model" (do **not** private-load).
+        Omit the argument entirely to private-load when
+        ``with_classifier=True`` (unit tests).
+    model_status:
+        Optional status dict to surface to the client (``loaded``,
+        ``load_time_s``, ``error``). When the caller injects a
+        classifier slot (even if ``None``), this status is preferred
+        over a private load attempt.
     """
 
-    def __init__(self, with_classifier: bool = True) -> None:
+    def __init__(
+        self,
+        with_classifier: bool = True,
+        classifier: Union[ChordClassifier, None, object] = _CLASSIFIER_UNSET,
+        model_status: Optional[dict] = None,
+    ) -> None:
         self.buffer = AudioRingBuffer()
         self.cqt = CQTStream()
         self.onsets = OnsetDetector()
         self.segments = SegmentBuffer()
         self.classifier: ChordClassifier | None = None
         # Model-load status. Surfaced to the client so it can show a
-        # "model: loading..." pill while Keras is still warming up.
+        # "model: loading..." / ready / error pill.
         self.model_status: dict = {
             "loaded": False,
             "load_time_s": 0.0,
             "error": None,
         }
-        if with_classifier:
+
+        if classifier is not _CLASSIFIER_UNSET:
+            # Explicit injection path (shared app instance, possibly
+            # None if startup load failed). Never private-load here.
+            self.classifier = classifier  # type: ignore[assignment]
+            if model_status is not None:
+                self.model_status = dict(model_status)
+            else:
+                self.model_status = {
+                    "loaded": self.classifier is not None,
+                    "load_time_s": 0.0,
+                    "error": None
+                    if self.classifier is not None
+                    else "classifier injected as None",
+                }
+        elif with_classifier:
+            # No injection: private load for standalone / tests.
             self._load_classifier()
+
         # Keep SegmentBuffer's debounce in sync with the detector's
         # live-tuned value.
         self.onsets.segments = self.segments
@@ -130,7 +170,8 @@ class PipelineRunner:
         if new_cqt_cols.size == 0:
             return messages
 
-        # 3. Onset detection on the new slice.
+        # 3. Onset detection on the new columns (detector keeps its own
+        # trailing CQT context for Superflux).
         new_onset_frames, _envelope_tail = self.onsets.update(new_cqt_cols)
 
         # 4. Push to the segment buffer - this may produce one or more
@@ -158,7 +199,8 @@ class PipelineRunner:
                 }
             )
 
-        # 6. CQT column update, rate-limited.
+        # 6. CQT column update, rate-limited. Always send a full trail
+        # snapshot (last CQT_TRAIL_COLUMNS), not a delta.
         now_ms = time.monotonic() * 1000.0
         if now_ms - self._last_cqt_emit_ms >= config.SEND_CQT_EVERY_MS:
             self._last_cqt_emit_ms = now_ms
@@ -168,9 +210,13 @@ class PipelineRunner:
                     "type": "cqt_columns",
                     "n_bins": int(trail.shape[0]),
                     "n_cols": int(trail.shape[1]),
+                    # Monotonic end index of the CQT stream so the client
+                    # can append only *new* columns and keep a full-width
+                    # scrolling history on the canvas.
+                    "end_column": int(self.cqt.total_columns),
                     "time_s": self.buffer.available_seconds,
-                    # Flatten in C order. The browser re-shapes to
-                    # ``(n_bins, n_cols)``.
+                    # Flatten in C order: index = b * n_cols + c.
+                    # The browser re-shapes to ``(n_bins, n_cols)``.
                     "columns": trail.astype(np.float32).flatten(order="C").tolist(),
                 }
             )
@@ -186,7 +232,12 @@ class PipelineRunner:
         return column_index * config.CQT_HOP_LENGTH / config.AUDIO_SAMPLE_RATE
 
     def close(self) -> None:
-        """Free the classifier (drops the Keras graph) and reset state."""
+        """Release per-connection DSP state and drop the classifier ref.
+
+        Only drops the local reference to the classifier. A shared
+        instance held by the app lifespan stays alive; a private
+        instance becomes eligible for GC when no other refs remain.
+        """
         self.classifier = None
         self.segments.reset()
         self.onsets.reset()

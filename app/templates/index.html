@@ -32,7 +32,7 @@
     <section class="controls">
       <button id="start" class="primary">Start microphone</button>
       <button id="reset" class="secondary" disabled>Reset</button>
-      <span id="model-status" class="model-status loading">model: loading&hellip;</span>
+      <span id="model-status" class="model-status loading">model: checking&hellip;</span>
       <span id="status" class="status">disconnected</span>
     </section>
 
@@ -61,6 +61,7 @@
           type="range"
           min="0" max="2" step="0.05" value="0"
           data-param-key="peak_pick_delta"
+          data-skip-initial="true"
         />
         <span class="param-value" data-param-label-for="peak_pick_delta">default</span>
       </div>

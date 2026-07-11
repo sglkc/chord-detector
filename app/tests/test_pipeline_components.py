@@ -96,10 +96,35 @@ class CQTStreamTests(unittest.TestCase):
         expected = int(2.0 * sr / CQT_HOP_LENGTH)
         self.assertLess(abs(new_cols.shape[1] - expected), 5)
         self.assertTrue(np.isfinite(new_cols).all())
-        # CQT is in dB scale. After amplitude_to_db with ref=np.max, the
-        # global maximum is exactly 0, so the array is mostly <= 0 with
-        # possibly a few 0s. The maximum must not be > 0.
-        self.assertLessEqual(float(new_cols.max()), 0.0 + 1e-6)
+        # Fixed ref=1.0: values are finite dB; soft audio is typically
+        # negative but we no longer require max exactly 0.
+        self.assertTrue(np.isfinite(new_cols).all())
+        self.assertLess(float(new_cols.max()), 40.0)
+
+    def test_flatten_c_order_contract(self):
+        """Server flattens trail as C-order (n_bins, n_cols)."""
+        import librosa
+
+        sr = AUDIO_SAMPLE_RATE
+        rng = np.random.default_rng(3)
+        y = rng.standard_normal(3 * sr).astype(np.float32) * 0.05
+        stream = CQTStream(
+            sample_rate=sr,
+            fmin=librosa.note_to_hz("C1"),
+            n_bins=CQT_FEATURE_BINS,
+            bins_per_octave=CQT_BINS_PER_OCTAVE,
+            hop_length=CQT_HOP_LENGTH,
+            analysis_window_seconds=2.0,
+        )
+        stream.update(y, total_appended=len(y))
+        trail = stream.columns[:, -min(80, stream.columns.shape[1]) :]
+        flat = trail.astype(np.float32).flatten(order="C")
+        n_bins, n_cols = trail.shape
+        self.assertEqual(len(flat), n_bins * n_cols)
+        # Index contract used by the browser: flat[b * n_cols + c].
+        for b in (0, n_bins // 2, n_bins - 1):
+            for c in (0, n_cols // 2, n_cols - 1):
+                self.assertEqual(flat[b * n_cols + c], trail[b, c])
 
 
 # ---------------------------------------------------------------------------
@@ -147,14 +172,30 @@ class OnsetDetectorTests(unittest.TestCase):
                     hop_length=CQT_HOP_LENGTH,
                 )
             ),
-            ref=np.max,
+            ref=1.0,
         )
-        new_onsets, _env = det.update(cqt)
+        # Feed in chunks so the detector uses its trailing context path
+        # (not a single giant update only).
+        chunk = 32
+        all_onsets = []
+        for start in range(0, cqt.shape[1], chunk):
+            new_onsets, _env = det.update(cqt[:, start : start + chunk])
+            all_onsets.extend(int(o) for o in new_onsets)
         # The detector must ignore onsets in the warmup window
         # (frames 0..CQT_FEATURE_FRAMES-1) and report onsets past it.
-        self.assertGreaterEqual(len(new_onsets), 1)
-        self.assertTrue(all(o >= CQT_FEATURE_FRAMES for o in new_onsets))
-        self.assertTrue(any(abs(o - 250) < 50 for o in new_onsets))
+        self.assertGreaterEqual(len(all_onsets), 1)
+        self.assertTrue(all(o >= CQT_FEATURE_FRAMES for o in all_onsets))
+        self.assertTrue(any(abs(o - 250) < 50 for o in all_onsets))
+
+    def test_envelope_is_capped(self):
+        det = OnsetDetector()
+        # Push many columns in small chunks; envelope must stay bounded.
+        cols = np.random.default_rng(0).standard_normal(
+            (CQT_FEATURE_BINS, 64)
+        ).astype(np.float32)
+        for _ in range(40):
+            det.update(cols)
+        self.assertLessEqual(det.envelope.size, 512)
 
 
 # ---------------------------------------------------------------------------
@@ -186,6 +227,97 @@ class SegmentBufferTests(unittest.TestCase):
         self.assertTrue(w.truncated)
         self.assertEqual(w.source_frames, 60)
         self.assertEqual(w.cqt.shape[1], 60)
+
+    def test_second_segment_after_truncate(self):
+        """onset → columns → second onset → more columns → two windows."""
+        seg = SegmentBuffer(target_frames=CQT_FEATURE_FRAMES, min_onset_gap_ms=0)
+        # Onset at 0, then 40 columns (global 0..39).
+        w1 = seg.push(np.full((CQT_FEATURE_BINS, 40), 1.0, dtype=np.float32), np.array([0]))
+        self.assertEqual(len(w1), 0)
+        # Second onset at 40 with 50 more columns (global 40..89).
+        # First segment should truncate at 40 frames; second collects 50.
+        w2 = seg.push(np.full((CQT_FEATURE_BINS, 50), 2.0, dtype=np.float32), np.array([40]))
+        self.assertEqual(len(w2), 1)
+        self.assertTrue(w2[0].truncated)
+        self.assertEqual(w2[0].source_frames, 40)
+        self.assertEqual(w2[0].onset_frame, 0)
+        self.assertTrue(np.allclose(w2[0].cqt, 1.0))
+        # Still collecting the second segment; force truncate with a
+        # third onset and empty columns to emit it.
+        w3 = seg.push(np.zeros((CQT_FEATURE_BINS, 0), dtype=np.float32), np.array([90]))
+        self.assertEqual(len(w3), 1)
+        self.assertTrue(w3[0].truncated)
+        self.assertEqual(w3[0].source_frames, 50)
+        self.assertEqual(w3[0].onset_frame, 40)
+        self.assertTrue(np.allclose(w3[0].cqt, 2.0))
+
+    def test_mid_batch_skips_pre_onset_columns(self):
+        """Columns before the onset in the same batch must not be kept."""
+        seg = SegmentBuffer(target_frames=CQT_FEATURE_FRAMES, min_onset_gap_ms=0)
+        # 20 pre-onset columns (values 1) then onset at global 20 with
+        # 30 post-onset columns (values 2) in one push of 50 cols.
+        cols = np.concatenate(
+            [
+                np.full((CQT_FEATURE_BINS, 20), 1.0, dtype=np.float32),
+                np.full((CQT_FEATURE_BINS, 30), 2.0, dtype=np.float32),
+            ],
+            axis=1,
+        )
+        windows = seg.push(cols, np.array([20]))
+        self.assertEqual(len(windows), 0)
+        # Finalize with a later onset.
+        windows = seg.push(
+            np.zeros((CQT_FEATURE_BINS, 0), dtype=np.float32), np.array([50])
+        )
+        self.assertEqual(len(windows), 1)
+        self.assertEqual(windows[0].source_frames, 30)
+        self.assertTrue(np.allclose(windows[0].cqt, 2.0))
+        self.assertEqual(windows[0].onset_frame, 20)
+
+    def test_late_onset_splits_already_collected_columns(self):
+        """Lagged onset inside prior batch range splits buffer, no lost frames."""
+        seg = SegmentBuffer(target_frames=CQT_FEATURE_FRAMES, min_onset_gap_ms=0)
+        # Onset 0, collect 80 columns (global 0..79), all value 1.
+        w0 = seg.push(np.full((CQT_FEATURE_BINS, 80), 1.0, dtype=np.float32), np.array([0]))
+        self.assertEqual(len(w0), 0)
+        # Next batch is global 80..99 (value 2), but peak-pick reports a
+        # late onset at frame 50 (already inside the previous buffer).
+        windows = seg.push(
+            np.full((CQT_FEATURE_BINS, 20), 2.0, dtype=np.float32), np.array([50])
+        )
+        self.assertEqual(len(windows), 1)
+        self.assertEqual(windows[0].source_frames, 50)
+        self.assertEqual(windows[0].onset_frame, 0)
+        self.assertTrue(np.allclose(windows[0].cqt, 1.0))
+        # New segment was seeded with frames 50..79 (1.0) plus 80..99 (2.0).
+        w2 = seg.push(np.zeros((CQT_FEATURE_BINS, 0), dtype=np.float32), np.array([100]))
+        self.assertEqual(len(w2), 1)
+        self.assertEqual(w2[0].onset_frame, 50)
+        self.assertEqual(w2[0].source_frames, 50)  # 30 + 20
+        self.assertTrue(np.allclose(w2[0].cqt[:, :30], 1.0))
+        self.assertTrue(np.allclose(w2[0].cqt[:, 30:], 2.0))
+
+
+# ---------------------------------------------------------------------------
+# Runner classifier injection
+# ---------------------------------------------------------------------------
+
+
+class PipelineRunnerInjectionTests(unittest.TestCase):
+    def test_explicit_none_classifier_does_not_private_load(self):
+        """Server-style injection of None must not load a private model."""
+        from app.pipeline.runner import PipelineRunner
+
+        status = {"loaded": False, "load_time_s": 1.25, "error": "boom"}
+        runner = PipelineRunner(
+            with_classifier=True,
+            classifier=None,
+            model_status=status,
+        )
+        self.assertIsNone(runner.classifier)
+        self.assertFalse(runner.model_status["loaded"])
+        self.assertEqual(runner.model_status["error"], "boom")
+        runner.close()
 
 
 # ---------------------------------------------------------------------------
@@ -236,9 +368,11 @@ class EndToEndRunnerTests(unittest.TestCase):
                 elif m["type"] == "cqt_columns":
                     cqt_messages += 1
                     self.assertIn("columns", m)
-                    # The runner flattens n_bins * n_cols floats.
+                    # The runner flattens n_bins * n_cols floats (C-order).
                     self.assertEqual(m["n_bins"] * m["n_cols"], len(m["columns"]))
                     self.assertEqual(m["n_bins"], CQT_FEATURE_BINS)
+                    self.assertIn("end_column", m)
+                    self.assertGreaterEqual(m["end_column"], m["n_cols"])
         runner.close()
         # Classifier is disabled so no chord messages expected.
         self.assertEqual(chord_messages, 0)
