@@ -15,3 +15,4 @@ app/models/
 # Jupyter
 .ipynb_checkpoints
 .jupyter_ystore.db
+.jupyter
