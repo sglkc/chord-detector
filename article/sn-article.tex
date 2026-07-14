@@ -4,7 +4,7 @@
 \usepackage{tabularx}
 \usepackage{diagbox}
 \usepackage{tikz}
-\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, fit, backgrounds}
+\usetikzlibrary{shapes.geometric, shapes.misc, arrows.meta, positioning, calc}
 \usepackage{graphicx}
 \usepackage{multirow}
 \usepackage{amsmath,amssymb,amsfonts}
@@ -51,92 +51,162 @@
 
 Recognizing musical chords directly from raw audio is a foundational task in music information retrieval (MIR), underpinning applications such as automatic music transcription, interactive music education tools, and real-time performance feedback systems \cite{Telila2023}\cite{Saputra2021}\cite{Moysis2023}. Unlike symbolic or MIDI-based chord recognition, audio-based recognition must contend with the acoustic realities of sound production: a chord played on one instrument, in one room, captured by one microphone, does not produce the same waveform as the identical chord played on a different instrument, in a different room, captured by a different microphone. This variability is not a peripheral nuisance but the central obstacle to deploying chord recognition systems in real-world settings, where the recording conditions encountered at inference time are rarely identical to those under which a model was trained \cite{Kusaka2024}.
 
-This mismatch is termed acoustic domain shift and is primarily driven by principal factors. First, instrument variation where differing voice synthesis hardware alter timbre and displace chord vectors in the feature space \cite{Kusaka2024}\cite{Majchrzak2025}. Second, environmental noise which introduces room acoustics and ambient spectral energy that are absent during training \cite{Majchrzak2025}. Lastly, recording device variation where microphone frequency responses introduce hardware-induced spectral distortions \cite{Kusaka2024}. Critically, classification errors under domain shift are not merely a symptom of insufficient training data volume, they arise because the three factors above systematically change the acoustic feature distribution of the test data away from the distribution that the classifier was optimized on, regardless of how much training data was used within the original domain \cite{Kusaka2024}\cite{Majchrzak2025}.
+This mismatch is termed acoustic domain shift and is primarily driven by three factors. First, instrument variation where differing voice synthesis alter timbre and displace chord vectors in the feature space \cite{Kusaka2024}\cite{Majchrzak2025}. Second, environmental noise which introduces room acoustics and ambient spectral energy that are absent during training \cite{Majchrzak2025}. Lastly, recording device variation where microphone frequency responses introduce hardware-induced spectral distortions \cite{Kusaka2024}. Critically, classification errors under domain shift are not merely a symptom of insufficient training data volume, they arise because the three factors above systematically change the acoustic feature distribution of the test data away from the distribution that the classifier was optimized on, regardless of how much training data was used within the original domain \cite{Kusaka2024}\cite{Majchrzak2025}.
 
-To study this problem, a feature representation and classifier pairing must first be established for the in-domain case. Time-frequency representations that convert audio into image-like matrices, subsequently classified with convolutional architectures, are now the dominant paradigm across audio recognition tasks including environmental sound classification \cite{Wolf-Monheim2025}, acoustic scene classification, speech recognition \cite{Zaman2023}, and music analysis \cite{Moysis2023}. Among these representations, the Constant-Q Transform (CQT) occupies a distinctive position for keyboard and chord audio specifically. Unlike the Short-Time Fourier Transform (STFT), which uses linearly spaced frequency bins, the CQT uses logarithmically spaced bins with its spacing governed by a constant quality factor, aligning each bin directly with a musical semitone on the chromatic scale \cite{Lacoste2007}. This alignment means that harmonic interval patterns appear as consistent geometric shapes in the CQT spectrogram, whereas the same intervals appear at different absolute bin spacings under STFT \cite{Li2021}.
+To study this problem, a feature representation and classifier pairing must first be established for the in-domain case. Time-frequency representations that convert audio into image-like matrices, subsequently classified with convolutional architectures, are now the dominant paradigm across audio recognition tasks including environmental sound classification \cite{Wolf-Monheim2025}, acoustic scene classification, speech recognition \cite{Zaman2023}, and music analysis \cite{Moysis2023}. Among these representations, the Constant-Q Transform (CQT) occupies a distinctive position for keyboard and chord audio specifically. Unlike the Short-Time Fourier Transform (STFT), which uses linearly spaced frequency bins, the CQT uses logarithmically spaced bins with its spacing governed by a constant quality factor, aligning each bin directly with a musical semitone on the chromatic scale \cite{Lacoste2007}. This alignment means that harmonic interval patterns appear as consistent shapes in the CQT spectrogram, whereas the same intervals appear at different bin spacings under STFT \cite{Li2021}.
 
-Li \cite{Li2021} demonstrated this advantage empirically, reporting 84.2\% accuracy for CQT-based chord recognition versus 75.3\% for STFT and 80.8\% for CENS chromagrams under otherwise identical CNN architectures. Telila et al.\ \cite{Telila2023} further confirmed that CQT-derived features capture piano note frequency structure with 88.2\% frame-level transcription accuracy, and O'Hanlon and Sandler \cite{OHanlon2021} exploited this same musical-scale alignment to design FifthNet, a parameter-efficient chord recognition architecture. Together, this body of work establishes CQT not merely as one viable feature among many, but as a representation whose geometric structure is specifically matched to the harmonic organization of keyboard music, making it the appropriate feature choice for this study.
+Li \cite{Li2021} demonstrated this advantage empirically, reporting 84.2\% accuracy for CQT-based chord recognition versus 75.3\% for STFT and 80.8\% for CENS chromagrams under otherwise identical CNN architectures. Telila et al.\ \cite{Telila2023} further confirmed that CQT-derived features capture piano note frequency structure with 88.2\% frame-level transcription accuracy, and O'Hanlon and Sandler \cite{OHanlon2021} exploited this same musical-scale alignment to design FifthNet, a parameter-efficient chord recognition architecture. Together, this body of work establishes CQT not merely as one viable feature among many, but as a representation whose structure is specifically matched to the harmonic characteristic of piano music, making it the appropriate feature choice for this study.
 
-Understanding which combinations of spectral features and classifier architectures remain robust under acoustic domain shift is of substantial practical and theoretical importance. The piano chord classification problem provides a controlled vocabulary for such a study. With 36 classes formed by 12 chromatic root notes and 3 chord qualities (major, minor, diminished), the task requires fine-grained spectral discrimination: major and minor triads differ by a single semitone shift in the third, and diminished triads differ by a further semitone shift in the fifth, corresponding to shifts of one or two CQT frequency bins at the chosen resolution \cite{Harte2010}. This makes the task appropriate for controlled generalization analysis.
+Understanding which combinations of spectral features and classifier architectures remain robust under acoustic domain shift is of substantial practical and theoretical importance. The piano chord classification problem provides a controlled vocabulary for such a study. With 36 classes formed by 12 chromatic root notes and 3 chord qualities (major, minor, diminished), the task requires fine-grained spectral discrimination, with major and minor triads differ by a single semitone shift in the third, and diminished triads differ by a further semitone shift in the fifth, corresponding to shifts of one or two CQT frequency bins at the chosen resolution \cite{Harte2010}. This makes the task appropriate for controlled generalization analysis.
 
 The two classifiers evaluated here represent distinct strategies. CNN learns spatially localized hierarchical feature detectors whose convolutional kernels respond to small time-frequency neighborhoods \cite{OShea2015}\cite{Purwono2022}. RBF-SVM learns a maximum-margin hyperplane defined by kernel similarity to training support vectors, where the RBF kernel measures global Euclidean distance between flattened feature vectors \cite{Wainer2020}. Under acoustic domain shift these strategies are expected to diverge, the CNN's locally defined representations should partially survive global spectral shifts, whereas the SVM's globally defined kernel distances may be severely distorted by the same shifts \cite{Zaman2023}.
 
 Support Vector Machines with RBF kernels are an established baseline for musical chord classification tasks \cite{Cui2022} \cite{Putra2025}. Cui \cite{Cui2022} applied SVM with Pitch Class Profile features for chord recognition, while Putra and Sanjaya \cite{Putra2025} employed SVM with PCP features for automatic chord recognition on guitar and piano, both achieving high accuracy under within-distribution evaluation. However, neither study addressed cross-dataset or cross-instrument generalisation, which is the critical gap that the present work directly investigates.
 
-The existing literature reveals a critical systemic gap: contemporary MIR research heavily prioritizes expanding chord vocabulary size \cite{Majchrzak2025} or introducing increasingly complex architectures, such as conformer-based models \cite{Akram2025} or transformer-attention mechanisms \cite{Kusaka2024} \cite{Rowe2021}. However, these systems are almost universally validated on in-domain benchmarks, leaving their structural generalizability unprobed. While a few recent studies have acknowledged the existence of an out-of-domain accuracy gap, they treat it purely as a data-scarcity issue to be bypassed via synthetic data augmentation \cite{Kusaka2024} \cite{Byambatsogt2020} or artificial generation strategies \cite{Majchrzak2025}, rather than diagnosing the underlying structural vulnerabilities of the chosen classifiers.
+The existing literature reveals a critical systemic gap: contemporary MIR research heavily prioritizes expanding chord vocabulary size \cite{Majchrzak2025} or introducing increasingly complex architectures, such as conformer-based models \cite{Akram2025} or transformer-attention mechanisms \cite{Kusaka2024}. However, these systems are almost universally validated on in-domain benchmarks, leaving their structural generalizability unprobed. While a few recent studies have acknowledged the existence of an out-of-domain accuracy gap, they treat it purely as a data-scarcity issue to be bypassed via synthetic data augmentation \cite{Kusaka2024} \cite{Byambatsogt2020} or artificial generation strategies \cite{Majchrzak2025} \cite{Ostermann2023}, rather than diagnosing the underlying structural vulnerabilities of the chosen classifiers.
 
-To date, the literature lacks a systematic, controlled evaluation that isolates how fundamentally distinct classification strategies behave under an unaugmented, three-factor acoustic domain shift. Rather than chasing incremental accuracy gains on static benchmarks, this work establishes a diagnostic baseline designed to uncover the structural root causes of classifier resilience and collapse under real-world covariate shifts.
-
-We investigate these vulnerabilities using a strictly controlled experimental framework. The training and evaluation datasets are captured using completely separate keyboard instruments, audio synthesis engines, recording devices, and physical acoustic environments, while holding all other musical and variables entirely constant. The paper's specific contributions are:
+To date, the literature lacks a systematic, controlled evaluation that isolates how fundamentally distinct classification strategies behave under an unaugmented, three-factor acoustic domain shift. The focus is not to chase accuracy gains on benchmarks, but establishing a diagnostic baseline designed to uncover the structural root causes of classifier resilience and collapse under real-world covariate shifts. The paper's specific contributions are:
 
 \begin{enumerate}[1.]
 
-\item An acquisition of two independently recorded piano chord datasets, deliberately varied along the three principal acoustic domain-shift factors, instrument, recording environment, and recording device, to enable a controlled study of cross-domain generalization in piano chord recognition.
+\item An acquisition of two independently recorded piano chord datasets, deliberately distinct along the three principal acoustic domain-shift factors, instrument, environment, and recording device, to enable a controlled study of cross-domain generalization in piano chord recognition.
 
 \item An extraction of Constant-Q Transform (CQT) spectrogram features from the recorded audio, selected for their alignment with the musical chromatic scale, to represent chord harmonic structure in a form suitable for both convolutional and kernel-based classifiers.
 
-\item An evaluation and comparison of a CNN and an RBF-SVM classifier, both trained under identical in-domain conditions, to examine how each classifier's strategy is affected when the acoustic domain shifts between the training and evaluation datasets.
+\item An evaluation and comparison of a CNN and an RBF-SVM classifier, both trained under identical in-domain conditions, to examine how each classifier's approach is affected when the acoustic domain shifts between the training and evaluation datasets.
 
 \end{enumerate}
 
 \section{Methodology}\label{sec3}
 
-The experimental pipeline is illustrated in Fig.~\ref{fig:methodology}. The study is structured around five phases: (1) dataset acquisition, (2) CQT feature extraction, (3) model training and hyperparameter optimization, (4) in-domain cross-validation, and (5) cross-domain evaluation. All experiments are implemented in Python 3.10 using TensorFlow 2.15, scikit-learn 1.7.2, Librosa 0.11.0, NumPy 1.26.4, Optuna 4.8.0, and Matplotlib 3.10.8. Training is conducted on an ASUS ROG Flow X13 (AMD Ryzen 7 6800HS, NVIDIA GeForce RTX 3050 Ti, 16\,GB RAM) with supplementary use of Google Colaboratory (T4/A100 GPU).
+The experimental pipeline is illustrated in Fig.~\ref{fig:methodology}. The study is structured around five phases: (1) dataset acquisition, (2) CQT feature extraction, (3) model training and hyperparameter tuning, (4) in-domain cross-validation, and (5) cross-domain evaluation. All experiments are implemented in Python 3.10 using TensorFlow 2.15, scikit-learn 1.7.2, Librosa 0.11.0, NumPy 1.26.4, Optuna 4.8.0, and Matplotlib 3.10.8. Training is conducted on an ASUS ROG Flow X13 (AMD Ryzen 7 6800HS, NVIDIA GeForce RTX 3050 Ti, 16\,GB RAM) with supplementary use of Google Colaboratory (T4/A100 GPU).
 
 \begin{figure}[h]
   \centering
-
   \begin{tikzpicture}[
-    node distance=0.1cm and 0.1cm,
+    node distance=0.18cm and 0.12cm,
     >={Stealth},
-    base/.style={rectangle, draw, align=center, minimum height=0.6cm, font=\footnotesize, rounded corners=3pt, line width=0.5pt},
-    main/.style={base, draw=blue!60!black, fill=blue!5, text width=6.0cm},
-    cnn/.style={base, draw=teal!70!black, fill=teal!5, text width=2.85cm},
-    svm/.style={base, draw=purple!70!black, fill=purple!5, text width=2.85cm},
-    clear/.style={base, draw=green!60!black, fill=green!5, text width=6.0cm, font=\footnotesize},
-    arrow/.style={->, line width=0.5pt, black!70}
+    font=\footnotesize,
+    base/.style={
+      draw, align=center, minimum height=0.55cm,
+      line width=0.55pt, inner sep=3.5pt
+    },
+    % Start / End: true pill (semicircular ends)
+    terminal/.style={
+      base,
+      shape=rounded rectangle,
+      rounded rectangle arc length=180,
+      draw=black!75,
+      fill=black!8,
+      minimum height=0.68cm,
+      minimum width=2.0cm,
+      inner xsep=12pt,
+      inner ysep=3pt,
+      font=\footnotesize\bfseries
+    },
+    % Process
+    process/.style={
+      base, rectangle, rounded corners=1.5pt,
+      draw=blue!60!black, fill=blue!5,
+      text width=5.9cm
+    },
+    % Input / Output
+    io/.style={
+      base,
+      trapezium,
+      trapezium left angle=72,
+      trapezium right angle=108,
+      trapezium stretches body=true,
+      draw=orange!75!black, fill=orange!7,
+      text width=5.25cm,
+      inner xsep=5pt
+    },
+    cnn/.style={
+      base, rectangle, rounded corners=1.5pt,
+      draw=teal!70!black, fill=teal!5,
+      text width=2.8cm,
+      minimum height=1.55cm
+    },
+    svm/.style={
+      base, rectangle, rounded corners=1.5pt,
+      draw=purple!70!black, fill=purple!5,
+      text width=2.8cm,
+      minimum height=1.55cm
+    },
+    result/.style={
+      base,
+      trapezium,
+      trapezium left angle=72,
+      trapezium right angle=108,
+      trapezium stretches body=true,
+      draw=green!60!black, fill=green!7,
+      text width=5.25cm,
+      inner xsep=5pt
+    },
+    arrow/.style={->, line width=0.55pt, black!70}
   ]
-    \node[draw, rounded corners=3pt, fill=black!7, text width=6.0cm, align=center,
-    font=\footnotesize\bfseries, minimum height=0.45cm] (header) {Evaluating CNN vs. SVM for Piano Chord Recognition Under Acoustic Domain Shift};
+    \node[terminal] (start) {Start};
 
-    \node[main, below=0.3cm of header] (p1) {\textbf{1. Dataset acquisition}\\[2pt] 36 classes (12 roots $\times$ 3 qualities)\\ Train: 7{,}200 samples \& Eval: 1{,}440 samples\\ Two keyboards, two environments};
+    \node[io, below=0.32cm of start] (in1)
+    {\textbf{Input: labeled chord audio}\\[2pt]
+     36 classes (12 roots $\times$ 3 qualities)\\
+     Train 7{,}200 \& Eval 1{,}440 samples\\
+     Two keyboards, two environments};
 
-    \node[main, below=0.3cm of p1] (p2) {\textbf{2. CQT feature extraction}\\[2pt] 48\,kHz, 512 hop, 6 octaves, 36 bins/oct\\ Output: $216 \times 188 \times 1$ (dB spectrogram)};
+    \node[process, below=0.3cm of in1] (p2)
+    {\textbf{CQT feature extraction}\\[2pt]
+     48\,kHz, hop 512, 6 octaves, 36 bins/oct\\
+     Shared representation: $216 \times 188 \times 1$ (dB)};
 
-    \node[cnn, below left=0.4cm and 0.15cm of p2.south, anchor=north east] (cnn1)
-    {\textbf{3a. CNN path}\\[2pt] 4 Conv2D \& MaxPool\\ Filters: 64 $\to$ 256\\ Adam \& Dropout (0.5)};
+    \node[cnn, below left=0.42cm and 0.12cm of p2.south, anchor=north east] (cnn1)
+    {\textbf{CNN path}\\[2pt]
+     4 Conv2D \& MaxPool\\
+     Filters: $64 \to 256$\\
+     Dropout (0.5)};
 
-    \node[cnn, below=0.25cm of cnn1] (cnn2) {\textbf{4a. 5-fold CV}\\[2pt] In-domain\\ Full retrain / fold};
+    \node[cnn, below=0.22cm of cnn1, minimum height=1.15cm] (cnn2)
+    {\textbf{5-fold CV}\\[2pt]
+     In-domain\\
+     Full retrain / fold};
 
-    \node[svm, below right=0.4cm and 0.15cm of p2.south, anchor=north west] (svm1)
-    {\textbf{3b. SVM path}\\[2pt] Flattened vectors\\ (40{,}608-dim.)\\ Optuna RBF tuning};
+    \node[svm, below right=0.42cm and 0.12cm of p2.south, anchor=north west] (svm1)
+    {\textbf{SVM path}\\[2pt]
+     Flattened vectors\\
+     (40{,}608-dim.)\\
+     Optuna RBF tuning};
 
-    \node[svm, below=0.25cm of svm1] (svm2) {\textbf{4b. 5-fold CV}\\[2pt] In-domain\\ Full retrain / fold};
+    \node[svm, below=0.22cm of svm1, minimum height=1.15cm] (svm2)
+    {\textbf{5-fold CV}\\[2pt]
+     In-domain\\
+     Full retrain / fold};
 
-    \node[main, below=0.45cm of $(cnn2.south)!0.5!(svm2.south)$, anchor=north] (p5)
-    {\textbf{5. Evaluation and comparison}\\[2pt] In-domain test vs.\ cross-domain eval set\\ Generalization under acoustic domain shift};
+    \node[process, below=0.42cm of $(cnn2.south)!0.5!(svm2.south)$, anchor=north] (p5)
+    {\textbf{Evaluation and comparison}\\[2pt]
+     In-domain test vs.\ cross-domain eval set\\
+     Generalization under acoustic domain shift};
 
-    \node[clear, below=0.3cm of p5] (res)
-    {\textbf{Comparative results}\\[2pt] Feature robustness, classifier generalization, domain-shift error analysis};
+    \node[result, below=0.28cm of p5] (out)
+    {\textbf{Output: comparative results}\\[2pt]
+     Feature robustness and generalization\\
+     Domain-shift error analysis};
 
-    % Upper paths
-    \draw[arrow] (header) -- (p1);
-    \draw[arrow] (p1) -- (p2);
-    \draw[arrow] (p2.south) -- ++(0,-0.2) -| (cnn1.north);
-    \draw[arrow] (p2.south) -- ++(0,-0.2) -| (svm1.north);
+    \node[terminal, below=0.3cm of out] (endn) {End};
+
+    \draw[arrow] (start) -- (in1);
+    \draw[arrow] (in1) -- (p2);
+    \draw[arrow] (p2.south) -- ++(0,-0.18) -| (cnn1.north);
+    \draw[arrow] (p2.south) -- ++(0,-0.18) -| (svm1.north);
     \draw[arrow] (cnn1) -- (cnn2);
     \draw[arrow] (svm1) -- (svm2);
 
-    % FIXED: Clean convergence into Box 5
-    \coordinate (merge) at ($(p5.north)+(0,0.225)$);
-    \draw[line width=0.5pt, black!70] (cnn2.south) |- (merge);
-    \draw[line width=0.5pt, black!70] (svm2.south) |- (merge);
+    \coordinate (merge) at ($(p5.north)+(0,0.2)$);
+    \draw[line width=0.55pt, black!70] (cnn2.south) |- (merge);
+    \draw[line width=0.55pt, black!70] (svm2.south) |- (merge);
     \draw[arrow] (merge) -- (p5.north);
 
-    % Lower path
-    \draw[arrow] (p5) -- (res);
+    \draw[arrow] (p5) -- (out);
+    \draw[arrow] (out) -- (endn);
   \end{tikzpicture}
-
   \caption{Experimental pipeline for CQT feature robustness and classifier generalization evaluation. Both classifiers receive identical CQT features.}
   \label{fig:methodology}
 \end{figure}
@@ -145,7 +215,7 @@ The experimental pipeline is illustrated in Fig.~\ref{fig:methodology}. The stud
 
 To directly isolate the effect of acoustic domain shift, all experiments are organized around two clearly defined testing scenarios, summarized in Table~\ref{tab:scenarios}.
 
-\begin{table*}[h]
+\begin{table*}[htbp]
 \caption{Two experimental scenarios isolating acoustic domain shift}\label{tab:scenarios}
 \begin{tabular*}{\textwidth}{@{}lll@{}}
 \toprule
@@ -164,7 +234,7 @@ Scenario 1 establishes an upper bound on classifier performance when instrument,
 
 \subsection{Dataset acquisition}\label{subsec3_1}
 
-Audio recordings are collected using a custom web-based MIDI recording application that connects to a keyboard via USB MIDI, programmatically triggers chords by sending simultaneous MIDI note-on events, and captures the resulting audio through a connected microphone (Online Resource~1). This deterministic triggering approach eliminates manual playing errors while retaining organic acoustic properties arising from the instrument's physical resonance and synthesis.
+Audio recordings are collected using a custom web-based recording application that connects to a keyboard via USB MIDI, programmatically triggers chords by sending simultaneous MIDI note-on events, and captures the resulting audio through a connected microphone. This deterministic triggering approach eliminates manual playing errors while retaining organic acoustic properties arising from the instrument's physical resonance and synthesis.
 
 The chord vocabulary covers 36 classes formed by the combination of 12 chromatic root notes (C, C$\sharp$, D, D$\sharp$, E, F, F$\sharp$, G, G$\sharp$, A, A$\sharp$, B) and 3 chord quality types (major, minor, diminished). All chords are voiced in the fourth octave, which provides optimal spectral coverage within the 6-octave CQT range and clear harmonic separability between qualities \cite{Telila2023} \cite{Harte2010}. The inclusion of the diminished quality tests classifier sensitivity to a harmonically dense chord type in which all intervals are minor thirds, creating greater inter-class harmonic proximity than major or minor chords \cite{Byambatsogt2020}.
 
@@ -174,11 +244,11 @@ Two independent datasets are recorded to enable cross-domain evaluation:
 
 \item \textbf{Training dataset}: 200 samples per class, 7,200 total. Recorded using a Xiaomi Redmi Pad 2 microphone from a Techno T-9890i keyboard with Acoustic Grand Piano voice. Note attack delays are randomized in the range 0--150\,ms to approximate the natural performance of human keystroke timing rather than perfectly simultaneous MIDI note-on events \cite{Bella2011} and prevent overfitting to perfect note onsets.
 
-\item \textbf{Evaluation dataset}: 40 samples per class, 1,440 total. Recorded using the internal microphone of an ASUS ROG Flow X13 laptop from a Yamaha PSR-S910 keyboard with Grand Piano voice, in a different physical room. Note attack delays are randomized in the range 0--100\,ms. Half of the samples per class are recorded at a relatively higher input volume level to introduce additional inter-sample acoustic variation.
+\item \textbf{Evaluation dataset}: 40 samples per class, 1,440 total. Recorded using the internal microphone of an ASUS ROG Flow X13 laptop from a Yamaha PSR-S910 keyboard with Grand Piano voice, in a different physical room. Note attack delays are randomized in the range 0--100\,ms. Half of the samples per class are recorded at a higher volume level to introduce additional acoustic variation.
 
 \end{enumerate}
 
-The two datasets differ systematically in instrument brand, piano voice synthesis, recording device, and room acoustics. No samples from the evaluation dataset were used at any stage of training, validation, or hyperparameter optimization. This strict separation ensures that cross-domain results measure genuine cross-domain generalization. All recordings are stored in OGG/OPUS format at 48,000\,Hz sample rate, 32-bit depth, mono channel, without post-processing filters. The distribution of audio durations across the training dataset is provided in Online Resource~2.
+The two datasets differ systematically in instrument, recording device, and room acoustics. No samples from the evaluation dataset were used at any stage of training, validation, or hyperparameter optimization. This strict separation ensures that cross-domain results measure genuine cross-domain generalization. All recordings are stored in OGG/OPUS format at 48,000\,Hz sample rate, 32-bit depth, mono channel, without post-processing filters.
 
 \subsection{CQT feature extraction}\label{subsec3_2}
 
@@ -189,7 +259,7 @@ Q = \frac{f_k}{f_{k+1} - f_k} = \frac{1}{2^{1/B} - 1}
 \label{eq:cqt}
 \end{equation}
 
-where $B$ is the number of bins per octave \cite{Li2021}\cite{Lacoste2007}. This logarithmic spacing aligns each bin with a musical semitone, making the spectrogram invariant to chord transposition and producing geometrically consistent harmonic patterns regardless of root pitch.
+where $B$ is the number of bins per octave \cite{Li2021}\cite{Lacoste2007}. This logarithmic spacing aligns each bin with a musical semitone, making the spectrogram invariant to chord transposition and producing geometrically consistent harmonic patterns regardless of root pitch. A semitone represents the absolute smallest distance between two adjacent notes on a musical instrument \cite{Harte2010}.
 
 The extraction parameters are listed in Table~\ref{tab:cqt-extraction-params}. The configuration of 36 bins per octave (3 bins per semitone) provides frequency resolution sufficient to resolve the interval differences between major ($+4, +3$ semitones), minor ($+3, +4$ semitones), and diminished ($+3, +3$ semitones) triads \cite{Akram2025}\cite{OHanlon2021}. Each sample is truncated to a fixed duration of 2.0\,s, using Equation~\ref{eq:frames} that yields a fixed frame length of $188$ frames and a uniform feature shape of $216 \times 188 \times 1$.
 
@@ -246,7 +316,7 @@ Dense & 36 & Softmax \\
 \end{tabularx}
 \end{table}
 
-Training configuration follows Table~\ref{tab:cnn-training-config}. Stratified random sampling with seed 42 ensures balanced class representation and reproducibility. \texttt{ReduceLROnPlateau} reduces the learning rate by factor 0.1 when validation loss stagnates for 2 epochs; \texttt{EarlyStopping} terminates training after 6 epochs without validation loss improvement \cite{Wolf-Monheim2025}. The final model is evaluated on the 10\% reserved test set, excluded from all training and validation phases.
+Training configuration follows Table~\ref{tab:cnn-training-config} using tensorflow library. Stratified random sampling with seed 42 ensures balanced class representation and reproducibility. \texttt{ReduceLROnPlateau} reduces the learning rate by factor 0.1 when validation loss stagnates for 2 epochs; \texttt{EarlyStopping} terminates training after 6 epochs without validation loss improvement \cite{Wolf-Monheim2025}. The final model is evaluated on the 10\% reserved test set, excluded from all training and validation phases.
 
 \begin{table}[h]
 \caption{CNN training configuration}\label{tab:cnn-training-config}
@@ -303,7 +373,7 @@ Under Scenario 1, both the CNN and the RBF-SVM achieve perfect classification pe
 
 \subsection{Cross-domain evaluation performance}\label{subsec4_3}
 
-To evaluate structural robustness against acoustic domain shift, the trained models are subjected to Scenario 2 using the held-out 1,440-sample evaluation dataset without any architectural fine-tuning, weight updates, or exposure to the target domain during the optimization phase. Under these cross-domain conditions, the classification performance of the two architectures sharply diverges.
+To evaluate structural robustness against acoustic domain shift, the trained models are subjected to Scenario 2 using the 1,440-sample evaluation dataset without any fine-tuning, weight updates, or exposure to the target domain. Under these cross-domain conditions, the classification performance of the two architectures sharply diverges.
 
 As illustrated in Fig.~\ref{fig:model-comparison}, the CNN demonstrates robust generalization capabilities, maintaining a cross-domain accuracy of 0.89 and a macro F1-score of 0.87. Conversely, the RBF-SVM experiences a severe performance collapse, dropping precipitously to a classification accuracy of 0.29 and a macro F1-score of 0.36.
 
@@ -338,9 +408,11 @@ To understand why the CNN's cross-domain accuracy of 0.89 falls short of its in-
 \label{fig:cnn-eval-confusion}
 \end{figure}
 
-Misclassifications are not randomly distributed but concentrated in harmonically proximate chord pairs. The largest single error (A\_diminished $\to$ A$\sharp$\_major, 20 counts) involves a quality shift combined with a semitone root displacement, consistent with a global downward frequency shift of the evaluation instrument's spectral envelope moving the CQT pattern of A\_diminished into the neighborhood of A$\sharp$\_major.
+Diagnostic analysis reveals that the misclassifications made by the CNN are not random. Instead, they are highly concentrated among harmonically proximate chord pairs, which means chords that sound very similar and share overlapping notes.
 
-The next largest cluster (C\_diminished $\to$ C$\sharp$\_diminished, 16 counts) is a pure semitone root shift with preserved quality. This confusion matrix therefore provides direct visual evidence that the CNN's residual errors are boundary-case failures at single-semitone class margins, not arbitrary or catastrophic misclassifications, supporting the interpretation that spatially local convolutional features partially, but not perfectly, survive the acoustic domain shift.
+The largest single error occurs when the chord G$\sharp$\_diminished\_4 is misclassified as B\_minor\_4, accumulating 36 counts. In music theory, these two chords are highly related because they share two identical notes, specifically B and D. The only structural difference between them is a single note adjustment from G$\sharp$\ to F$\sharp$, which is an interval of two semitones. Because these audio frequencies are closely aligned, a global frequency shift in the evaluation instrument's acoustics pushes the pattern of the true chord into the boundary of the predicted class.
+
+Other major error clusters follow a highly similar pattern of narrow musical shifts. For example, the chord E\_diminished\_4 is misclassified as D$\sharp$\_major\_4 with 30 counts, and A$\sharp$\_diminished as B\_minor\_4 with 20 counts. This confusion matrix provides direct evidence that the errors of the network are near-miss failures at single semitone or double semitone margins rather than chaotic misclassifications. Because the convolutional layers learn to recognize localized regions on the spectrogram, these structural pattern traits effectively manage to partially survive the acoustic domain shift.
 
 \subsection{SVM attractor collapse}\label{subsec5_2}
 
@@ -367,8 +439,8 @@ Because this study purposely avoided artificial data augmentation or noise filte
 
 \backmatter
 
-% \bmhead{Supplementary information}
-% The online version contains supplementary materials (Online Resources~1--12) available at.
+\bmhead{Supplementary information}
+The online version contains supplementary materials available at.
 
 \bmhead{Author contributions}
 All authors contributed to study conceptualization and design. Material preparation, data acquisition, experimentation, analysis, and drafting were performed by CGS. All authors reviewed and approved the final version.
