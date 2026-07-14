@@ -44,6 +44,17 @@ ln -sfn ../../training/models/model-bn-c64-c128-c256-c256-d256.keras \
 uv run uvicorn app.server:app --host 0.0.0.0 --port 8000 --reload
 ```
 
+## Tests
+
+```bash
+# pipeline unit tests (no server, no TensorFlow model load required for most cases)
+.venv/bin/python -m app.tests.test_pipeline_components
+
+# process-level e2e: boots uvicorn, checks /healthz, static assets, WebSocket
+# CQT stream, and (if present) classification on a local validation clip
+.venv/bin/python -m app.tests.test_e2e_server
+```
+
 …then open <http://localhost:8000> in a browser. The browser will
 prompt for microphone access.
 
