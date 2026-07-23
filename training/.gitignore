@@ -1,22 +1,6 @@
-# Python-generated files
-__pycache__/
-*.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
-
-# Virtual environments
-.venv
-
-# Jupyter
-.ipynb_checkpoints
-
-# ---------------------------------------------------------------------------
-# Large / generated artifacts
+# Large / generated artifacts under training/
 # Keep directory tree in git (via .gitkeep); ignore all other contents.
-# Pattern: ignore everything under DIR, re-include subdirs + .gitkeep files.
-# ---------------------------------------------------------------------------
+# Python / .venv / Jupyter ignores live in the repo-root .gitignore.
 
 # Raw audio datasets (opus, vivo, thinkpad, archives, side caches)
 /datasets/**

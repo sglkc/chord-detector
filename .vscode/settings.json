@@ -1,4 +1,6 @@
 {
   "editor.wordWrap": "on",
-  "latex-workshop.latex.autoBuild.cleanAndRetry.enabled": false
+  "latex-workshop.latex.autoBuild.cleanAndRetry.enabled": false,
+  "workbench.colorTheme": "Dark 2026",
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python"
 }
