@@ -31,3 +31,6 @@
 **/misclass-cache/**
 !**/misclass-cache/**/
 !**/misclass-cache/**/.gitkeep
+
+# Batch / tool run logs
+/notebooks/*.log
