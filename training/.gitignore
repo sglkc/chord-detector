@@ -9,12 +9,41 @@ wheels/
 # Virtual environments
 .venv
 
-datasets*
-*.keras
-*.npz
-*models*
-validations*
-evaluations*
-*cache*
-
+# Jupyter
 .ipynb_checkpoints
+
+# ---------------------------------------------------------------------------
+# Large / generated artifacts
+# Keep directory tree in git (via .gitkeep); ignore all other contents.
+# Pattern: ignore everything under DIR, re-include subdirs + .gitkeep files.
+# ---------------------------------------------------------------------------
+
+# Raw audio datasets (opus, vivo, thinkpad, archives, side caches)
+/datasets/**
+!/datasets/**/
+!/datasets/**/.gitkeep
+
+# Extracted feature caches (.npz)
+/features/**
+!/features/**/
+!/features/**/.gitkeep
+
+# Trained model weights (.keras, .pkl, etc.)
+/models/**
+!/models/**/
+!/models/**/.gitkeep
+
+# Validation clips + feature packs
+/validations/**
+!/validations/**/
+!/validations/**/.gitkeep
+
+# Evaluation sets + feature packs
+/evaluations/**
+!/evaluations/**/
+!/evaluations/**/.gitkeep
+
+# Notebook-local caches
+**/misclass-cache/**
+!**/misclass-cache/**/
+!**/misclass-cache/**/.gitkeep
