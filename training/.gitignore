@@ -2,7 +2,7 @@
 # Keep directory tree in git (via .gitkeep); ignore all other contents.
 # Python / .venv / Jupyter ignores live in the repo-root .gitignore.
 
-# Raw audio datasets (opus, vivo, thinkpad, archives, side caches)
+# Raw audio datasets (training, vivo, thinkpad, archives, side caches)
 /datasets/**
 !/datasets/**/
 !/datasets/**/.gitkeep
