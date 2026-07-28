@@ -27,6 +27,11 @@
 !/evaluations/**/
 !/evaluations/**/.gitkeep
 
+# Noise / IR banks for domain augmentation (raw wavs + source zips)
+/noises/**
+!/noises/**/
+!/noises/**/.gitkeep
+
 # Notebook-local caches
 **/misclass-cache/**
 !**/misclass-cache/**/
