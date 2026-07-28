@@ -1,0 +1,2 @@
+dataset,description,features_path,model_path,num_samples,num_classes,accuracy,macro_precision,macro_recall,macro_f1,weighted_precision,weighted_recall,weighted_f1
+test-noisy,Noisy evaluation features,/home/seya/code/chord-detection/training/features/test-noisy.npz,/home/seya/code/chord-detection/training/models/model-bn-c64-c128-c256-c256-d256.keras,3600,36,0.8216666666666667,0.8452745374057258,0.8216666666666667,0.7961960954565112,0.8452745374057261,0.8216666666666667,0.7961960954565112
