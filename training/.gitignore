@@ -39,3 +39,10 @@
 
 # Batch / tool run logs
 /notebooks/*.log
+
+# Exported listen-pack audio (features-faithful wet/dry); keep index/README
+/processed-samples/**
+!/processed-samples/**/
+!/processed-samples/**/.gitkeep
+!/processed-samples/**/*.csv
+!/processed-samples/**/*.md
