@@ -1,2 +1,0 @@
-dataset,description,features_path,model_path,num_samples,num_classes,accuracy,macro_precision,macro_recall,macro_f1,weighted_precision,weighted_recall,weighted_f1
-training,In-domain training features (Techno + Redmi Pad),/home/seya/code/chord-detection/training/features/training.npz,/home/seya/code/chord-detection/training/models/model-bn-c64-c128-c256-c256-d256.keras,7200,36,0.9998611111111111,0.9998618021006082,0.9998611111111112,0.9998611102430502,0.9998618021006082,0.9998611111111111,0.9998611102430502

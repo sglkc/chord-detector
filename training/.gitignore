@@ -37,6 +37,11 @@
 !**/misclass-cache/**/
 !**/misclass-cache/**/.gitkeep
 
+# CNN eval / compare / cross-eval artifacts (csv, png, npz caches)
+**/cnn-eval-results/
+**/cnn-compare-results/
+**/cnn-cross-eval-results/
+
 # Batch / tool run logs
 /notebooks/*.log
 

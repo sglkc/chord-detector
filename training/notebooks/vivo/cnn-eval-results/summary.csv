@@ -1,2 +1,0 @@
-dataset,description,features_path,model_path,num_samples,num_classes,accuracy,macro_precision,macro_recall,macro_f1,weighted_precision,weighted_recall,weighted_f1
-vivo,Cross-domain vivo features,/home/seya/code/chord-detection/training/features/vivo.npz,/home/seya/code/chord-detection/training/models/model-bn-c64-c128-c256-c256-d256.keras,1440,36,0.9458333333333333,0.9495360835465685,0.9458333333333334,0.9373876344037984,0.9495360835465686,0.9458333333333333,0.9373876344037982
