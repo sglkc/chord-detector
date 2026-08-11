@@ -7,7 +7,7 @@ shared instance loaded once at app startup, or loaded privately (e.g.
 in unit tests).
 
 The runner returns a list of *messages* to ship back to the browser.
-The two message types are:
+The message types are:
 
 ``{"type": "cqt_columns", "columns": [...], "n_cols": int, "time_s": float}``
 
@@ -15,11 +15,20 @@ The two message types are:
     trailing CQT columns (dB). The browser paints them right-to-left
     on a scrolling canvas.
 
+``{"type": "onset", "column": int, "time_s": float}``
+
+    A newly detected Superflux onset. ``column`` is the global CQT
+    column index (same coordinate system as ``end_column``). The
+    browser draws it as a vertical marker on the spectrogram.
+
 ``{"type": "chord", "raw_label": str, "display_label": str,
    "confidence": float, "onset_time": float, "duration": float,
-   "truncated": bool, "source_frames": int}``
+   "truncated": bool, "source_frames": int, "onset_column": int}``
 
     The result of a CNN inference on a completed segment.
+    ``onset_column`` is the global CQT column of the segment start
+    (same coordinate system as ``onset.column`` / ``end_column``)
+    so the browser can pin the label to that spectrogram marker.
 
 The runner is intentionally synchronous (no asyncio) - the WebSocket
 handler is expected to call it inside ``asyncio.to_thread``. Callers
@@ -174,6 +183,19 @@ class PipelineRunner:
         # trailing CQT context for Superflux).
         new_onset_frames, _envelope_tail = self.onsets.update(new_cqt_cols)
 
+        # Emit each new onset immediately (not rate-limited with CQT)
+        # so the browser can mark chord start/end on the spectrogram
+        # even when this tick does not send a cqt_columns snapshot.
+        for onset_frame in np.asarray(new_onset_frames, dtype=np.int64).ravel():
+            onset_frame = int(onset_frame)
+            messages.append(
+                {
+                    "type": "onset",
+                    "column": onset_frame,
+                    "time_s": self._column_to_time(onset_frame),
+                }
+            )
+
         # 4. Push to the segment buffer - this may produce one or more
         # completed windows.
         completed_windows = self.segments.push(new_cqt_cols, new_onset_frames)
@@ -181,6 +203,10 @@ class PipelineRunner:
         # 5. Run classification on each completed window.
         for window in completed_windows:
             if self.classifier is None:
+                continue
+            # Decay tails / noise clicks after Superflux: stretching a
+            # 30-frame stub to 188 frames is what produced C:min spam.
+            if window.source_frames < config.MIN_CLASSIFY_FRAMES:
                 continue
             result = self.classifier.classify(window.cqt)
             onset_time = self._column_to_time(window.onset_frame)
@@ -196,6 +222,7 @@ class PipelineRunner:
                     "duration": duration,
                     "truncated": window.truncated,
                     "source_frames": window.source_frames,
+                    "onset_column": int(window.onset_frame),
                 }
             )
 

@@ -4,7 +4,9 @@
 //   1. Capture the microphone via getUserMedia + AudioWorklet.
 //   2. Stream Float32 mono PCM to /ws as binary WebSocket frames.
 //   3. Render incoming CQT columns on a scrolling canvas.
-//   4. Display the latest chord label.
+//   4. Overlay Superflux onsets as red vertical lines with the
+//      classified chord for that segment (rotated if it would clip).
+//   5. Display the latest chord label.
 //
 // Audio math lives entirely inside the worklet. The main thread is
 // responsible for transport (WebSocket) and rendering only.
@@ -20,6 +22,7 @@
   const chordEl = $("chord");
   const chordMetaEl = $("chord-meta");
   const cqtEl = $("cqt");
+  const cqtLabelsEl = $("cqt-labels");
   const cqtMetaEl = $("cqt-meta");
   const startBtn = $("start");
   const resetBtn = $("reset");
@@ -57,6 +60,11 @@
   // snapshot each tick; we only scroll by (end_column - lastEndColumn)
   // new columns so history fills the full canvas width over time.
   let lastEndColumn = -1;
+  // Superflux onsets on the scrolling canvas. Each entry is
+  // { column, label, confidence, endColumn }. label/confidence are
+  // filled in when the CNN classifies the segment that started here.
+  // Pruned once the onset scrolls off the left edge.
+  let onsets = [];
 
   const REQUIRED_SAMPLE_RATE = 48000;
 
@@ -149,6 +157,7 @@
       colBuffer = new Float32Array(nBins * CANVAS_W);
       colBuffer.fill(DB_MIN);
       lastEndColumn = -1;
+      onsets = [];
     }
     ensureBuffers();
 
@@ -216,6 +225,178 @@
       }
     }
     ctx.putImageData(imageData, 0, 0);
+    drawOnsetLines(ctx);
+    drawOnsetLabels();
+  }
+
+  // Map a global CQT column index to a canvas x. Rightmost pixel is
+  // lastEndColumn - 1; leftmost is lastEndColumn - CANVAS_W.
+  function onsetColumnToX(column) {
+    return column - lastEndColumn + CANVAS_W;
+  }
+
+  function recordOnset(column) {
+    if (typeof column !== "number" || !Number.isFinite(column)) return;
+    const col = Math.round(column);
+    for (let i = 0; i < onsets.length; i++) {
+      if (onsets[i].column === col) return;
+    }
+    onsets.push({
+      column: col,
+      label: null,
+      confidence: null,
+      endColumn: null,
+    });
+    onsets.sort((a, b) => a.column - b.column);
+  }
+
+  function attachChordLabel(column, label, confidence, sourceFrames) {
+    if (!label) return;
+    const col = typeof column === "number" && Number.isFinite(column)
+      ? Math.round(column)
+      : null;
+    const endColumn =
+      col != null && typeof sourceFrames === "number" && sourceFrames > 0
+        ? col + Math.round(sourceFrames)
+        : null;
+
+    let best = null;
+    let bestDist = Infinity;
+    if (col != null) {
+      for (let i = 0; i < onsets.length; i++) {
+        const d = Math.abs(onsets[i].column - col);
+        if (d < bestDist) {
+          bestDist = d;
+          best = onsets[i];
+        }
+      }
+    }
+    // Peak-pick / debounce can land a few frames off the segment start.
+    if (best && bestDist <= 4) {
+      best.label = label;
+      best.confidence = confidence;
+      if (endColumn != null) best.endColumn = endColumn;
+      return;
+    }
+    if (col == null) return;
+    onsets.push({
+      column: col,
+      label,
+      confidence,
+      endColumn,
+    });
+    onsets.sort((a, b) => a.column - b.column);
+  }
+
+  function pruneOnsets() {
+    if (lastEndColumn < 0 || onsets.length === 0) return;
+    const leftEdge = lastEndColumn - CANVAS_W;
+    // Keep onsets still on-canvas or just off the right (not yet
+    // painted into the spectrogram, but already detected).
+    let i = 0;
+    while (i < onsets.length && onsets[i].column < leftEdge) i += 1;
+    if (i > 0) onsets = onsets.slice(i);
+  }
+
+  function drawOnsetLines(ctx) {
+    if (lastEndColumn < 0 || onsets.length === 0) return;
+    pruneOnsets();
+    ctx.fillStyle = "#ff2020";
+    for (let i = 0; i < onsets.length; i++) {
+      const x = onsetColumnToX(onsets[i].column);
+      if (x < 0 || x >= CANVAS_W) continue;
+      // 2px so the marker stays visible when the canvas is CSS-scaled.
+      ctx.fillRect(Math.round(x), 0, 2, CANVAS_H);
+    }
+  }
+
+  function clearOnsetLabels() {
+    if (!cqtLabelsEl) return;
+    const ctx = cqtLabelsEl.getContext("2d");
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, cqtLabelsEl.width, cqtLabelsEl.height);
+  }
+
+  // Crisp overlay (not pixelated like the spectrogram). Each label
+  // belongs to the segment that starts at that onset: it sits in the
+  // span until the next onset / segment end. Horizontal when that
+  // span is wide enough; otherwise rotated 90° along the red line.
+  function drawOnsetLabels() {
+    if (!cqtLabelsEl) return;
+    const cssW = cqtEl.clientWidth || CANVAS_W;
+    const cssH = cqtEl.clientHeight || CANVAS_H;
+    const dpr = window.devicePixelRatio || 1;
+    const bw = Math.max(1, Math.round(cssW * dpr));
+    const bh = Math.max(1, Math.round(cssH * dpr));
+    if (cqtLabelsEl.width !== bw || cqtLabelsEl.height !== bh) {
+      cqtLabelsEl.width = bw;
+      cqtLabelsEl.height = bh;
+    }
+    const ctx = cqtLabelsEl.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    if (lastEndColumn < 0 || onsets.length === 0) return;
+    pruneOnsets();
+
+    const sx = cssW / CANVAS_W;
+    ctx.font = "11px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.lineWidth = 3;
+    ctx.lineJoin = "round";
+
+    for (let i = 0; i < onsets.length; i++) {
+      const o = onsets[i];
+      if (!o.label) continue;
+      const xPx = onsetColumnToX(o.column) * sx;
+      if (xPx < -12 || xPx > cssW + 12) continue;
+
+      let rightLimit = cssW;
+      if (i + 1 < onsets.length) {
+        rightLimit = Math.min(rightLimit, onsetColumnToX(onsets[i + 1].column) * sx);
+      }
+      if (typeof o.endColumn === "number") {
+        rightLimit = Math.min(rightLimit, onsetColumnToX(o.endColumn) * sx);
+      }
+
+      const conf =
+        typeof o.confidence === "number"
+          ? `${Math.round(o.confidence * 100)}%`
+          : "";
+      const text = conf ? `${o.label} ${conf}` : o.label;
+      const tw = ctx.measureText(text).width;
+      const pad = 4;
+      const avail = rightLimit - xPx;
+      const fitsH = avail >= tw + pad + 2 && xPx + pad + tw <= cssW - 2 && xPx >= 0;
+
+      const alpha =
+        typeof o.confidence === "number"
+          ? 0.5 + 0.5 * Math.max(0, Math.min(1, o.confidence))
+          : 0.9;
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(0,0,0,0.82)";
+      ctx.fillStyle = `rgba(255,236,236,${alpha})`;
+
+      if (fitsH) {
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        ctx.strokeText(text, xPx + pad, 4);
+        ctx.fillText(text, xPx + pad, 4);
+      } else {
+        // 90° clockwise: reads top-to-bottom along the onset line.
+        // Sit just to the right of the line, or to the left if the
+        // right side would clip the canvas edge.
+        const fontH = 12;
+        const onRight = xPx + fontH + 2 < cssW;
+        ctx.translate(onRight ? xPx + 5 : xPx - 2, 5);
+        ctx.rotate(Math.PI / 2);
+        ctx.textAlign = "left";
+        ctx.textBaseline = onRight ? "bottom" : "top";
+        ctx.strokeText(text, 0, 0);
+        ctx.fillText(text, 0, 0);
+      }
+      ctx.restore();
+    }
   }
 
   // ----------------------------------------------------------------- //
@@ -255,12 +436,32 @@
         typeof msg.end_column === "number" ? ` | col ${msg.end_column}` : "";
       cqtMetaEl.textContent =
         `${msg.n_cols} trail | canvas ${CANVAS_W}px${endLabel} | time ${msg.time_s.toFixed(1)}s`;
+    } else if (msg.type === "onset") {
+      recordOnset(msg.column);
+      drawCanvas();
     } else if (msg.type === "chord") {
       chordEl.textContent = msg.display_label;
       chordMetaEl.textContent =
         `confidence ${(msg.confidence * 100).toFixed(1)}%  |  ` +
         `onset ${msg.onset_time.toFixed(2)}s  |  ` +
         (msg.truncated ? `truncated (${msg.source_frames} frames)` : `full (188 frames)`);
+
+      // Pin the short label to the onset that started this segment
+      // so the spectrogram keeps a history (the card only shows the
+      // latest prediction, which is often C:min on background noise).
+      const onsetCol =
+        typeof msg.onset_column === "number"
+          ? msg.onset_column
+          : typeof msg.onset_time === "number"
+            ? Math.round(msg.onset_time * REQUIRED_SAMPLE_RATE / 512)
+            : null;
+      attachChordLabel(
+        onsetCol,
+        msg.display_label,
+        msg.confidence,
+        msg.source_frames
+      );
+      drawOnsetLabels();
 
       // Briefly flash the chord card so the user can see new
       // predictions.
@@ -511,12 +712,14 @@
     // Clear local canvas and scroll watermark so the next trail seeds
     // a fresh history (server total_columns also resets on reset).
     lastEndColumn = -1;
+    onsets = [];
     if (colBuffer) colBuffer.fill(DB_MIN);
     if (imageData) {
       const ctx = cqtEl.getContext("2d");
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
     }
+    clearOnsetLabels();
     chordEl.textContent = "--";
     chordMetaEl.textContent = "awaiting audio\u2026";
   }
@@ -539,6 +742,12 @@
   const ctx0 = cqtEl.getContext("2d");
   ctx0.fillStyle = "#000";
   ctx0.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+  if (typeof ResizeObserver !== "undefined" && cqtEl) {
+    new ResizeObserver(() => {
+      if (lastEndColumn >= 0) drawOnsetLabels();
+    }).observe(cqtEl);
+  }
 
   // ----------------------------------------------------------------- //
   // Settings panel: each slider has data-param-key="...". Live

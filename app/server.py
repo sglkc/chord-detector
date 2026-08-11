@@ -22,10 +22,15 @@ Message protocol (server -> client)
     row-major (C) order. Re-shape on the client to
     ``(n_bins, n_cols)``.
 
+``{"type": "onset", "column": int, "time_s": float}``
+    A newly detected Superflux onset. ``column`` is the global CQT
+    column index (same coordinate system as ``end_column``).
+
 ``{"type": "chord", "raw_label": str, "display_label": str,
    "confidence": float, "onset_time": float, "duration": float,
-   "truncated": bool, "source_frames": int}``
-    A completed chord classification.
+   "truncated": bool, "source_frames": int, "onset_column": int}``
+    A completed chord classification. ``onset_column`` matches the
+    Superflux onset that started the segment.
 
 ``{"type": "error", "message": str}``
     Something went wrong; the client should surface it.

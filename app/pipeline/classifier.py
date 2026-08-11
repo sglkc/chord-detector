@@ -21,6 +21,25 @@ import numpy as np
 from .. import config
 
 
+def peak_normalize_db(cqt_db: np.ndarray) -> np.ndarray:
+    """Shift a dB CQT so its peak is 0, matching training ``ref=np.max``.
+
+    Training extraction is ``amplitude_to_db(mag, ref=np.max)``. The
+    live stream uses a fixed ``ref=1.0`` so stitched columns stay
+    comparable; that leaves a global offset (quiet mic → peak around
+    -15 dB or lower). The CNN's input BatchNorm was fit on peak-0
+    features, and that offset alone flips D minor → C#:dim, G major →
+    C:maj, quiet piano → C:dim / C:min.
+    """
+    cqt_db = np.asarray(cqt_db, dtype=np.float32)
+    if cqt_db.size == 0:
+        return cqt_db
+    peak = float(np.max(cqt_db))
+    if not np.isfinite(peak):
+        return cqt_db
+    return cqt_db - peak
+
+
 def stretch_features_to_frames(
     feature_array: np.ndarray,
     target_frames: int = config.CQT_FEATURE_FRAMES,
@@ -107,6 +126,8 @@ class ChordClassifier:
             ``"C_major_4"``-style string the model was trained on.
         """
         stretched = stretch_features_to_frames(cqt_window, config.CQT_FEATURE_FRAMES)
+        # Match training ``ref=np.max`` (live CQT is stored at ref=1.0).
+        stretched = peak_normalize_db(stretched)
         # The CNN expects ``(batch, bins, frames, 1)``.
         x = stretched[np.newaxis, ..., np.newaxis].astype(np.float32, copy=False)
         if self._predict_lock is not None:
@@ -128,4 +149,4 @@ class ChordClassifier:
         }
 
 
-__all__ = ["ChordClassifier", "stretch_features_to_frames"]
+__all__ = ["ChordClassifier", "stretch_features_to_frames", "peak_normalize_db"]

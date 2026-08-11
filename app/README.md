@@ -29,7 +29,7 @@ real time.
                                               ChordClassifier (shared TF / Keras CNN)
                                                   │
                               ◀──── JSON ────────┘
-                              {type: "cqt_columns"}  {type: "chord"}
+                              {type: "cqt_columns"}  {type: "onset"}  {type: "chord"}
 ```
 
 ## Run
@@ -102,7 +102,8 @@ Server → client **text** JSON frames:
 | `ready`        | Emitted on connect.                                                                   |
 | `model_status` | `loaded`, `load_time_s`, `error` – startup model load result.                         |
 | `cqt_columns`  | `n_bins, n_cols, time_s, columns[Array<number>]` – full trail snapshot, C-order flat. |
-| `chord`        | `raw_label, display_label, confidence, predicted_index, onset_time, duration, truncated, source_frames`. |
+| `onset`        | `column, time_s` – Superflux onset at a global CQT column (spectrogram marker). |
+| `chord`        | `raw_label, display_label, confidence, predicted_index, onset_time, duration, truncated, source_frames, onset_column`. |
 | `error`        | `message`                                                                             |
 | `pong`         | Reply to a client `ping` text frame.                                                  |
 
@@ -120,7 +121,8 @@ Client → server **text** frames (control):
   browser refuses to stream if `AudioContext.sampleRate !== 48000`.
 * **CQT**: 216 bins (6 octaves × 36 bins/octave), fmin = C1, hop = 512.
   Streaming dB conversion uses a **fixed** `ref=1.0` so stitched
-  columns stay comparable across analysis windows.
+  columns stay comparable across analysis windows. The CNN input is
+  then peak-shifted to 0 dB (`ref=np.max`) to match training.
 * **Onset detector**: Superflux (lag=2, max_size=3) run on a trailing
   CQT **context** window (not tiny per-tick slices alone), with the
   same peak-pick parameters as
@@ -185,8 +187,9 @@ All constants live in `app/config.py`:
 * **Onset false-positives**: Superflux can fire on percussive attacks
   (drum hits, transients). The CNN will still try to classify the
   window, often producing an unexpected chord.
-* **No silence gate**: in a silent room the spectrogram will still
-  scroll; it just won't produce chord messages.
+* **No silence class**: the CNN is 36 closed-set chords (16 silent
+  training clips were labeled `C_diminished_4`). Windows shorter than
+  `MIN_CLASSIFY_FRAMES` (~0.5 s) are not sent to the CNN.
 * **First 2 s of audio**: CQT / onset detection require the minimum
   training window to fill before any columns are produced.
 

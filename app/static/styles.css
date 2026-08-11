@@ -93,6 +93,10 @@ main {
 
 .meta { font-variant-numeric: tabular-nums; }
 
+.canvas-stack {
+  position: relative;
+}
+
 #cqt {
   display: block;
   width: 100%;
@@ -100,6 +104,15 @@ main {
   background: #000;
   border-radius: 6px;
   image-rendering: pixelated;
+}
+
+#cqt-labels {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  border-radius: 6px;
 }
 
 .controls {

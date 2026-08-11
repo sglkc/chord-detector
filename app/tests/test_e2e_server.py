@@ -231,6 +231,7 @@ class LiveServerE2ETests(unittest.TestCase):
             "duration",
             "truncated",
             "source_frames",
+            "onset_column",
         ):
             self.assertIn(key, chord)
         self.assertIn(chord["raw_label"], MODEL_LABELS)

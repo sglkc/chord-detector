@@ -25,6 +25,7 @@ from app.config import (
     MODEL_LABELS,
 )
 from app.pipeline.audio_buffer import AudioRingBuffer
+from app.pipeline.classifier import peak_normalize_db, stretch_features_to_frames
 from app.pipeline.cqt_stream import CQTStream
 from app.pipeline.onset_detector import OnsetDetector
 from app.pipeline.segment_buffer import SegmentBuffer
@@ -299,6 +300,34 @@ class SegmentBufferTests(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
+# CNN input peak-norm (training is amplitude_to_db(..., ref=np.max))
+# ---------------------------------------------------------------------------
+
+
+class PeakNormalizeTests(unittest.TestCase):
+    def test_peak_becomes_zero_and_offsets_preserved(self):
+        x = np.array([[-20.0, -40.0], [-30.0, -10.0]], dtype=np.float32)
+        y = peak_normalize_db(x)
+        self.assertAlmostEqual(float(y.max()), 0.0)
+        self.assertAlmostEqual(float(y[1, 1]), 0.0)
+        self.assertAlmostEqual(float(y[0, 0]), -10.0)
+        self.assertAlmostEqual(float(y[0, 1]), -30.0)
+
+    def test_empty_passthrough(self):
+        empty = np.zeros((216, 0), dtype=np.float32)
+        out = peak_normalize_db(empty)
+        self.assertEqual(out.shape, (216, 0))
+
+    def test_stretch_then_norm_keeps_188_frames(self):
+        short = np.linspace(-60.0, -20.0, 40, dtype=np.float32)
+        window = np.stack([short] * CQT_FEATURE_BINS, axis=0)
+        stretched = stretch_features_to_frames(window, CQT_FEATURE_FRAMES)
+        normed = peak_normalize_db(stretched)
+        self.assertEqual(normed.shape, (CQT_FEATURE_BINS, CQT_FEATURE_FRAMES))
+        self.assertAlmostEqual(float(normed.max()), 0.0, places=4)
+
+
+# ---------------------------------------------------------------------------
 # Runner classifier injection
 # ---------------------------------------------------------------------------
 
@@ -344,10 +373,11 @@ class EndToEndRunnerTests(unittest.TestCase):
 
         chord_messages = 0
         cqt_messages = 0
+        onset_messages = 0
         for off in range(0, total, 4096):
             msgs = runner.ingest_pcm(audio[off : off + 4096])
             for m in msgs:
-                self.assertIn(m["type"], {"chord", "cqt_columns", "error", "reset"})
+                self.assertIn(m["type"], {"chord", "cqt_columns", "onset", "error", "reset"})
                 if m["type"] == "chord":
                     chord_messages += 1
                     self.assertGreaterEqual(
@@ -362,6 +392,7 @@ class EndToEndRunnerTests(unittest.TestCase):
                             "duration",
                             "truncated",
                             "source_frames",
+                            "onset_column",
                         },
                     )
                     self.assertIn(m["raw_label"], MODEL_LABELS)
@@ -373,9 +404,19 @@ class EndToEndRunnerTests(unittest.TestCase):
                     self.assertEqual(m["n_bins"], CQT_FEATURE_BINS)
                     self.assertIn("end_column", m)
                     self.assertGreaterEqual(m["end_column"], m["n_cols"])
+                elif m["type"] == "onset":
+                    onset_messages += 1
+                    self.assertIn("column", m)
+                    self.assertIn("time_s", m)
+                    self.assertIsInstance(m["column"], int)
+                    self.assertGreaterEqual(m["column"], 0)
+                    self.assertGreaterEqual(m["time_s"], 0.0)
         runner.close()
         # Classifier is disabled so no chord messages expected.
         self.assertEqual(chord_messages, 0)
+        # Synthetic clicks after the Superflux warmup should produce
+        # at least one onset marker for the spectrogram overlay.
+        self.assertGreaterEqual(onset_messages, 1)
         # cqt_columns are rate-limited to ~20 Hz, so 6 s of audio
         # should produce a healthy number of them.
         self.assertGreaterEqual(cqt_messages, 30)

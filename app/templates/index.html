@@ -26,7 +26,10 @@
         <span>Constant-Q Spectrogram (scrolling, dB)</span>
         <span id="cqt-meta" class="meta">0 cols</span>
       </div>
-      <canvas id="cqt" width="600" height="216"></canvas>
+      <div class="canvas-stack">
+        <canvas id="cqt" width="600" height="216"></canvas>
+        <canvas id="cqt-labels"></canvas>
+      </div>
     </section>
 
     <section class="controls">
