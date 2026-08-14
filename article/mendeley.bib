@@ -98,7 +98,7 @@
   doi = {10.3390/S20216077},
   issn = {1424-8220},
   issue = {21},
-  journal = {Sensors 2020, Vol. 20, Page 6077},
+  journal = {Sensors},
   keywords = {chord recognition,convolutional neural network,data augmentation,guitar,multi,playing robot,task learning},
   month = {10},
   pages = {6077},
@@ -173,6 +173,16 @@
   title = {Audio Classification of Low Feature Spectrograms Utilizing Convolutional Neural Networks},
   url = {http://arxiv.org/abs/2410.21561 http://dx.doi.org/10.1109/ICMLA55696.2022.00115},
   year = {2024}
+}
+
+@article{Edwards2024,
+  author  = {Drew Edwards and Simon Dixon and Emmanouil Benetos and Akira Maezawa and Yuta Kusaka},
+  title   = {A Data-Driven Analysis of Robust Automatic Piano Transcription},
+  journal = {IEEE Signal Processing Letters},
+  volume  = {31},
+  pages   = {681--685},
+  year    = {2024},
+  doi     = {10.1109/LSP.2024.3363646}
 }
 
 @article{Faghih2022,
@@ -396,6 +406,7 @@
 @inproceedings{Korzeniowski2016,
   abstract = {We explore frame-level audio feature learning for chord recognition using artificial neural networks. We present the argument that chroma vectors potentially hold enough information to model harmonic content of audio for chord recognition, but that standard chroma extractors compute too noisy features. This leads us to propose a learned chroma feature extractor based on artificial neural networks. It is trained to compute chroma features that encode harmonic information important for chord recognition, while being robust to irrelevant interferences. We achieve this by feeding the network an audio spectrum with context instead of a single frame as input. This way, the network can learn to selectively compensate noise and resolve harmonic ambiguities. We compare the resulting features to hand-crafted ones by using a simple linear frame-wise classifier for chord recognition on various data sets. The results show that the learned feature extractor produces superior chroma vectors for chord recognition.},
   author = {Filip Korzeniowski and Gerhard Widmer},
+  address = {New York, NY, USA},
   booktitle = {Proceedings of the 17th International Society for Music Information Retrieval Conference, ISMIR 2016},
   isbn = {9780692755068},
   month = {12},
@@ -675,10 +686,10 @@ a8d8b7b4c7;path=librosa-librosa-af8c839
   doi = {10.1186/S13636-023-00278-7},
   issn = {1687-4722},
   issue = {1},
-  journal = {EURASIP Journal on Audio, Speech, and Music Processing 2023 2023:1},
+  journal = {EURASIP Journal on Audio, Speech, and Music Processing},
   keywords = {Acoustics,Engineering Acoustics,Image and Speech Processing,Mathematics in Music,Music segmentation,Onset detection,Signal,Source separation,Tempo estimation},
   month = {3},
-  pages = {13-},
+  pages = {13},
   publisher = {SpringerOpen},
   title = {AAM: a dataset of Artificial Audio Multitracks for diverse music information retrieval tasks},
   url = {https://link.springer.com/article/10.1186/s13636-023-00278-7},
@@ -989,6 +1000,34 @@ Cournapeau, D. and Brucher, M. and Perrot, M. and Duchesnay, E.},
   year = {2023}
 }
 
+@inproceedings{Piczak2015,
+  author = {Piczak, Karol J.},
+  title = {{ESC}: Dataset for Environmental Sound Classification},
+  booktitle = {Proceedings of the 23rd {ACM} International Conference on Multimedia},
+  year = {2015},
+  pages = {1015--1018},
+  doi = {10.1145/2733373.2806390}
+}
+
+@article{Traer2016,
+  author = {Traer, James and McDermott, Josh H.},
+  title = {Statistics of natural reverberation enable perceptual separation of sound and space},
+  journal = {Proceedings of the National Academy of Sciences},
+  volume = {113},
+  number = {48},
+  pages = {E7856--E7865},
+  year = {2016},
+  doi = {10.1073/pnas.1612524113}
+}
+
+@inproceedings{Bock2013,
+  author = {B{\"o}ck, Sebastian and Widmer, Gerhard},
+  title = {Maximum Filter Vibrato Suppression for Onset Detection},
+  booktitle = {Proceedings of the 16th International Conference on Digital Audio Effects ({DAFx}-13)},
+  year = {2013},
+  address = {Maynooth, Ireland}
+}
+
 @article{zbaltan2024,
   abstract = {Lifelong music education is critical need for all with a particular focus on adult learners and seniors. One of the difficulties in music education is identifying chords accurately. This is a preliminary study to develop a chord identification application using Artificial Intelligence (AI) technologies. I seek to answer the key research question of how audio processing algorithms and deep learning models can be used to provide real-time, accurate and user-friendly chord recognition that meets the diverse needs of adult learners and senior citizens. Our overall goal is to create an application that not only assists with chord identification, but also fosters a lifelong love of music and learning. My methodology is based on the principles of adult and senior education initiatives and includes the following key steps: using ready-made datasets for audio processing and feature extraction, transforming waveforms into mel spectrograms, and preparing and extending the datasets where necessary. I then train and optimise deep learning models, such as various convolutional neural network (CNN) architectures, to achieve high accuracy in chord recognition. By using advanced technologies and adhering to the principles of lifelong learning, our research aims to enhance the musical journey of individuals throughout their lives, contributing to both personal enrichment and cognitive well-being.},
   author = {Nihan Özbaltan},
@@ -1004,4 +1043,42 @@ Cournapeau, D. and Brucher, M. and Perrot, M. and Duchesnay, E.},
   url = {https://dergipark.org.tr/en/pub/ojomus/article/1580523},
   volume = {9},
   year = {2024}
+}
+
+@misc{Li2016,
+  abstract = {Deep neural networks (DNN) have shown unprecedented success in various computer vision applications such as image classification and object detection. However, it is still a common annoyance during the training phase, that one has to prepare at least thousands of labeled images to fine-tune a network to a specific domain. Recent study shows that a DNN has strong dependency towards the training dataset, and the learned features cannot be easily transferred to a different but relevant task without fine-tuning. In this paper, we propose a simple yet powerful remedy, called Adaptive Batch Normalization (AdaBN) to increase the generalization ability of a DNN.},
+  author = {Yanghao Li and Naiyan Wang and Jianping Shi and Jiaying Liu and Xiaodi Hou},
+  note = {Preprint at \url{https://arxiv.org/abs/1603.04779}},
+  title = {Revisiting Batch Normalization for Practical Domain Adaptation},
+  doi = {10.48550/arXiv.1603.04779},
+  url = {https://arxiv.org/pdf/1603.04779},
+  year = {2016}
+}
+
+@misc{Ulyanov2016,
+  abstract = {It this paper we revisit the fast stylization method introduced in Ulyanov et al. (2016). We show how a small change in the stylization architecture results in a significant qualitative improvement in the generated images. The change is limited to swapping batch normalization with instance normalization, and to apply the latter both at training and testing times. The resulting method can be used to train high-performance architectures for real-time image generation.},
+  author = {Dmitry Ulyanov and Andrea Vedaldi and Victor Lempitsky},
+  note = {Preprint at \url{https://arxiv.org/abs/1607.08022}},
+  title = {Instance Normalization: The Missing Ingredient for Fast Stylization},
+  doi = {10.48550/arXiv.1607.08022},
+  url = {https://arxiv.org/pdf/1607.08022},
+  year = {2016}
+}
+
+@inproceedings{Bouthillier2021,
+  author = {Xavier Bouthillier and Pierre Delaunay and Mirko Bronzi and Assya Trofimov and Brennan Nichyporuk and Justin Szeto and Nazanin Mohammadi Sepahvand and Edward Raff and Kanika Madan and Vikram Voleti and Samira Ebrahimi Kahou and Vincent Michalski and Tal Arbel and Chris Pal and Gael Varoquaux and Pascal Vincent},
+  title = {Accounting for Variance in Machine Learning Benchmarks},
+  booktitle = {Proceedings of Machine Learning and Systems (MLSys 2021)},
+  year = {2021},
+  doi = {10.48550/arXiv.2103.03098}
+}
+
+@article{Geirhos2020,
+  author = {Robert Geirhos and Jorn-Henrik Jacobsen and Claudio Michaelis and Richard Zemel and Wieland Brendel and Matthias Bethge and Felix A. Wichmann},
+  title = {Shortcut learning in deep neural networks},
+  journal = {Nature Machine Intelligence},
+  volume = {2},
+  pages = {665--673},
+  year = {2020},
+  doi = {10.1038/s42256-020-00257-z}
 }
