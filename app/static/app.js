@@ -27,6 +27,7 @@
   const startBtn = $("start");
   const resetBtn = $("reset");
   const statusEl = $("status");
+  const themeToggle = $("theme-toggle");
 
   // ----------------------------------------------------------------- //
   // State
@@ -737,6 +738,39 @@
   });
 
   resetBtn.addEventListener("click", reset);
+
+  // ----------------------------------------------------------------- //
+  // Theme: light is the default. Choice is stored so a reload keeps it.
+  // ----------------------------------------------------------------- //
+
+  const THEME_KEY = "chord-detection-theme";
+
+  function currentTheme() {
+    const attr = document.documentElement.getAttribute("data-theme");
+    return attr === "dark" ? "dark" : "light";
+  }
+
+  function applyTheme(theme) {
+    const next = theme === "dark" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem(THEME_KEY, next); } catch (_) { /* private mode */ }
+    if (themeToggle) {
+      const toDark = next === "light";
+      themeToggle.textContent = toDark ? "Dark" : "Light";
+      themeToggle.setAttribute(
+        "aria-label",
+        toDark ? "Switch to dark theme" : "Switch to light theme"
+      );
+      themeToggle.setAttribute("aria-pressed", next === "dark" ? "true" : "false");
+    }
+  }
+
+  applyTheme(currentTheme());
+  if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
+      applyTheme(currentTheme() === "dark" ? "light" : "dark");
+    });
+  }
 
   // Initial canvas paint.
   const ctx0 = cqtEl.getContext("2d");

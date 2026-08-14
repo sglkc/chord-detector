@@ -1,18 +1,38 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Real-Time Chord Detection Demo</title>
   <link rel="stylesheet" href="/static/styles.css" />
+  <script>
+    (function () {
+      var theme = "light";
+      try {
+        var stored = localStorage.getItem("chord-detection-theme");
+        if (stored === "dark" || stored === "light") theme = stored;
+      } catch (_) { /* private mode */ }
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
 </head>
 <body>
   <header>
-    <h1>Real-Time Chord Detection</h1>
-    <p class="subtitle">
-      Browser microphone &rarr; librosa CQT &rarr; Superflux onsets
-      &rarr; CNN classifier
-    </p>
+    <div class="header-bar">
+      <div class="header-copy">
+        <h1>Real-Time Chord Detection</h1>
+        <p class="subtitle">
+          Browser microphone &rarr; librosa CQT &rarr; Superflux onsets
+          &rarr; CNN classifier
+        </p>
+      </div>
+      <button
+        id="theme-toggle"
+        class="theme-toggle"
+        type="button"
+        aria-label="Switch to dark theme"
+      >Dark</button>
+    </div>
   </header>
 
   <main>
