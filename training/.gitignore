@@ -42,6 +42,16 @@
 **/cnn-compare-results/
 **/cnn-cross-eval-results/
 
+# SVM recorded-eval artifacts
+**/svm-eval-results/
+
+# CNN variant retrain / OOD matrix / centroid baseline
+**/cross-eval-results/
+**/variant-results/
+**/baseline-results/
+**/cnn-v2/weights/
+**/cnn-v2/weights_extra/
+
 # Batch / tool run logs
 /notebooks/*.log
 
