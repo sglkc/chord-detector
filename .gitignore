@@ -16,3 +16,8 @@ app/models/
 .ipynb_checkpoints
 .jupyter_ystore.db
 .jupyter
+
+# Local agent / editor dirs
+.grok/
+.claude/
+.playwright*

@@ -51,6 +51,8 @@
 **/baseline-results/
 **/cnn-v2/weights/
 **/cnn-v2/weights_extra/
+**/cnn-latest/weights/
+**/cnn-latest/results/
 
 # Batch / tool run logs
 /notebooks/*.log
