@@ -182,6 +182,7 @@ class LiveServerE2ETests(unittest.TestCase):
         self.assertIn("text/html", content_type)
         html = body.decode("utf-8")
         self.assertIn("Chord Detection", html)
+        self.assertIn("chord-list", html)
         self.assertIn("/static/app.js", html)
 
         for path, needle in (
@@ -232,6 +233,7 @@ class LiveServerE2ETests(unittest.TestCase):
             "truncated",
             "source_frames",
             "onset_column",
+            "strength",
         ):
             self.assertIn(key, chord)
         self.assertIn(chord["raw_label"], MODEL_LABELS)

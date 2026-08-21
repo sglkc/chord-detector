@@ -134,6 +134,26 @@ class CQTStreamTests(unittest.TestCase):
 
 
 class OnsetDetectorTests(unittest.TestCase):
+    def test_envelope_at_reads_global_column(self):
+        det = OnsetDetector()
+        det.envelope = np.array([0.1, 0.4, 0.9], dtype=np.float32)
+        det._envelope_start_frame = 10
+        self.assertAlmostEqual(det.envelope_at(11), 0.4, places=5)
+        self.assertIsNone(det.envelope_at(9))
+        self.assertIsNone(det.envelope_at(13))
+        det.reset()
+
+    def test_peak_pick_delta_stays_on_unit_interval(self):
+        det = OnsetDetector()
+        self.assertAlmostEqual(det.set_param("peak_pick_delta", "0.2"), 0.2)
+        self.assertAlmostEqual(det.peak_pick_params["delta"], 0.2)
+        self.assertAlmostEqual(det.set_param("peak_pick_delta", "none"), 0.07)
+        with self.assertRaises(ValueError):
+            det.set_param("peak_pick_delta", "1.5")
+        with self.assertRaises(ValueError):
+            det.set_param("peak_pick_delta", "-0.1")
+        det.reset()
+
     def test_finds_click_in_noise(self):
         import librosa
 
@@ -408,6 +428,7 @@ class EndToEndRunnerTests(unittest.TestCase):
                     onset_messages += 1
                     self.assertIn("column", m)
                     self.assertIn("time_s", m)
+                    self.assertIn("strength", m)
                     self.assertIsInstance(m["column"], int)
                     self.assertGreaterEqual(m["column"], 0)
                     self.assertGreaterEqual(m["time_s"], 0.0)

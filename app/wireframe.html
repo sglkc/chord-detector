@@ -1,21 +1,46 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Wireframe — Real-Time Chord Detection</title>
+  <title>Wireframe — Piano Chord Detection</title>
   <style>
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: #222;
       background: #fff;
     }
-    .wrap { max-width: 720px; margin: 0 auto; padding: 24px 16px 40px; }
-    .row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-    h1 { margin: 0; font-size: 1.4rem; font-weight: 600; }
-    .sub { margin: 6px 0 0; font-size: 0.85rem; color: #666; }
+
+    .wrap {
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 28px 40px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.4rem;
+      font-weight: 600;
+    }
+
+    .sub {
+      margin: 6px 0 0;
+      padding-bottom: 10px;
+      font-size: 0.85rem;
+      color: #666;
+    }
+
     .btn {
       border: 1px solid #222;
       background: #fff;
@@ -23,13 +48,82 @@
       font: inherit;
       cursor: default;
     }
-    .btn.primary { background: #222; color: #fff; }
+
+    .btn.primary {
+      background: #222;
+      color: #fff;
+    }
+
     .btn[disabled] { opacity: 0.4; }
-    .box { border: 1px solid #222; padding: 16px; margin-top: 16px; }
-    .chord { text-align: center; padding: 28px 16px; }
-    .chord-name { font-size: 3.4rem; font-weight: 700; letter-spacing: -0.02em; }
-    .meta { margin-top: 8px; font-size: 0.85rem; color: #666; }
-    .canvas-head { display: flex; justify-content: space-between; font-size: 0.8rem; color: #666; margin-bottom: 8px; }
+
+    .box {
+      border: 1px solid #222;
+      padding: 16px;
+      margin-top: 16px;
+    }
+
+    .stage {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      margin-top: 16px;
+    }
+
+    .stage-live {
+      min-width: 0;
+      flex: 1 1 58%;
+    }
+
+    .stage-live .box:first-child { margin-top: 0; }
+
+    .split {
+      flex: 0 0 28px;
+      position: relative;
+    }
+
+    .split::before {
+      content: "";
+      position: absolute;
+      top: 12px;
+      bottom: 12px;
+      left: 13px;
+      width: 2px;
+      background: #222;
+    }
+
+    .session {
+      margin-top: 0;
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 42%;
+      min-width: 0;
+    }
+
+    .chord {
+      text-align: center;
+      padding: 22px 16px;
+    }
+
+    .chord-name {
+      font-size: 3.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .meta {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    .canvas-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
     .spec {
       position: relative;
       height: 160px;
@@ -37,82 +131,326 @@
       background:
         repeating-linear-gradient(90deg, #f4f4f4 0 20px, #eee 20px 40px);
     }
+
     .line {
       position: absolute;
-      top: 0; bottom: 0;
+      top: 0;
+      bottom: 0;
       width: 2px;
       background: #c00;
     }
+
     .tag {
       position: absolute;
       top: 6px;
-      font-size: 11px;
-      color: #c00;
+      font-size: 15px;
+      font-weight: 600;
+      color: #111;
       white-space: nowrap;
     }
-    .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; }
-    .pill { border: 1px solid #222; border-radius: 999px; padding: 3px 10px; font-size: 0.8rem; }
-    details { border: 1px solid #222; padding: 12px 16px; margin-top: 16px; }
-    summary { cursor: default; font-weight: 500; }
-    details p { margin: 10px 0 0; color: #444; font-size: 0.9rem; }
-    .param { display: grid; grid-template-columns: 1fr 180px 48px; gap: 10px; align-items: center; margin-top: 10px; font-size: 0.9rem; }
-    .caption { margin-top: 28px; font-size: 0.8rem; color: #666; }
+
+    .seg-spec {
+      position: relative;
+      height: 120px;
+      border: 1px dashed #222;
+      background:
+        repeating-linear-gradient(90deg, #f4f4f4 0 16px, #eee 16px 32px);
+      margin-bottom: 10px;
+    }
+
+    .seg-spec .fill {
+      position: absolute;
+      inset: 0 28% 0 0;
+      background:
+        repeating-linear-gradient(90deg, #ddd 0 16px, #ccc 16px 32px);
+    }
+
+    .session-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .transport {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .transport .btn { padding: 4px 10px; }
+
+    .bar {
+      flex: 1;
+      height: 8px;
+      border: 1px solid #222;
+      position: relative;
+    }
+
+    .bar i {
+      position: absolute;
+      left: 24%;
+      top: -3px;
+      width: 8px;
+      height: 14px;
+      background: #222;
+    }
+
+    .clock {
+      font-size: 0.8rem;
+      color: #666;
+      white-space: nowrap;
+    }
+
+    .spec-row,
+    .seg-row {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+    }
+
+    .spec-row .spec,
+    .seg-row .seg-spec { flex: 1; min-width: 0; }
+
+    .yaxis {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      width: 1.7rem;
+      font-size: 0.7rem;
+      color: #666;
+      text-align: right;
+      line-height: 1;
+    }
+
+    .yaxis-sm { font-size: 0.62rem; }
+
+    .list-head,
+    .list-row {
+      display: grid;
+      grid-template-columns: 3.6rem 1fr 5.2rem 4.4rem 3.4rem;
+      gap: 8px;
+      padding: 6px 4px;
+      font-size: 0.85rem;
+    }
+
+    .list-head {
+      color: #666;
+      font-size: 0.75rem;
+      border-top: 1px solid #222;
+    }
+
+    .list-wrap {
+      flex: 1 1 0;
+      min-height: 148px;
+      overflow-y: scroll;
+      border-top: 1px solid #ddd;
+    }
+
+    .list-row { border-bottom: 1px solid #eee; }
+
+    .list-row.now {
+      background: #f4f4f4;
+      font-weight: 600;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .pill {
+      border: 1px solid #222;
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 0.8rem;
+    }
+
+    details {
+      border: 1px solid #222;
+      padding: 12px 16px;
+      margin-top: 16px;
+    }
+
+    summary {
+      cursor: default;
+      font-weight: 500;
+    }
+
+    details > p {
+      margin: 10px 0 14px;
+      color: #444;
+      font-size: 0.9rem;
+    }
+
+    .settings-list {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0;
+    }
+
+    .param {
+      padding: 0 20px;
+      border-right: 1px solid #222;
+      font-size: 0.85rem;
+    }
+
+    .param:first-child { padding-left: 0; }
+
+    .param:last-child {
+      padding-right: 0;
+      border-right: 0;
+    }
+
+    .param-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-weight: 600;
+    }
+
+    .param-help {
+      margin: 6px 0 8px;
+      color: #666;
+      font-size: 0.8rem;
+    }
+
+    .param-track {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #666;
+      font-size: 0.75rem;
+    }
+
+    .param-track .bar {
+      height: 6px;
+      margin: 0;
+    }
+
+    .caption {
+      margin-top: 28px;
+      font-size: 0.8rem;
+      color: #666;
+    }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <div class="row">
       <div>
-        <h1>Real-Time Chord Detection</h1>
-        <p class="sub">microphone → feature extraction → onset → classification</p>
+        <h1>Piano Chord Detection</h1>
+        <p class="sub">microphone → librosa CQT → Superflux onsets → CNN classifier</p>
       </div>
       <button class="btn" type="button">Dark</button>
     </div>
 
-    <section class="box chord">
-      <div class="chord-name">G:maj</div>
-      <div class="meta">confidence 94.2% &nbsp;|&nbsp; onset 4.12s &nbsp;|&nbsp; full</div>
-    </section>
+    <div class="stage">
+      <div class="stage-live">
+        <section class="box chord">
+          <div class="chord-name">G:maj</div>
+          <div class="meta">confidence 94.2% &nbsp;|&nbsp; strength 1.88 &nbsp;|&nbsp; full (188 frames)</div>
+        </section>
 
-    <section class="box">
-      <div class="canvas-head">
-        <span>Sound view (scrolling)</span>
-        <span>live</span>
+        <section class="box">
+          <div class="canvas-head">
+            <span>Constant-Q Spectrogram (in decibels)</span>
+            <span>80 trail | canvas 600px | live</span>
+          </div>
+          <div class="spec-row">
+            <div class="yaxis"><span>C7</span><span>C6</span><span>C5</span><span>C4</span><span>C3</span><span>C2</span><span>C1</span></div>
+          <div class="spec">
+            <div class="line" style="left:18%"></div>
+            <div class="tag" style="left:20%">C:min 18%</div>
+            <div class="line" style="left:48%"></div>
+            <div class="tag" style="left:50%">D:min 91%</div>
+            <div class="line" style="left:78%"></div>
+            <div class="tag" style="left:80%">G:maj 94%</div>
+          </div>
+          </div>
+        </section>
       </div>
-      <div class="spec">
-        <div class="line" style="left:18%"></div>
-        <div class="tag" style="left:19%">C:min 18%</div>
-        <div class="line" style="left:48%"></div>
-        <div class="tag" style="left:49%">D:min 91%</div>
-        <div class="line" style="left:78%"></div>
-        <div class="tag" style="left:79%">G:maj 94%</div>
-      </div>
-    </section>
+
+      <div class="split" title="drag to resize"></div>
+
+      <section class="box session">
+        <div class="session-head">
+          <span>Session</span>
+          <span>8 chords &nbsp;&middot;&nbsp; 0:18.2</span>
+        </div>
+        <div class="canvas-head">
+          <span>Segment</span>
+          <span>G:maj</span>
+        </div>
+        <div class="seg-row">
+          <div class="yaxis yaxis-sm"><span>C7</span><span>C6</span><span>C5</span><span>C4</span><span>C3</span><span>C2</span><span>C1</span></div>
+          <div class="seg-spec">
+            <div class="fill"></div>
+          </div>
+        </div>
+        <div class="transport">
+          <button class="btn" type="button">Play</button>
+          <div class="bar"><i></i></div>
+          <span class="clock">0:04.1 / 0:18.2</span>
+        </div>
+        <div class="list-head">
+          <span>onset</span><span>chord</span><span>confidence</span><span>strength</span><span>length</span>
+        </div>
+        <div class="list-wrap">
+          <div class="list-row"><span>0.18</span><span>C:min</span><span>18%</span><span>0.21</span><span>1.8s</span></div>
+          <div class="list-row"><span>2.01</span><span>D:min</span><span>91%</span><span>1.42</span><span>2.1s</span></div>
+          <div class="list-row now"><span>4.12</span><span>G:maj</span><span>94%</span><span>1.88</span><span>1.8s</span></div>
+          <div class="list-row"><span>6.02</span><span>C:maj</span><span>88%</span><span>1.10</span><span>1.9s</span></div>
+          <div class="list-row"><span>8.11</span><span>F:maj</span><span>76%</span><span>0.74</span><span>2.0s</span></div>
+          <div class="list-row"><span>10.20</span><span>A:min</span><span>83%</span><span>1.05</span><span>1.7s</span></div>
+          <div class="list-row"><span>12.05</span><span>E:min</span><span>71%</span><span>0.63</span><span>2.0s</span></div>
+          <div class="list-row"><span>14.18</span><span>G:maj</span><span>90%</span><span>1.31</span><span>1.8s</span></div>
+        </div>
+      </section>
+    </div>
 
     <section class="controls">
-      <button class="btn primary" type="button">Stop microphone</button>
+      <button class="btn primary" type="button">Start microphone</button>
       <button class="btn" type="button">Reset</button>
       <span class="pill">model: ready</span>
-      <span class="meta">streaming</span>
+      <span class="meta">disconnected</span>
     </section>
 
-    <details>
+    <details open>
       <summary>Onset settings</summary>
-      <p>How readily a new chord is declared. Higher = fewer starts.</p>
-      <div class="param"><span>Minimum onset gap</span><span>────●──</span><span>80</span></div>
-      <div class="param"><span>Peak-pick delta</span><span>●──────</span><span>default</span></div>
-      <div class="param"><span>Peak-pick wait</span><span>──●────</span><span>30</span></div>
+      <p>How easily a new chord is started. Higher values mean fewer starts.</p>
+      <div class="settings-list">
+        <div class="param">
+          <div class="param-top"><span>Minimum onset gap</span><span>80 ms</span></div>
+          <p class="param-help">Wait this long after one start before allowing another. Stops broken or arpeggiated chords from becoming two chords.</p>
+          <div class="param-track"><span>0 ms</span><div class="bar"><i style="left:16%"></i></div><span>500 ms</span></div>
+        </div>
+        <div class="param">
+          <div class="param-top"><span>Peak-pick delta</span><span>0.07</span></div>
+          <p class="param-help">How much stronger than nearby sound a start must be. Higher = fewer starts. Default is 0.07.</p>
+          <div class="param-track"><span>0</span><div class="bar"><i style="left:7%"></i></div><span>0.99</span></div>
+        </div>
+        <div class="param">
+          <div class="param-top"><span>Peak-pick wait</span><span>30 frames · 320 ms</span></div>
+          <p class="param-help">After a start, skip this many frames before the next can fire. One frame is about 11 ms.</p>
+          <div class="param-track"><span>0</span><div class="bar"><i style="left:30%"></i></div><span>100</span></div>
+        </div>
+      </div>
     </details>
 
-    <details>
-      <summary>What is this?</summary>
-      <p>
-        Play into the microphone. The page shows a live sound view,
-        marks where a chord started, and names the closed segment.
-      </p>
-    </details>
-
-    <p class="caption">Static wireframe. No microphone, no backend.</p>
+    <p class="caption">
+      Full-width stage. Live view ~58% / session ~42%, drag handle
+      between them. Session rail: cropped segment CQT, transport,
+      scrollable list (onset, chord, confidence, strength, length).
+      Onset settings in three columns.
+    </p>
   </div>
 </body>
+
 </html>

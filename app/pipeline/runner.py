@@ -15,15 +15,17 @@ The message types are:
     trailing CQT columns (dB). The browser paints them right-to-left
     on a scrolling canvas.
 
-``{"type": "onset", "column": int, "time_s": float}``
+``{"type": "onset", "column": int, "time_s": float, "strength": float}``
 
     A newly detected Superflux onset. ``column`` is the global CQT
     column index (same coordinate system as ``end_column``). The
     browser draws it as a vertical marker on the spectrogram.
+    ``strength`` is the Superflux envelope value at that peak.
 
 ``{"type": "chord", "raw_label": str, "display_label": str,
    "confidence": float, "onset_time": float, "duration": float,
-   "truncated": bool, "source_frames": int, "onset_column": int}``
+   "truncated": bool, "source_frames": int, "onset_column": int,
+   "strength": float}``
 
     The result of a CNN inference on a completed segment.
     ``onset_column`` is the global CQT column of the segment start
@@ -193,6 +195,7 @@ class PipelineRunner:
                     "type": "onset",
                     "column": onset_frame,
                     "time_s": self._column_to_time(onset_frame),
+                    "strength": self.onsets.envelope_at(onset_frame),
                 }
             )
 
@@ -203,10 +206,6 @@ class PipelineRunner:
         # 5. Run classification on each completed window.
         for window in completed_windows:
             if self.classifier is None:
-                continue
-            # Decay tails / noise clicks after Superflux: stretching a
-            # 30-frame stub to 188 frames is what produced C:min spam.
-            if window.source_frames < config.MIN_CLASSIFY_FRAMES:
                 continue
             result = self.classifier.classify(window.cqt)
             onset_time = self._column_to_time(window.onset_frame)
@@ -223,6 +222,7 @@ class PipelineRunner:
                     "truncated": window.truncated,
                     "source_frames": window.source_frames,
                     "onset_column": int(window.onset_frame),
+                    "strength": self.onsets.envelope_at(window.onset_frame),
                 }
             )
 

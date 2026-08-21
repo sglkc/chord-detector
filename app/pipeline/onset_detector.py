@@ -186,6 +186,13 @@ class OnsetDetector:
 
         return new_onsets.astype(np.int64, copy=False), new_envelope
 
+    def envelope_at(self, global_column: int) -> float | None:
+        """Superflux strength at a global CQT column, if still in history."""
+        i = int(global_column) - int(self._envelope_start_frame)
+        if i < 0 or i >= int(self.envelope.size):
+            return None
+        return float(self.envelope[i])
+
     def reset(self) -> None:
         """Drop the envelope, CQT context, and watermarks. Used on disconnect."""
         self.envelope = np.zeros(0, dtype=np.float32)
@@ -239,10 +246,9 @@ class OnsetDetector:
             ``app.config``.
         value:
             String form of the new value. Coerced to ``int`` or
-            ``float`` based on the key. ``peak_pick_delta`` accepts
-            a numeric value or the literal ``"None"`` (case
-            insensitive) to clear the override and fall back to
-            librosa's default.
+            ``float`` based on the key. ``peak_pick_delta`` is
+            prominence on the normalized [0, 1] envelope; ``"none"``
+            resets it to 0.07.
 
         Returns
         -------
@@ -280,9 +286,14 @@ class OnsetDetector:
 
         if key == "peak_pick_delta":
             if value.strip().lower() in {"none", "null", ""}:
-                self.peak_pick_params.pop("delta", None)
-                return None
+                self.peak_pick_params["delta"] = 0.07
+                return 0.07
             f = float(value)
+            if f < 0.0 or f > 1.0:
+                raise ValueError(
+                    "peak_pick_delta must be in [0, 1]; "
+                    "the onset envelope is normalized"
+                )
             self.peak_pick_params["delta"] = f
             return f
 

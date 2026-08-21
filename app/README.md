@@ -6,7 +6,8 @@ mono Float32 PCM to a Python backend over a single WebSocket, and the
 backend runs the **same** librosa CQT + Superflux onset + CNN
 pipeline used in the offline notebooks (`EVALUATION.md`). The
 spectrogram and the latest predicted chord stream back to the page in
-real time.
+real time. The browser also keeps the captured take and a scrollable
+list of every closed segment; after Stop, Play seeks that recording.
 
 ```
    Browser                                       Python (uvicorn :8000)
@@ -102,8 +103,8 @@ Server → client **text** JSON frames:
 | `ready`        | Emitted on connect.                                                                   |
 | `model_status` | `loaded`, `load_time_s`, `error` – startup model load result.                         |
 | `cqt_columns`  | `n_bins, n_cols, time_s, columns[Array<number>]` – full trail snapshot, C-order flat. |
-| `onset`        | `column, time_s` – Superflux onset at a global CQT column (spectrogram marker). |
-| `chord`        | `raw_label, display_label, confidence, predicted_index, onset_time, duration, truncated, source_frames, onset_column`. |
+| `onset`        | `column, time_s, strength` – Superflux onset at a global CQT column (spectrogram marker). |
+| `chord`        | `raw_label, display_label, confidence, predicted_index, onset_time, duration, truncated, source_frames, onset_column, strength`. |
 | `error`        | `message`                                                                             |
 | `pong`         | Reply to a client `ping` text frame.                                                  |
 
@@ -188,8 +189,7 @@ All constants live in `app/config.py`:
   (drum hits, transients). The CNN will still try to classify the
   window, often producing an unexpected chord.
 * **No silence class**: the CNN is 36 closed-set chords (16 silent
-  training clips were labeled `C_diminished_4`). Windows shorter than
-  `MIN_CLASSIFY_FRAMES` (~0.5 s) are not sent to the CNN.
+  training clips were labeled `C_diminished_4`).
 * **First 2 s of audio**: CQT / onset detection require the minimum
   training window to fill before any columns are produced.
 

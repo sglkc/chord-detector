@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en" data-theme="light">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -11,46 +12,96 @@
       try {
         var stored = localStorage.getItem("chord-detection-theme");
         if (stored === "dark" || stored === "light") theme = stored;
-      } catch (_) { /* private mode */ }
+      } catch (_) { /* private mode */}
       document.documentElement.setAttribute("data-theme", theme);
     })();
   </script>
 </head>
+
 <body>
   <header>
     <div class="header-bar">
       <div class="header-copy">
-        <h1>Real-Time Chord Detection</h1>
+        <h1>Piano Chord Detection</h1>
         <p class="subtitle">
           Browser microphone &rarr; librosa CQT &rarr; Superflux onsets
           &rarr; CNN classifier
         </p>
       </div>
-      <button
-        id="theme-toggle"
-        class="theme-toggle"
-        type="button"
-        aria-label="Switch to dark theme"
-      >Dark</button>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to dark theme">Dark</button>
     </div>
   </header>
 
   <main>
-    <section class="chord-card">
-      <div id="chord" class="chord-label">--</div>
-      <div id="chord-meta" class="chord-meta">awaiting audio&hellip;</div>
-    </section>
+    <div class="stage">
+      <div class="stage-live">
+        <section class="chord-card">
+          <div id="chord" class="chord-label">--</div>
+          <div id="chord-meta" class="chord-meta">awaiting audio&hellip;</div>
+        </section>
 
-    <section class="canvas-card">
-      <div class="canvas-header">
-        <span>Constant-Q Spectrogram (scrolling, dB)</span>
-        <span id="cqt-meta" class="meta">0 cols</span>
+        <section class="canvas-card">
+          <div class="canvas-header">
+            <span>Constant-Q Spectrogram (in decibels)</span>
+            <span id="cqt-meta" class="meta">0 cols</span>
+          </div>
+          <div class="canvas-stack">
+            <div class="cqt-yaxis" aria-hidden="true">
+              <span>C7</span><span>C6</span><span>C5</span><span>C4</span>
+              <span>C3</span><span>C2</span><span>C1</span>
+            </div>
+            <div class="cqt-plot">
+              <canvas id="cqt" width="600" height="216"></canvas>
+              <canvas id="cqt-labels"></canvas>
+            </div>
+          </div>
+        </section>
       </div>
-      <div class="canvas-stack">
-        <canvas id="cqt" width="600" height="216"></canvas>
-        <canvas id="cqt-labels"></canvas>
-      </div>
-    </section>
+
+      <div id="stage-split" class="stage-split" role="separator" aria-orientation="vertical"
+        aria-label="Resize live view and session" tabindex="0"></div>
+
+      <section class="session-card">
+        <div class="session-head">
+          <span>Session</span>
+          <span id="session-meta">0 chords</span>
+        </div>
+        <div class="segment-spec">
+          <div class="canvas-header">
+            <span>Segment</span>
+            <span id="segment-meta" class="meta">no segment</span>
+          </div>
+          <div class="segment-spec-stack">
+            <div class="cqt-yaxis cqt-yaxis-sm" aria-hidden="true">
+              <span>C7</span><span>C6</span><span>C5</span><span>C4</span>
+              <span>C3</span><span>C2</span><span>C1</span>
+            </div>
+            <div class="segment-plot">
+              <canvas id="segment-cqt" width="320" height="120"></canvas>
+              <div id="segment-placeholder" class="segment-placeholder">
+                Captured spectrogram
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="transport">
+          <button id="play" class="secondary" type="button" disabled>Play</button>
+          <input id="seek" type="range" min="0" max="0" step="0.01" value="0" disabled
+            aria-label="Playback position" />
+          <span id="clock" class="clock">0:00.0</span>
+        </div>
+        <div class="chord-list-head" aria-hidden="true">
+          <span>onset</span>
+          <span>chord</span>
+          <span>confidence</span>
+          <span>strength</span>
+          <span>length</span>
+        </div>
+        <ol id="chord-list" class="chord-list" aria-label="Segmented chords">
+          <li class="chord-empty">Chords appear here as segments close</li>
+        </ol>
+      </section>
+    </div>
 
     <section class="controls">
       <button id="start" class="primary">Start microphone</button>
@@ -62,65 +113,66 @@
     <details class="settings">
       <summary>Onset settings</summary>
       <p class="settings-hint">
-        Tune how aggressively new chords are detected. Higher values =
-        fewer, more confident onsets. Changes apply immediately.
+        How easily a new chord is started. Higher values mean fewer
+        starts. Changes apply on the next audio chunk.
       </p>
-      <div class="param-row">
-        <label for="param-min-onset-gap">Minimum onset gap (ms)</label>
-        <input
-          id="param-min-onset-gap"
-          class="param-slider"
-          type="range"
-          min="0" max="500" step="10" value="80"
-          data-param-key="min_onset_gap_ms"
-        />
-        <span class="param-value" data-param-label-for="min_onset_gap_ms">80</span>
+      <div class="settings-list">
+        <div class="param">
+          <div class="param-top">
+            <label for="param-min-onset-gap">Minimum onset gap</label>
+            <span class="param-value" data-param-label-for="min_onset_gap_ms">80 ms</span>
+          </div>
+          <p class="param-help">
+            Wait this long after one start before allowing another.
+            Stops broken or arpeggiated chords from becoming two chords.
+          </p>
+          <div class="param-control">
+            <span class="param-end">0 ms</span>
+            <input id="param-min-onset-gap" class="param-slider" type="range"
+              min="0" max="500" step="10" value="80"
+              data-param-key="min_onset_gap_ms" />
+            <span class="param-end">500 ms</span>
+          </div>
+        </div>
+        <div class="param">
+          <div class="param-top">
+            <label for="param-peak-delta">Peak-pick delta</label>
+            <span class="param-value" data-param-label-for="peak_pick_delta">0.07</span>
+          </div>
+          <p class="param-help">
+            How much stronger than nearby sound a start must be.
+            Higher = fewer starts. Default is 0.07.
+          </p>
+          <div class="param-control">
+            <span class="param-end">0</span>
+            <input id="param-peak-delta" class="param-slider" type="range"
+              min="0" max="0.99" step="0.01" value="0.07"
+              data-param-key="peak_pick_delta" />
+            <span class="param-end">0.99</span>
+          </div>
+        </div>
+        <div class="param">
+          <div class="param-top">
+            <label for="param-peak-wait">Peak-pick wait</label>
+            <span class="param-value" data-param-label-for="peak_pick_wait">30 frames · 320 ms</span>
+          </div>
+          <p class="param-help">
+            After a start, skip this many frames before the next can
+            fire. One frame is about 11 ms.
+          </p>
+          <div class="param-control">
+            <span class="param-end">0</span>
+            <input id="param-peak-wait" class="param-slider" type="range"
+              min="0" max="100" step="1" value="30"
+              data-param-key="peak_pick_wait" />
+            <span class="param-end">100</span>
+          </div>
+        </div>
       </div>
-      <div class="param-row">
-        <label for="param-peak-delta">Peak-pick delta</label>
-        <input
-          id="param-peak-delta"
-          class="param-slider"
-          type="range"
-          min="0" max="2" step="0.05" value="0"
-          data-param-key="peak_pick_delta"
-          data-skip-initial="true"
-        />
-        <span class="param-value" data-param-label-for="peak_pick_delta">default</span>
-      </div>
-      <div class="param-row">
-        <label for="param-peak-wait">Peak-pick wait (frames)</label>
-        <input
-          id="param-peak-wait"
-          class="param-slider"
-          type="range"
-          min="0" max="100" step="1" value="30"
-          data-param-key="peak_pick_wait"
-        />
-        <span class="param-value" data-param-label-for="peak_pick_wait">30</span>
-      </div>
-    </details>
-
-    <details class="readme">
-      <summary>What is this?</summary>
-      <p>
-        This page captures audio from your microphone, streams it to a
-        Python backend over a single WebSocket, and runs the full
-        chord-detection pipeline (librosa CQT, Superflux onset
-        detection, then a small CNN trained on the OPUS chord
-        dataset) on every chunk. The spectrogram and the latest
-        predicted chord are shown back here in real time.
-      </p>
-      <p>
-        Open this page via <code>http://localhost:8000</code>
-        (or HTTPS in production) so the browser will grant microphone
-        access. Play chords on a guitar, keyboard, or open a chord
-        chart on another tab &mdash; any sustained tone should
-        produce a prediction within a second.
-      </p>
     </details>
   </main>
 
   <script src="/static/app.js" defer></script>
 </body>
+
 </html>

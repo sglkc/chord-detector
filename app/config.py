@@ -52,12 +52,6 @@ CQT_FMIN: float = float(librosa.note_to_hz("C1"))
 #: ``round(2 * 48000 / 512) = 188``.
 CQT_FEATURE_FRAMES: int = 188
 
-#: Do not run the CNN on windows shorter than this. Superflux often
-#: fires a late peak on the decay of a ~2 s clip (or on noise); the
-#: leftover 20–40 frames get stretched to 188 and come out as C:min /
-#: C#:dim. ~0.5 s is still a short chord, not a tail stub.
-MIN_CLASSIFY_FRAMES: int = 47
-
 #: Maximum audio kept in the rolling buffer (seconds). Old audio is
 #: discarded so the CQT / onset stages never see more than this.
 MAX_AUDIO_SECONDS: float = 6.0
@@ -76,13 +70,16 @@ SUPERFLUX_PARAMETERS: dict = {
 }
 
 #: Peak-picking parameters used by ``librosa.onset.onset_detect``.
-#: Same numbers as the training notebook.
+#: Same numbers as the training notebook. ``delta`` is prominence on
+#: the *normalized* [0, 1] Superflux envelope; librosa's default is
+#: 0.07. Values >= 1 can never fire a peak.
 PEAK_PICK_PARAMETERS: dict = {
     "pre_max": 30,
     "post_max": 1,
     "pre_avg": 100,
     "post_avg": 1,
     "wait": 30,
+    "delta": 0.07,
 }
 
 #: Minimum gap between two consecutive onsets (ms). Acts as a debounce
@@ -184,7 +181,6 @@ __all__ = [
     "CQT_FEATURE_BINS",
     "CQT_FMIN",
     "CQT_FEATURE_FRAMES",
-    "MIN_CLASSIFY_FRAMES",
     "MAX_AUDIO_SECONDS",
     "SUPERFLUX_PARAMETERS",
     "PEAK_PICK_PARAMETERS",
