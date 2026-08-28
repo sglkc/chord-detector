@@ -116,24 +116,7 @@
         How easily a new chord is started. Higher values mean fewer
         starts. Changes apply on the next audio chunk.
       </p>
-      <div class="settings-list">
-        <div class="param">
-          <div class="param-top">
-            <label for="param-min-onset-gap">Minimum onset gap</label>
-            <span class="param-value" data-param-label-for="min_onset_gap_ms">80 ms</span>
-          </div>
-          <p class="param-help">
-            Wait this long after one start before allowing another.
-            Stops broken or arpeggiated chords from becoming two chords.
-          </p>
-          <div class="param-control">
-            <span class="param-end">0 ms</span>
-            <input id="param-min-onset-gap" class="param-slider" type="range"
-              min="0" max="500" step="10" value="80"
-              data-param-key="min_onset_gap_ms" />
-            <span class="param-end">500 ms</span>
-          </div>
-        </div>
+      <div class="settings-list settings-list-single">
         <div class="param">
           <div class="param-top">
             <label for="param-peak-delta">Peak-pick delta</label>
@@ -149,23 +132,6 @@
               min="0" max="0.99" step="0.01" value="0.07"
               data-param-key="peak_pick_delta" />
             <span class="param-end">0.99</span>
-          </div>
-        </div>
-        <div class="param">
-          <div class="param-top">
-            <label for="param-peak-wait">Peak-pick wait</label>
-            <span class="param-value" data-param-label-for="peak_pick_wait">30 frames · 320 ms</span>
-          </div>
-          <p class="param-help">
-            After a start, skip this many frames before the next can
-            fire. One frame is about 11 ms.
-          </p>
-          <div class="param-control">
-            <span class="param-end">0</span>
-            <input id="param-peak-wait" class="param-slider" type="range"
-              min="0" max="100" step="1" value="30"
-              data-param-key="peak_pick_wait" />
-            <span class="param-end">100</span>
           </div>
         </div>
       </div>

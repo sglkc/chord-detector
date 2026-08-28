@@ -528,6 +528,17 @@ button.secondary:hover:not(:disabled) {
   gap: 0;
 }
 
+.settings-list-single {
+  grid-template-columns: minmax(0, 36rem);
+}
+
+.settings-list-single .param,
+.settings-list-single .param:first-child,
+.settings-list-single .param:last-child {
+  padding: 0;
+  border-right: 0;
+}
+
 .param {
   display: flex;
   flex-direction: column;

@@ -69,16 +69,32 @@ SUPERFLUX_PARAMETERS: dict = {
     "max_size": 3,
 }
 
-#: Peak-picking parameters used by ``librosa.onset.onset_detect``.
-#: Same numbers as the training notebook. ``delta`` is prominence on
-#: the *normalized* [0, 1] Superflux envelope; librosa's default is
-#: 0.07. Values >= 1 can never fire a peak.
-PEAK_PICK_PARAMETERS: dict = {
+def _peak_pick_frames(ms: float) -> int:
+    """Convert milliseconds to CQT frames for ``librosa`` peak picking.
+
+    One frame is ``CQT_HOP_LENGTH / AUDIO_SAMPLE_RATE`` seconds
+    (~10.7 ms). Values below one frame, including a requested 0 ms,
+    become 1 because ``peak_pick`` requires ``post_max`` / ``post_avg``
+    >= 1 and a 1 ms window is smaller than one hop.
+    """
+    frames = int(round(float(ms) * 0.001 * AUDIO_SAMPLE_RATE / CQT_HOP_LENGTH))
+    return max(1, frames)
+
+
+#: Peak-pick windows in milliseconds, then converted to frames.
+#: ``post_*`` cannot be 0 ms in librosa, so those stay 1 ms → 1 frame.
+PEAK_PICK_MS: dict = {
     "pre_max": 30,
     "post_max": 1,
     "pre_avg": 100,
     "post_avg": 1,
     "wait": 30,
+}
+
+#: Peak-picking parameters used by ``librosa.onset.onset_detect``.
+#: ``delta`` is prominence on the normalized [0, 1] Superflux envelope.
+PEAK_PICK_PARAMETERS: dict = {
+    **{key: _peak_pick_frames(ms) for key, ms in PEAK_PICK_MS.items()},
     "delta": 0.07,
 }
 
@@ -183,6 +199,7 @@ __all__ = [
     "CQT_FEATURE_FRAMES",
     "MAX_AUDIO_SECONDS",
     "SUPERFLUX_PARAMETERS",
+    "PEAK_PICK_MS",
     "PEAK_PICK_PARAMETERS",
     "MIN_ONSET_GAP_MS",
     "ONSET_WARMUP_FRAMES",

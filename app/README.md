@@ -174,8 +174,9 @@ All constants live in `app/config.py`:
 | `CQT_HOP_LENGTH` | 512 | smaller = better time resolution, more CPU |
 | `CQT_OCTAVES` / `CQT_BINS_PER_OCTAVE` | 6 / 36 | must match the model |
 | `CQT_FEATURE_FRAMES` | 188 | must match the model |
-| `PEAK_PICK_PARAMETERS` | (see config) | more `wait` = fewer onsets |
-| `MIN_ONSET_GAP_MS` | 80 | debounce vibrato |
+| `PEAK_PICK_MS` | 30 / 1 / 100 / 1 / 30 | peak-pick windows in ms; converted to frames |
+| `PEAK_PICK_PARAMETERS` | (from `PEAK_PICK_MS`) | only `delta` is live-tunable in the UI |
+| `MIN_ONSET_GAP_MS` | 80 | debounce (not shown in the UI) |
 | `ONSET_WARMUP_FRAMES` | 188 | ignore early spurious onsets |
 | `SEND_CQT_EVERY_MS` | 50 | throttles CQT updates to the client |
 | `CQT_TRAIL_COLUMNS` | 80 | how many trailing CQT cols are sent per update |

@@ -425,21 +425,11 @@
     <details open>
       <summary>Onset settings</summary>
       <p>How easily a new chord is started. Higher values mean fewer starts.</p>
-      <div class="settings-list">
-        <div class="param">
-          <div class="param-top"><span>Minimum onset gap</span><span>80 ms</span></div>
-          <p class="param-help">Wait this long after one start before allowing another. Stops broken or arpeggiated chords from becoming two chords.</p>
-          <div class="param-track"><span>0 ms</span><div class="bar"><i style="left:16%"></i></div><span>500 ms</span></div>
-        </div>
-        <div class="param">
+      <div class="settings-list" style="grid-template-columns: minmax(0, 36rem);">
+        <div class="param" style="padding: 0; border-right: 0;">
           <div class="param-top"><span>Peak-pick delta</span><span>0.07</span></div>
           <p class="param-help">How much stronger than nearby sound a start must be. Higher = fewer starts. Default is 0.07.</p>
           <div class="param-track"><span>0</span><div class="bar"><i style="left:7%"></i></div><span>0.99</span></div>
-        </div>
-        <div class="param">
-          <div class="param-top"><span>Peak-pick wait</span><span>30 frames · 320 ms</span></div>
-          <p class="param-help">After a start, skip this many frames before the next can fire. One frame is about 11 ms.</p>
-          <div class="param-track"><span>0</span><div class="bar"><i style="left:30%"></i></div><span>100</span></div>
         </div>
       </div>
     </details>
@@ -448,7 +438,7 @@
       Full-width stage. Live view ~58% / session ~42%, drag handle
       between them. Session rail: cropped segment CQT, transport,
       scrollable list (onset, chord, confidence, strength, length).
-      Onset settings in three columns.
+      Only peak-pick delta is live-tunable.
     </p>
   </div>
 </body>

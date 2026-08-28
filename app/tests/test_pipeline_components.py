@@ -23,6 +23,7 @@ from app.config import (
     CQT_FEATURE_FRAMES,
     CQT_HOP_LENGTH,
     MODEL_LABELS,
+    PEAK_PICK_PARAMETERS,
 )
 from app.pipeline.audio_buffer import AudioRingBuffer
 from app.pipeline.classifier import peak_normalize_db, stretch_features_to_frames
@@ -131,6 +132,15 @@ class CQTStreamTests(unittest.TestCase):
 # ---------------------------------------------------------------------------
 # OnsetDetector
 # ---------------------------------------------------------------------------
+
+
+class PeakPickConfigTests(unittest.TestCase):
+    def test_ms_windows_convert_to_at_least_one_frame(self):
+        self.assertEqual(PEAK_PICK_PARAMETERS["pre_max"], 3)
+        self.assertEqual(PEAK_PICK_PARAMETERS["post_max"], 1)
+        self.assertEqual(PEAK_PICK_PARAMETERS["pre_avg"], 9)
+        self.assertEqual(PEAK_PICK_PARAMETERS["post_avg"], 1)
+        self.assertEqual(PEAK_PICK_PARAMETERS["wait"], 3)
 
 
 class OnsetDetectorTests(unittest.TestCase):
