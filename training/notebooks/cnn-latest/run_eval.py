@@ -40,6 +40,7 @@ BATCH_SIZE = 32
 OOD_CSV = OUT_DIR / "ood_seeds.csv"
 OVERLAY_CSV = OUT_DIR / "overlay_seeds.csv"
 RECALL_CSV = OUT_DIR / "per_class_recall_seeds.csv"
+OVERLAY_RECALL_CSV = OUT_DIR / "overlay_per_class_recall.csv"
 
 
 def class_order():
@@ -87,6 +88,7 @@ def main():
     ap.add_argument("--stage", choices=["ood", "overlay", "both"], default="both")
     ap.add_argument("--variant", choices=VARIANTS, default=None)
     ap.add_argument("--seed", type=int, default=None)
+    ap.add_argument("--force", action="store_true")
     args = ap.parse_args()
 
     import tensorflow as tf
@@ -153,12 +155,14 @@ def main():
                 prev_r.to_csv(RECALL_CSV, index=False)
                 print(f"OOD {variant}/seed{seed}: {len(ood_rows)} datasets")
 
-            if args.stage in ("overlay", "both") and not already_done(OVERLAY_CSV, variant, seed):
-                overlay_rows = []
+            if args.stage in ("overlay", "both") and (
+                args.force or not already_done(OVERLAY_CSV, variant, seed)
+            ):
+                overlay_rows, rec_rows = [], []
                 for ds in OOD_DATASETS:
                     for overlay, suffix in OVERLAY_SUFFIXES.items():
                         X, y = load_xy(FEATURES_DIR / f"{ds}-{suffix}.npz", class_to_idx)
-                        acc, p, r, f1, _, _, _ = score(model, X, y, class_names)
+                        acc, p, r, f1, rec, cm, _ = score(model, X, y, class_names)
                         overlay_rows.append(
                             {
                                 "variant": variant,
@@ -172,10 +176,31 @@ def main():
                                 "macro_f1": f1,
                             }
                         )
+                        pd.DataFrame(cm, index=class_names, columns=class_names).to_csv(
+                            CM_DIR / f"{ds}_{overlay}_{variant}_seed{seed}.csv"
+                        )
+                        rec_rows.extend(
+                            {
+                                "variant": variant,
+                                "seed": seed,
+                                "dataset": ds,
+                                "overlay": overlay,
+                                "class": cls,
+                                "recall": float(rv),
+                            }
+                            for cls, rv in zip(class_names, rec)
+                        )
                         del X, y
                 prev = pd.read_csv(OVERLAY_CSV) if OVERLAY_CSV.exists() else pd.DataFrame()
+                if len(prev):
+                    prev = prev[~((prev.variant == variant) & (prev.seed == seed))]
                 prev = pd.concat([prev, pd.DataFrame(overlay_rows)], ignore_index=True)
                 prev.to_csv(OVERLAY_CSV, index=False)
+                prev_r = pd.read_csv(OVERLAY_RECALL_CSV) if OVERLAY_RECALL_CSV.exists() else pd.DataFrame()
+                if len(prev_r):
+                    prev_r = prev_r[~((prev_r.variant == variant) & (prev_r.seed == seed))]
+                prev_r = pd.concat([prev_r, pd.DataFrame(rec_rows)], ignore_index=True)
+                prev_r.to_csv(OVERLAY_RECALL_CSV, index=False)
                 print(f"overlay {variant}/seed{seed}: {len(overlay_rows)} cells")
 
             del model
