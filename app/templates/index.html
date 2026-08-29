@@ -105,6 +105,9 @@
 
     <section class="controls">
       <button id="start" class="primary">Start microphone</button>
+      <button id="upload" class="secondary" type="button">Upload audio</button>
+      <input id="upload-file" type="file" accept="audio/*,.wav,.ogg,.mp3,.flac,.webm,.m4a" hidden />
+      <button id="download" class="secondary" type="button" disabled>Download audio</button>
       <button id="reset" class="secondary" disabled>Reset</button>
       <span id="model-status" class="model-status loading">model: checking&hellip;</span>
       <span id="status" class="status">disconnected</span>

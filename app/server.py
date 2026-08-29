@@ -285,6 +285,15 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                 if text is not None:
                     stripped = text.strip()
                     lower = stripped.lower()
+                    # ``flush`` waits until queued PCM is ingested so
+                    # a file upload can pace itself and not overflow
+                    # the 8-chunk pending cap.
+                    if lower == "flush":
+                        await _await_runner_idle()
+                        await websocket.send_text(
+                            json.dumps({"type": "flushed"})
+                        )
+                        continue
                     # Serialize mutations with the PCM worker. Ping
                     # does not touch the runner and can proceed.
                     mutates = lower == "reset" or lower.startswith("set ")
@@ -379,6 +388,10 @@ async def _handle_control(websocket: WebSocket, runner: PipelineRunner, text: st
     ------------------
     ``ping``
         Cheap heartbeat; server replies with ``{"type": "pong"}``.
+    ``flush``
+        Wait until queued PCM is ingested, then reply
+        ``{"type": "flushed"}``. Used by file upload so the
+        8-chunk pending queue does not drop audio.
     ``reset``
         Drop in-flight pipeline state on the server side. The
         client also clears its canvas / chord card.

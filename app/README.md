@@ -8,6 +8,9 @@ pipeline used in the offline notebooks (`EVALUATION.md`). The
 spectrogram and the latest predicted chord stream back to the page in
 real time. The browser also keeps the captured take and a scrollable
 list of every closed segment; after Stop, Play seeks that recording.
+Download saves the take as a 48 kHz mono WAV. Upload sends a local
+audio file through the same WebSocket pipeline (resampled to 48 kHz
+mono).
 
 ```
    Browser                                       Python (uvicorn :8000)
@@ -107,6 +110,7 @@ Server → client **text** JSON frames:
 | `chord`        | `raw_label, display_label, confidence, predicted_index, onset_time, duration, truncated, source_frames, onset_column, strength`. |
 | `error`        | `message`                                                                             |
 | `pong`         | Reply to a client `ping` text frame.                                                  |
+| `flushed`      | Reply to a client `flush` text frame: all queued PCM has been ingested.               |
 
 `cqt_columns.columns` is a **full trail snapshot** of the last
 `CQT_TRAIL_COLUMNS` (not a delta). Layout is C-order
@@ -114,7 +118,7 @@ Server → client **text** JSON frames:
 spectrogram display from each snapshot.
 
 Client → server **text** frames (control):
-`ping`, `reset`, `set <key>=<value>`.
+`ping`, `flush`, `reset`, `set <key>=<value>`.
 
 ## Pipeline details
 

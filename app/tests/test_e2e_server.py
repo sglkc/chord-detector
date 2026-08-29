@@ -183,6 +183,8 @@ class LiveServerE2ETests(unittest.TestCase):
         html = body.decode("utf-8")
         self.assertIn("Chord Detection", html)
         self.assertIn("chord-list", html)
+        self.assertIn("Download audio", html)
+        self.assertIn("Upload audio", html)
         self.assertIn("/static/app.js", html)
 
         for path, needle in (

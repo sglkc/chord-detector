@@ -11,6 +11,8 @@
 //      and play back the captured take after Stop.
 //   7. Crop each closed segment from the live CQT buffer and show
 //      that slice (not the full trail) on the session canvas.
+//   8. Download the take as WAV, or upload a file and run it through
+//      the same WebSocket pipeline.
 //
 // Audio math lives entirely inside the worklet. The main thread is
 // responsible for transport (WebSocket) and rendering only.
@@ -30,6 +32,9 @@
   const cqtMetaEl = $("cqt-meta");
   const startBtn = $("start");
   const resetBtn = $("reset");
+  const uploadBtn = $("upload");
+  const uploadFileEl = $("upload-file");
+  const downloadBtn = $("download");
   const playBtn = $("play");
   const seekEl = $("seek");
   const clockEl = $("clock");
@@ -56,6 +61,9 @@
   let mediaStream = null;
   let socket = null;
   let running = false;
+  let uploadCancel = false;
+  let lastServerMsgAt = 0;
+  let flushWaiters = [];
 
   // CQT canvas state. We hold a rolling buffer of canvas-width columns.
   // n_bins is learned from the first server message; default 216.
@@ -666,6 +674,9 @@
     const canPlay = !running && recordedSamples > 0;
     if (playBtn) playBtn.disabled = !canPlay;
     if (seekEl) seekEl.disabled = !canPlay;
+    if (downloadBtn) downloadBtn.disabled = !canPlay;
+    if (uploadBtn) uploadBtn.disabled = running;
+    if (startBtn && !running) startBtn.disabled = false;
   }
 
   function updateSessionMeta() {
@@ -921,7 +932,10 @@
   // ----------------------------------------------------------------- //
 
   function handleServerMessage(msg) {
-    if (msg.type === "ready") {
+    lastServerMsgAt = Date.now();
+    if (msg.type === "flushed") {
+      settleFlushWaiters();
+    } else if (msg.type === "ready") {
       setStatus("connected", "connected");
     } else if (msg.type === "model_status") {
       setModelStatus(msg);
@@ -1097,6 +1111,201 @@
     });
   }
 
+  function encodeWavPcm16(f32, sampleRate) {
+    const n = f32.length;
+    const dataBytes = n * 2;
+    const buf = new ArrayBuffer(44 + dataBytes);
+    const view = new DataView(buf);
+    const writeStr = (off, s) => {
+      for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i));
+    };
+    writeStr(0, "RIFF");
+    view.setUint32(4, 36 + dataBytes, true);
+    writeStr(8, "WAVE");
+    writeStr(12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeStr(36, "data");
+    view.setUint32(40, dataBytes, true);
+    let o = 44;
+    for (let i = 0; i < n; i++) {
+      let s = f32[i];
+      if (s > 1) s = 1;
+      else if (s < -1) s = -1;
+      view.setInt16(o, s < 0 ? Math.round(s * 0x8000) : Math.round(s * 0x7fff), true);
+      o += 2;
+    }
+    return new Blob([buf], { type: "audio/wav" });
+  }
+
+  async function decodeToMono48k(file) {
+    const raw = await file.arrayBuffer();
+    const probe = new AudioContext();
+    let decoded;
+    try {
+      decoded = await probe.decodeAudioData(raw.slice(0));
+    } finally {
+      try { await probe.close(); } catch (_) { /* noop */ }
+    }
+    if (decoded.sampleRate === REQUIRED_SAMPLE_RATE && decoded.numberOfChannels === 1) {
+      return decoded.getChannelData(0).slice();
+    }
+    const frames = Math.max(1, Math.ceil(decoded.duration * REQUIRED_SAMPLE_RATE));
+    const offline = new OfflineAudioContext(1, frames, REQUIRED_SAMPLE_RATE);
+    const src = offline.createBufferSource();
+    src.buffer = decoded;
+    src.connect(offline.destination);
+    src.start(0);
+    const rendered = await offline.startRendering();
+    return rendered.getChannelData(0).slice();
+  }
+
+  function downloadRecording() {
+    if (running || recordedSamples <= 0) return;
+    const pcm = flattenRecording();
+    const blob = encodeWavPcm16(pcm, REQUIRED_SAMPLE_RATE);
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `chord-session-${stamp}.wav`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  function connectPipeline() {
+    return new Promise((resolve, reject) => {
+      const wsUrl = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws`;
+      socket = new WebSocket(wsUrl);
+      socket.binaryType = "arraybuffer";
+      socket.onopen = () => {
+        sendAllParams();
+        resolve();
+      };
+      socket.onerror = () => {
+        setStatus("socket error", "error");
+        reject(new Error("socket error"));
+      };
+      socket.onclose = () => {
+        setStatus("disconnected", null);
+        if (running) stop();
+      };
+      socket.onmessage = (ev) => {
+        try {
+          handleServerMessage(JSON.parse(ev.data));
+        } catch (err) {
+          setStatus(`bad message: ${err.message}`, "error");
+        }
+      };
+    });
+  }
+
+  function settleFlushWaiters() {
+    const waiters = flushWaiters;
+    flushWaiters = [];
+    for (let i = 0; i < waiters.length; i++) waiters[i]();
+  }
+
+  function waitFlushed(timeoutMs) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        flushWaiters = flushWaiters.filter((fn) => fn !== onFlush);
+        reject(new Error("timed out waiting for server flush"));
+      }, timeoutMs);
+      const onFlush = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+      flushWaiters.push(onFlush);
+    });
+  }
+
+  async function sendPcmWithBackpressure(pcm) {
+    // Server pending queue is 8 chunks. Send fewer than that, then
+    // ``flush`` so ingest finishes before more audio arrives.
+    const chunk = 4096;
+    const batch = 4;
+    let inBatch = 0;
+    for (let i = 0; i < pcm.length; i += chunk) {
+      if (uploadCancel || !socket || socket.readyState !== WebSocket.OPEN) return;
+      const slice = pcm.subarray(i, i + chunk);
+      socket.send(slice.slice().buffer);
+      inBatch += 1;
+      if (inBatch >= batch) {
+        socket.send("flush");
+        await waitFlushed(30000);
+        inBatch = 0;
+      }
+    }
+    if (inBatch > 0 && socket && socket.readyState === WebSocket.OPEN) {
+      socket.send("flush");
+      await waitFlushed(30000);
+    }
+  }
+
+  async function processUploadedFile(file) {
+    if (running || !file) return;
+    uploadCancel = false;
+    stopPlayback();
+    setStatus("decoding audio...", null);
+    let pcm;
+    try {
+      pcm = await decodeToMono48k(file);
+    } catch (err) {
+      setStatus(`error: could not read audio (${err.message})`, "error");
+      return;
+    }
+    if (!pcm || pcm.length === 0) {
+      setStatus("error: empty audio file", "error");
+      return;
+    }
+    if (pcm.length > MAX_RECORD_SAMPLES) {
+      pcm = pcm.subarray(0, MAX_RECORD_SAMPLES);
+    }
+
+    running = true;
+    resetBtn.disabled = false;
+    if (startBtn) startBtn.disabled = true;
+    syncTransportEnabled();
+    lastEndColumn = -1;
+    onsets = [];
+    if (colBuffer) colBuffer.fill(DB_MIN);
+    clearOnsetLabels();
+    await closePlayContext();
+    clearSession();
+    recordedChunks = [pcm];
+    recordedSamples = pcm.length;
+    updateSessionMeta();
+    updateClock();
+
+    try {
+      setStatus("processing file...", "connected");
+      await connectPipeline();
+      if (uploadCancel) {
+        await stop();
+        return;
+      }
+      await sendPcmWithBackpressure(pcm);
+      // Last CQT / chord frames can arrive just after flush.
+      await sleep(400);
+    } catch (err) {
+      setStatus(`error: ${err.message}`, "error");
+      console.error(err);
+    }
+    await stop();
+    if (!uploadCancel) setStatus("file processed", "connected");
+  }
+
   // ----------------------------------------------------------------- //
   // Audio capture
   // ----------------------------------------------------------------- //
@@ -1206,6 +1415,8 @@
   }
 
   async function stop() {
+    uploadCancel = true;
+    settleFlushWaiters();
     running = false;
     setStartButtonState(false);
     startBtn.disabled = false;
@@ -1246,6 +1457,7 @@
   }
 
   function reset() {
+    uploadCancel = true;
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send("reset");
     }
@@ -1276,6 +1488,22 @@
   });
 
   resetBtn.addEventListener("click", reset);
+
+  if (downloadBtn) {
+    downloadBtn.addEventListener("click", downloadRecording);
+  }
+
+  if (uploadBtn && uploadFileEl) {
+    uploadBtn.addEventListener("click", () => {
+      if (running) return;
+      uploadFileEl.value = "";
+      uploadFileEl.click();
+    });
+    uploadFileEl.addEventListener("change", () => {
+      const file = uploadFileEl.files && uploadFileEl.files[0];
+      if (file) processUploadedFile(file);
+    });
+  }
 
   if (playBtn) {
     playBtn.addEventListener("click", () => {
