@@ -209,35 +209,3 @@ handles = [plt.Line2D([], [], color=COLOR[v], linewidth=1.2, label=v)
            for v in ["orig", "clean"]]
 fig.legend(handles=handles, loc="outside lower center", ncol=2)
 save(fig, "esm-variant-history")
-
-
-# ---------------------------------------------------------------------------
-# Seed spread, CNN only: the ten reported checkpoints, no third variant and no
-# centroid baseline (sn-supplementary-draft-4.tex)
-# ---------------------------------------------------------------------------
-fig, ax = plt.subplots(figsize=(6.85, 2.9), layout="constrained")
-jitter2 = {"orig": -0.12, "clean": 0.12}
-rng = np.random.default_rng(0)
-
-for v in ["orig", "clean"]:
-    sub = ood[ood.variant == v]
-    for i, ds in enumerate(OOD):
-        pts = sub[sub.dataset == ds]["accuracy"].to_numpy()
-        xs = np.full(len(pts), x[i] + jitter2[v]) + rng.uniform(-0.03, 0.03, len(pts))
-        ax.scatter(xs, pts, s=22, facecolor=COLOR[v], edgecolor=COLOR[v],
-                   linewidth=0.7, zorder=3, label=v if i == 0 else None)
-    means = sub.groupby("dataset")["accuracy"].mean().loc[OOD]
-    ax.scatter(x + jitter2[v], means, marker="_", s=170, color=COLOR[v],
-               linewidth=1.4, zorder=4)
-
-ax.scatter(x, [PUBLISHED[d] for d in OOD], marker="x", s=30, color="0.35",
-           linewidth=1.0, zorder=5, label="earlier single checkpoint")
-
-ax.set_xticks(x, OOD)
-ax.set_ylabel("Accuracy")
-ax.set_ylim(0.25, 1.03)
-ax.set_axisbelow(True)
-ax.yaxis.grid(True, linestyle=":", linewidth=0.4, color="0.75")
-fig.legend(*ax.get_legend_handles_labels(), loc="outside lower center", ncol=3,
-           columnspacing=1.2, handletextpad=0.4)
-save(fig, "esm-seed-spread-cnn")
