@@ -54,6 +54,15 @@
 **/cnn-latest/weights/
 **/cnn-latest/results/
 
+# SVM baseline re-run; results are regenerated, bundles are ~673 MB each
+**/svm-latest/results/
+**/svm-latest/bundles/
+
+# Onset detection results
+**/onset-latest/*results*/
+
+**/raw-audio/*results*/
+
 # Batch / tool run logs
 /notebooks/*.log
 
