@@ -17,6 +17,7 @@ dependencies = [
     "miditoolkit>=1.0.1",
     "mir-eval>=0.8.2",
     "numpy>=1.26.4",
+    "optuna>=4.9.0",
     "pandas>=2.0.0",
     "scikit-learn>=1.7.2",
     "seaborn>=0.13.2",
