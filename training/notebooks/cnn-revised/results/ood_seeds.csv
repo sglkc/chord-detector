@@ -1,0 +1,6 @@
+variant,seed,dataset,accuracy,macro_precision,macro_recall,macro_f1
+clean,42,thinkpad,1.0,1.0,1.0,1.0
+clean,42,vivo,1.0,1.0,1.0,1.0
+clean,42,flow,1.0,1.0,1.0,1.0
+clean,42,thinkpad-2,1.0,1.0,1.0,1.0
+clean,42,flow-2,1.0,1.0,1.0,1.0

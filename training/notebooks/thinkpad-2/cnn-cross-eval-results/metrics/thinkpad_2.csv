@@ -1,0 +1,2 @@
+name,domain,kind,n_samples,n_classes,accuracy,macro_precision,macro_recall,macro_f1,weighted_precision,weighted_recall,weighted_f1
+thinkpad_2,thinkpad-2,ood_keyboard,1440,36,0.8854166666666666,0.848812115918275,0.8854166666666666,0.855960795760429,0.8488121159182748,0.8854166666666666,0.855960795760429

@@ -1,0 +1,2 @@
+name,domain,kind,n_samples,n_classes,accuracy,macro_precision,macro_recall,macro_f1,weighted_precision,weighted_recall,weighted_f1
+flow,flow,ood_device,1440,36,0.94375,0.9644632062470012,0.9437500000000001,0.9351947359591632,0.9644632062470011,0.94375,0.9351947359591632

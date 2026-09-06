@@ -37,33 +37,60 @@
 !**/misclass-cache/**/
 !**/misclass-cache/**/.gitkeep
 
-# CNN eval / compare / cross-eval artifacts (csv, png, npz caches)
-**/cnn-eval-results/
-**/cnn-compare-results/
-**/cnn-cross-eval-results/
+# Experiment result dirs: keep CSVs, ignore weights / images / caches / logs
+**/cnn-eval-results/**
+!**/cnn-eval-results/**/
+!**/cnn-eval-results/**/*.csv
+**/cnn-compare-results/**
+!**/cnn-compare-results/**/
+!**/cnn-compare-results/**/*.csv
+**/cnn-cross-eval-results/**
+!**/cnn-cross-eval-results/**/
+!**/cnn-cross-eval-results/**/*.csv
 
-# SVM recorded-eval artifacts
-**/svm-eval-results/
+**/svm-eval-results/**
+!**/svm-eval-results/**/
+!**/svm-eval-results/**/*.csv
 
-# CNN variant retrain / OOD matrix / centroid baseline
-**/cross-eval-results/
-**/variant-results/
-**/baseline-results/
+**/cross-eval-results/**
+!**/cross-eval-results/**/
+!**/cross-eval-results/**/*.csv
+**/variant-results/**
+!**/variant-results/**/
+!**/variant-results/**/*.csv
+**/baseline-results/**
+!**/baseline-results/**/
+!**/baseline-results/**/*.csv
+
 **/cnn-v2/weights/
 **/cnn-v2/weights_extra/
 **/cnn-latest/weights/
-**/cnn-latest/results/
+**/cnn-latest/results/**
+!**/cnn-latest/results/**/
+!**/cnn-latest/results/**/*.csv
 **/cnn-revised/weights/
-**/cnn-revised/results/
+**/cnn-revised/results/**
+!**/cnn-revised/results/**/
+!**/cnn-revised/results/**/*.csv
 
-# SVM baseline re-run; results are regenerated, bundles are ~673 MB each
-**/svm-latest/results/
+**/svm-latest/results/**
+!**/svm-latest/results/**/
+!**/svm-latest/results/**/*.csv
 **/svm-latest/bundles/
 
-# Onset detection results
-**/onset-latest/*results*/
+**/onset-latest/*results*/**
+!**/onset-latest/*results*/**/
+!**/onset-latest/*results*/**/*.csv
 
-**/raw-audio/*results*/
+**/raw-audio/*results*/**
+!**/raw-audio/*results*/**/
+!**/raw-audio/*results*/**/*.csv
+
+# Archived / backup experiment dumps
+**/*_archive*/
+**/*_results-archive*/
+**/*backup*/
+**/*bak*/
 
 # Batch / tool run logs
 /notebooks/*.log

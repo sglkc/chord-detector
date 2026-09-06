@@ -1,0 +1,6 @@
+dataset,n,mismatches,fast_s,libsvm_s,speedup
+thinkpad,1440,0,2.38,273.0,114.8
+vivo,1440,0,2.83,277.3,98.0
+flow,1440,0,2.26,269.1,118.9
+thinkpad-2,1440,0,2.76,313.2,113.6
+flow-2,1440,0,2.42,297.7,122.9

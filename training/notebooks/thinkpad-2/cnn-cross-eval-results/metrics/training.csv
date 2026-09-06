@@ -1,0 +1,2 @@
+name,domain,kind,n_samples,n_classes,accuracy,macro_precision,macro_recall,macro_f1,weighted_precision,weighted_recall,weighted_f1
+training,training,in_domain,7200,36,0.9998611111111111,0.9998618021006082,0.9998611111111112,0.9998611102430502,0.9998618021006082,0.9998611111111111,0.9998611102430502

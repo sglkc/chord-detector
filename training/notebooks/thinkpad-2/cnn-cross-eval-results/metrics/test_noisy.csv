@@ -1,0 +1,2 @@
+name,domain,kind,n_samples,n_classes,accuracy,macro_precision,macro_recall,macro_f1,weighted_precision,weighted_recall,weighted_f1
+test_noisy,test-noisy,ood_noisy,3600,36,0.8216666666666667,0.8452745374057258,0.8216666666666667,0.7961960954565112,0.8452745374057261,0.8216666666666667,0.7961960954565112

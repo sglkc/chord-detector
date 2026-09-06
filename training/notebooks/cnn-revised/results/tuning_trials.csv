@@ -1,0 +1,2 @@
+trial,lr,batch_size,es_patience,rlr_patience,rlr_factor,epochs_run,val_loss,val_accuracy,test_accuracy,test_macro_precision,test_macro_recall,test_macro_f1,A1,A2,B1,B2,mean_ood,minutes
+6,0.0001,16,6,2,0.1,18,1.515026383458462e-06,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,3.2666666666666666

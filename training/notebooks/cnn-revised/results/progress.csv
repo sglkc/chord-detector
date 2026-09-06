@@ -1,0 +1,2 @@
+variant,seed,n_train,n_val,n_test,test_accuracy,test_macro_precision,test_macro_recall,test_macro_f1
+clean,42,5736,718,718,1.0,1.0,1.0,1.0

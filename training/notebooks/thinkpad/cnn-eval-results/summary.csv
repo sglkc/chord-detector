@@ -1,0 +1,2 @@
+dataset,description,features_path,model_path,num_samples,num_classes,accuracy,macro_precision,macro_recall,macro_f1,weighted_precision,weighted_recall,weighted_f1
+thinkpad,Cross-domain thinkpad features,/home/seya/code/chord-detection/training/features/thinkpad.npz,/home/seya/code/chord-detection/training/models/model-bn-c64-c128-c256-c256-d256.keras,1440,36,0.9944444444444445,0.9949755957507895,0.9944444444444444,0.9944278940735356,0.9949755957507894,0.9944444444444445,0.9944278940735356

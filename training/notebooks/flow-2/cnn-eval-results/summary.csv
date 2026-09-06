@@ -1,0 +1,2 @@
+dataset,description,features_path,model_path,num_samples,num_classes,accuracy,macro_precision,macro_recall,macro_f1,weighted_precision,weighted_recall,weighted_f1
+flow-2,Cross-domain flow-2 features,/home/seya/code/chord-detection/training/features/flow-2.npz,/home/seya/code/chord-detection/training/models/model-bn-c64-c128-c256-c256-d256.keras,1440,36,0.8743055555555556,0.8484982657663072,0.8743055555555556,0.8401698341650082,0.8484982657663069,0.8743055555555556,0.8401698341650081
