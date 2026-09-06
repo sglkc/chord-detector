@@ -53,6 +53,8 @@
 **/cnn-v2/weights_extra/
 **/cnn-latest/weights/
 **/cnn-latest/results/
+**/cnn-revised/weights/
+**/cnn-revised/results/
 
 # SVM baseline re-run; results are regenerated, bundles are ~673 MB each
 **/svm-latest/results/

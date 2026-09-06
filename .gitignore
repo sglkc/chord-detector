@@ -21,3 +21,8 @@ app/models/
 .grok/
 .claude/
 .playwright*
+skripsi/*
+
+# Local conversation dumps / scratch notes
+my.md
+final-conversation.md

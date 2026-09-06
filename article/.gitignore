@@ -21,4 +21,6 @@ presentation/
 *.png
 figures/
 *.bak
+*-bak*.tex
+review.md
 references/

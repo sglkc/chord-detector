@@ -1,26 +1,28 @@
 #!/usr/bin/env python3
-"""One (trial-config, fold) of 5-fold CV, in-domain only, as an isolated OS process.
+"""One (config, fold) of 5-fold CV, in-domain only, as an isolated OS process.
 
-Rescoring fix: the first tuning pass (`run_tune.py` / `tune.ipynb`) selected its
-winner by mean(A1, A2, B1, B2) -- the four reported generalization scenarios --
-which is a worse leak than the SVM's own tuning ever had (the SVM's search never
-touched anything outside `training-clean.npz`). This script re-scores the exact
-same 10 (lr, batch_size) configs Optuna already drew, this time using only
-5-fold CV on the training pool, mirroring `svm-tuning.ipynb`'s
-`StratifiedKFold(n_splits=5)` objective exactly. No OOD dataset is touched here.
+Grid search: `tune.ipynb` enumerates lr x batch_size (decades: {0.01, 0.001,
+0.0001} x {16, 32, 64}, 9 configs) and dispatches one job per (config, fold)
+here, mirroring `svm-tuning.ipynb`'s `StratifiedKFold(n_splits=5)` objective
+exactly. No OOD dataset is touched -- selection is purely in-domain, same
+discipline as the SVM's C/gamma search.
 
 Reuses the fold assignments already written by `cnn-latest/run_kfold.py`
 (`cnn-latest/results/splits/clean-fold{0..4}.csv`) rather than redrawing them --
 same folds the published baseline's own k-fold CV and the SVM's `kfold.ipynb`
 already used, so nothing needs re-pairing.
 
-Per-fold models are not persisted (matches svm-tuning.ipynb: fit, score,
-discard). The winning config's *already-trained* single-split checkpoint
-(`weights/trial{NN}.keras`, trained during the first tuning pass on the fixed
-`clean-seed42` split) is what gets promoted -- this script only decides which
-one that is.
+Per-fold model weights are not persisted (matches svm-tuning.ipynb: fit, score,
+discard) -- only the winning config gets a real checkpoint, trained once on the
+fixed `clean-seed42` 80/10/10 split by `run_tune.py`, this script only decides
+which config that is. Per-epoch history *is* saved (results/history/
+trial{NN}-fold{k}.csv, same shape as cnn-latest/run_kfold.py's per-fold
+histories) so a combined training-curve figure can be drawn for the winner.
 
-Writes one row to results/cv_scores.csv per (trial, fold).
+Writes one row to results/cv_scores.csv per (trial, fold). `--lr`/`--batch-size`
+are passed directly by the grid driver; if omitted, falls back to looking the
+trial number up in results/tuning_trials.csv (kept for archived-run
+reproducibility).
 """
 import argparse
 import os
@@ -43,7 +45,9 @@ OUT_DIR = HERE / "results"
 CV_SCORES_CSV = OUT_DIR / "cv_scores.csv"
 TRIALS_CSV = OUT_DIR / "tuning_trials.csv"
 FAILURES_CSV = OUT_DIR / "cv_failures.csv"
+HISTORY_DIR = OUT_DIR / "history"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
+HISTORY_DIR.mkdir(parents=True, exist_ok=True)
 
 N_FOLDS = 5
 CNN_EPOCHS = int(os.environ.get("CNN_EPOCHS_OVERRIDE", 50))
@@ -75,8 +79,10 @@ def replace_row(path, row, keys):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--trial", required=True, type=int, help="row in tuning_trials.csv to look up lr/batch_size")
+    ap.add_argument("--trial", required=True, type=int, help="config id (for grouping in cv_scores.csv)")
     ap.add_argument("--fold", required=True, type=int)
+    ap.add_argument("--lr", type=float, default=None)
+    ap.add_argument("--batch-size", type=int, default=None)
     ap.add_argument("--force", action="store_true")
     args = ap.parse_args()
     trial, fold = args.trial, args.fold
@@ -89,9 +95,12 @@ def main():
             print(f"skip trial{trial}/fold{fold} (already in cv_scores.csv)")
             return 0
 
-    tuned = pd.read_csv(TRIALS_CSV)
-    row0 = tuned.loc[tuned.trial == trial].iloc[0]
-    lr, batch_size = float(row0.lr), int(row0.batch_size)
+    if args.lr is not None and args.batch_size is not None:
+        lr, batch_size = args.lr, args.batch_size
+    else:
+        tuned = pd.read_csv(TRIALS_CSV)
+        row0 = tuned.loc[tuned.trial == trial].iloc[0]
+        lr, batch_size = float(row0.lr), int(row0.batch_size)
 
     trial_start = datetime.now().replace(microsecond=0)
 
@@ -160,6 +169,13 @@ def main():
         callbacks=cbs,
         verbose=0,
     )
+
+    hist_df = pd.DataFrame(history.history)
+    hist_df.insert(0, "epoch", np.arange(1, len(hist_df) + 1))
+    hist_df.insert(0, "fold", fold)
+    hist_df.insert(0, "seed", seed)
+    hist_df.insert(0, "trial", trial)
+    hist_df.to_csv(HISTORY_DIR / f"trial{trial:02d}-fold{fold}.csv", index=False)
 
     def eval_split(X, y):
         loss, acc = model.evaluate(X, y, batch_size=32, verbose=0)
